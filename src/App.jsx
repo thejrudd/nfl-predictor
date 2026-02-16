@@ -1,19 +1,22 @@
 import { useEffect, useState } from 'react';
 import { loadScheduleData } from './utils/scheduleParser';
 import { usePredictions } from './context/PredictionContext';
+import { useTheme } from './context/ThemeContext';
 import { validateTotalWinsLosses } from './utils/validation';
 import TeamList from './components/TeamList';
 import TeamDetail from './components/TeamDetail';
 import StandingsTable from './components/StandingsTable';
+import PlayoffSeeding from './components/PlayoffSeeding';
 
 function App() {
   const [scheduleData, setScheduleData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedTeam, setSelectedTeam] = useState(null);
-  const [currentView, setCurrentView] = useState('predictions'); // 'predictions' or 'standings'
+  const [currentView, setCurrentView] = useState('predictions'); // 'predictions', 'standings', or 'playoffs'
 
   const { getPredictionCount, resetAllPredictions, predictions } = usePredictions();
+  const { darkMode, toggleDarkMode } = useTheme();
 
   useEffect(() => {
     loadScheduleData()
@@ -31,15 +34,15 @@ function App() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="text-xl text-gray-600">Loading...</div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
+        <div className="text-xl text-gray-600 dark:text-gray-400">Loading...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
         <div className="text-xl text-red-600">Error: {error}</div>
       </div>
     );
@@ -47,8 +50,8 @@ function App() {
 
   if (!scheduleData) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="text-xl text-gray-600">No data available</div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
+        <div className="text-xl text-gray-600 dark:text-gray-400">No data available</div>
       </div>
     );
   }
@@ -59,33 +62,50 @@ function App() {
   const hasPredictions = predictionCount > 0;
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-4xl font-display tracking-wide text-gray-900">
+              <h1 className="text-4xl font-display tracking-wide text-gray-900 dark:text-white">
                 NFL SEASON PREDICTOR
               </h1>
-              <p className="text-sm font-semibold text-blue-600 mt-1">2026 SEASON</p>
+              <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 mt-1">2026 SEASON</p>
             </div>
 
             <div className="mt-4 sm:mt-0 flex items-center space-x-4">
+              {/* Dark Mode Toggle */}
+              <button
+                onClick={toggleDarkMode}
+                className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                aria-label="Toggle dark mode"
+              >
+                {darkMode ? (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                  </svg>
+                )}
+              </button>
+
               <div className="text-sm">
-                <span className="font-semibold text-gray-700">{predictionCount}</span>
-                <span className="text-gray-500"> / {totalTeams} teams predicted</span>
+                <span className="font-semibold text-gray-700 dark:text-gray-300">{predictionCount}</span>
+                <span className="text-gray-500 dark:text-gray-400"> / {totalTeams} teams predicted</span>
               </div>
 
               {/* Validation Status Badge */}
               {hasPredictions && (
                 <div>
                   {validation.isValid ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-300">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 border border-green-300 dark:border-green-700">
                       ✓ Valid
                     </span>
                   ) : (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-300">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-300 border border-red-300 dark:border-red-700">
                       ⚠ Invalid
                     </span>
                   )}
@@ -95,7 +115,7 @@ function App() {
               {predictionCount > 0 && (
                 <button
                   onClick={resetAllPredictions}
-                  className="px-3 py-1.5 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
+                  className="px-3 py-1.5 text-sm text-red-600 dark:text-red-400 border border-red-300 dark:border-red-700 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                 >
                   Reset All
                 </button>
@@ -105,7 +125,7 @@ function App() {
 
           {/* Progress Bar */}
           <div className="mt-4">
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div
                 className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${(predictionCount / totalTeams) * 100}%` }}
@@ -120,7 +140,7 @@ function App() {
               className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
                 currentView === 'predictions'
                   ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
               }`}
             >
               MAKE PREDICTIONS
@@ -130,10 +150,20 @@ function App() {
               className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
                 currentView === 'standings'
                   ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
               }`}
             >
               VIEW STANDINGS
+            </button>
+            <button
+              onClick={() => setCurrentView('playoffs')}
+              className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+                currentView === 'playoffs'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              PLAYOFF SEEDING
             </button>
           </div>
         </div>
@@ -141,13 +171,17 @@ function App() {
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {currentView === 'predictions' ? (
+        {currentView === 'predictions' && (
           <TeamList
             teams={scheduleData.teams}
             onTeamClick={setSelectedTeam}
           />
-        ) : (
+        )}
+        {currentView === 'standings' && (
           <StandingsTable teams={scheduleData.teams} />
+        )}
+        {currentView === 'playoffs' && (
+          <PlayoffSeeding teams={scheduleData.teams} />
         )}
       </div>
 
