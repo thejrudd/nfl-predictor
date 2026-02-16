@@ -1,0 +1,229 @@
+{
+  "season": 2026,
+  "teams": [
+    {
+      "id": "BUF",
+      "name": "Buffalo Bills",
+      "division": "AFC East",
+      "conference": "AFC",
+      "opponents": ["MIA", "MIA", "NE", "NE", "NYJ", "NYJ", "BAL", "CHI", "DET", "KC", "LAC", "DEN", "GB", "HOU", "LV", "LAR", "MIN"]
+    },
+    {
+      "id": "MIA",
+      "name": "Miami Dolphins",
+      "division": "AFC East",
+      "conference": "AFC",
+      "opponents": ["BUF", "BUF", "NE", "NE", "NYJ", "NYJ", "CHI", "CIN", "DET", "KC", "LAC", "DEN", "IND", "GB", "LV", "MIN", "SF"]
+    },
+    {
+      "id": "NE",
+      "name": "New England Patriots",
+      "division": "AFC East",
+      "conference": "AFC",
+      "opponents": ["BUF", "BUF", "MIA", "MIA", "NYJ", "NYJ", "DEN", "GB", "LV", "MIN", "PIT", "CHI", "DET", "JAX", "KC", "LAR", "SEA"]
+    },
+    {
+      "id": "NYJ",
+      "name": "New York Jets",
+      "division": "AFC East",
+      "conference": "AFC",
+      "opponents": ["BUF", "BUF", "MIA", "MIA", "NE", "NE", "CLE", "DEN", "GB", "LV", "MIN", "ARI", "CHI", "DET", "KC", "LAC", "TEN"]
+    },
+    {
+      "id": "BAL",
+      "name": "Baltimore Ravens",
+      "division": "AFC North",
+      "conference": "AFC",
+      "opponents": ["CIN", "CIN", "CLE", "CLE", "PIT", "PIT", "JAX", "LAC", "NO", "TB", "TEN", "ATL", "BUF", "CAR", "DAL", "HOU", "IND"]
+    },
+    {
+      "id": "CIN",
+      "name": "Cincinnati Bengals",
+      "division": "AFC North",
+      "conference": "AFC",
+      "opponents": ["BAL", "BAL", "CLE", "CLE", "PIT", "PIT", "JAX", "KC", "NO", "TB", "TEN", "ATL", "CAR", "HOU", "IND", "MIA", "WSH"]
+    },
+    {
+      "id": "CLE",
+      "name": "Cleveland Browns",
+      "division": "AFC North",
+      "conference": "AFC",
+      "opponents": ["BAL", "BAL", "CIN", "CIN", "PIT", "PIT", "ATL", "CAR", "HOU", "IND", "LV", "JAX", "NO", "TB", "NYG", "NYJ", "TEN"]
+    },
+    {
+      "id": "PIT",
+      "name": "Pittsburgh Steelers",
+      "division": "AFC North",
+      "conference": "AFC",
+      "opponents": ["BAL", "BAL", "CIN", "CIN", "CLE", "CLE", "ATL", "CAR", "DEN", "HOU", "IND", "JAX", "NE", "NO", "PHI", "TB", "TEN"]
+    },
+    {
+      "id": "HOU",
+      "name": "Houston Texans",
+      "division": "AFC South",
+      "conference": "AFC",
+      "opponents": ["IND", "IND", "JAX", "JAX", "TEN", "TEN", "BAL", "BUF", "CIN", "DAL", "NYG", "CLE", "GB", "LAC", "PHI", "PIT", "WSH"]
+    },
+    {
+      "id": "IND",
+      "name": "Indianapolis Colts",
+      "division": "AFC South",
+      "conference": "AFC",
+      "opponents": ["HOU", "HOU", "JAX", "JAX", "TEN", "TEN", "BAL", "CIN", "DAL", "MIA", "NYG", "CLE", "KC", "MIN", "PHI", "PIT", "WSH"]
+    },
+    {
+      "id": "JAX",
+      "name": "Jacksonville Jaguars",
+      "division": "AFC South",
+      "conference": "AFC",
+      "opponents": ["HOU", "HOU", "IND", "IND", "TEN", "TEN", "CLE", "NE", "PHI", "PIT", "WSH", "BAL", "CHI", "CIN", "DAL", "DEN", "NYG"]
+    },
+    {
+      "id": "TEN",
+      "name": "Tennessee Titans",
+      "division": "AFC South",
+      "conference": "AFC",
+      "opponents": ["HOU", "HOU", "IND", "IND", "JAX", "JAX", "CLE", "NYJ", "PHI", "PIT", "WSH", "BAL", "CIN", "DAL", "DET", "LV", "NYG"]
+    },
+    {
+      "id": "DEN",
+      "name": "Denver Broncos",
+      "division": "AFC West",
+      "conference": "AFC",
+      "opponents": ["KC", "KC", "LV", "LV", "LAC", "LAC", "BUF", "JAX", "LAR", "MIA", "SEA", "ARI", "CAR", "NE", "NYJ", "PIT", "SF"]
+    },
+    {
+      "id": "KC",
+      "name": "Kansas City Chiefs",
+      "division": "AFC West",
+      "conference": "AFC",
+      "opponents": ["DEN", "DEN", "LV", "LV", "LAC", "LAC", "ARI", "IND", "NE", "NYJ", "SF", "ATL", "BUF", "CIN", "LAR", "MIA", "SEA"]
+    },
+    {
+      "id": "LV",
+      "name": "Las Vegas Raiders",
+      "division": "AFC West",
+      "conference": "AFC",
+      "opponents": ["DEN", "DEN", "KC", "KC", "LAC", "LAC", "BUF", "LAR", "MIA", "SEA", "TEN", "ARI", "CLE", "NE", "NO", "NYJ", "SF"]
+    },
+    {
+      "id": "LAC",
+      "name": "Los Angeles Chargers",
+      "division": "AFC West",
+      "conference": "AFC",
+      "opponents": ["DEN", "DEN", "KC", "KC", "LV", "LV", "ARI", "HOU", "NE", "NYJ", "SF", "BAL", "BUF", "LAR", "MIA", "SEA", "TB"]
+    },
+    {
+      "id": "DAL",
+      "name": "Dallas Cowboys",
+      "division": "NFC East",
+      "conference": "NFC",
+      "opponents": ["NYG", "NYG", "PHI", "PHI", "WSH", "WSH", "ARI", "BAL", "JAX", "SF", "TB", "TEN", "GB", "HOU", "IND", "LAR", "SEA"]
+    },
+    {
+      "id": "NYG",
+      "name": "New York Giants",
+      "division": "NFC East",
+      "conference": "NFC",
+      "opponents": ["DAL", "DAL", "PHI", "PHI", "WSH", "WSH", "ARI", "CLE", "JAX", "NO", "SF", "TEN", "DET", "HOU", "IND", "LAR", "SEA"]
+    },
+    {
+      "id": "PHI",
+      "name": "Philadelphia Eagles",
+      "division": "NFC East",
+      "conference": "NFC",
+      "opponents": ["DAL", "DAL", "NYG", "NYG", "WSH", "WSH", "CAR", "HOU", "IND", "LAR", "PIT", "SEA", "ARI", "CHI", "JAX", "SF", "TEN"]
+    },
+    {
+      "id": "WSH",
+      "name": "Washington Commanders",
+      "division": "NFC East",
+      "conference": "NFC",
+      "opponents": ["DAL", "DAL", "NYG", "NYG", "PHI", "PHI", "ATL", "CIN", "HOU", "IND", "LAR", "SEA", "ARI", "JAX", "MIN", "SF", "TEN"]
+    },
+    {
+      "id": "CHI",
+      "name": "Chicago Bears",
+      "division": "NFC North",
+      "conference": "NFC",
+      "opponents": ["DET", "DET", "GB", "GB", "MIN", "MIN", "JAX", "NE", "NO", "NYJ", "PHI", "TB", "ATL", "BUF", "CAR", "MIA", "SEA"]
+    },
+    {
+      "id": "DET",
+      "name": "Detroit Lions",
+      "division": "NFC North",
+      "conference": "NFC",
+      "opponents": ["CHI", "CHI", "GB", "GB", "MIN", "MIN", "NE", "NO", "NYG", "NYJ", "TB", "TEN", "ARI", "ATL", "BUF", "CAR", "MIA"]
+    },
+    {
+      "id": "GB",
+      "name": "Green Bay Packers",
+      "division": "NFC North",
+      "conference": "NFC",
+      "opponents": ["CHI", "CHI", "DET", "DET", "MIN", "MIN", "ATL", "BUF", "CAR", "DAL", "HOU", "MIA", "LAR", "NE", "NO", "NYJ", "TB"]
+    },
+    {
+      "id": "MIN",
+      "name": "Minnesota Vikings",
+      "division": "NFC North",
+      "conference": "NFC",
+      "opponents": ["CHI", "CHI", "DET", "DET", "GB", "GB", "ATL", "BUF", "CAR", "IND", "MIA", "WSH", "NE", "NO", "NYJ", "SF", "TB"]
+    },
+    {
+      "id": "ATL",
+      "name": "Atlanta Falcons",
+      "division": "NFC South",
+      "conference": "NFC",
+      "opponents": ["CAR", "CAR", "NO", "NO", "TB", "TB", "BAL", "CHI", "CIN", "DET", "KC", "SF", "CLE", "GB", "MIN", "PIT", "WSH"]
+    },
+    {
+      "id": "CAR",
+      "name": "Carolina Panthers",
+      "division": "NFC South",
+      "conference": "NFC",
+      "opponents": ["ATL", "ATL", "NO", "NO", "TB", "TB", "BAL", "CHI", "CIN", "DEN", "DET", "SEA", "CLE", "GB", "MIN", "PHI", "PIT"]
+    },
+    {
+      "id": "NO",
+      "name": "New Orleans Saints",
+      "division": "NFC South",
+      "conference": "NFC",
+      "opponents": ["ATL", "ATL", "CAR", "CAR", "TB", "TB", "ARI", "CLE", "GB", "LV", "MIN", "PIT", "BAL", "CHI", "CIN", "DET", "NYG"]
+    },
+    {
+      "id": "TB",
+      "name": "Tampa Bay Buccaneers",
+      "division": "NFC South",
+      "conference": "NFC",
+      "opponents": ["ATL", "ATL", "CAR", "CAR", "NO", "NO", "CLE", "GB", "LAC", "LAR", "MIN", "PIT", "BAL", "CHI", "CIN", "DAL", "DET"]
+    },
+    {
+      "id": "ARI",
+      "name": "Arizona Cardinals",
+      "division": "NFC West",
+      "conference": "NFC",
+      "opponents": ["LAR", "LAR", "SF", "SF", "SEA", "SEA", "DEN", "DET", "LV", "NYJ", "PHI", "WSH", "DAL", "KC", "LAC", "NO", "NYG"]
+    },
+    {
+      "id": "LAR",
+      "name": "Los Angeles Rams",
+      "division": "NFC West",
+      "conference": "NFC",
+      "opponents": ["ARI", "ARI", "SF", "SF", "SEA", "SEA", "BUF", "DAL", "GB", "KC", "LAC", "NYG", "DEN", "LV", "PHI", "TB", "WSH"]
+    },
+    {
+      "id": "SF",
+      "name": "San Francisco 49ers",
+      "division": "NFC West",
+      "conference": "NFC",
+      "opponents": ["ARI", "ARI", "LAR", "LAR", "SEA", "SEA", "DEN", "LV", "MIA", "MIN", "PHI", "WSH", "ATL", "DAL", "KC", "LAC", "NYG"]
+    },
+    {
+      "id": "SEA",
+      "name": "Seattle Seahawks",
+      "division": "NFC West",
+      "conference": "NFC",
+      "opponents": ["ARI", "ARI", "LAR", "LAR", "SF", "SF", "CHI", "DAL", "KC", "LAC", "NE", "NYG", "CAR", "DEN", "LV", "PHI", "WSH"]
+    }
+  ]
+}
