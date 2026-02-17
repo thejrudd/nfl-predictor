@@ -1,0 +1,7 @@
+services:
+  nfl-predictor:
+    build: .
+    ports:
+      - "${PORT:-80}:80"
+    restart: unless-stopped
+    container_name: nfl-predictor
