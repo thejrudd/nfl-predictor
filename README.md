@@ -52,21 +52,6 @@ The app will be available on port 80 by default. To use a different port:
 PORT=8080 docker compose up -d --build
 ```
 
-### Download from GitHub without git
-
-If git isn't installed on your server, download the repo as a tarball:
-
-```bash
-curl -L https://github.com/thejrudd/nfl-predictor/archive/refs/heads/main.tar.gz | tar xz
-cd nfl-predictor-main
-docker compose up -d --build
-```
-
-> For private repos, use a [personal access token](https://github.com/settings/tokens):
-> ```bash
-> curl -L -H "Authorization: token YOUR_TOKEN" https://api.github.com/repos/thejrudd/nfl-predictor/tarball/main | tar xz
-> ```
-
 ## Tech Stack
 
 - **React 19** — UI framework
@@ -81,7 +66,6 @@ docker compose up -d --build
 - **Season Narrative** — Auto-generate a text summary of your predicted season ("The Bills go 14-3 and clinch the AFC East in Week 15...")
 - **Historical Comparison** — Show how predicted records compare to each team's actual results from past seasons
 - **Team Rosters & Stats** — Display roster and player stats for each team
-- **Two-Column Division Grid** — AFC on the left, NFC on the right for better use of wide screens
 
 ## Project Structure
 
