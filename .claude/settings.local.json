@@ -5,7 +5,10 @@
       "Bash(npx vite build)",
       "Bash(npx tailwindcss --help:*)",
       "Bash(grep:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(npm install:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
