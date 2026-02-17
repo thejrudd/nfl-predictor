@@ -75,6 +75,14 @@ docker compose up -d --build
 - **html2canvas** — Image export
 - **nginx** — Production static file serving (Docker)
 
+## Roadmap
+
+- **Compare Mode** — Import a friend's predictions and diff them against yours
+- **Season Narrative** — Auto-generate a text summary of your predicted season ("The Bills go 14-3 and clinch the AFC East in Week 15...")
+- **Historical Comparison** — Show how predicted records compare to each team's actual results from past seasons
+- **Team Rosters & Stats** — Display roster and player stats for each team
+- **Two-Column Division Grid** — AFC on the left, NFC on the right for better use of wide screens
+
 ## Project Structure
 
 ```
