@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { loadScheduleData } from './utils/scheduleParser';
 import { usePredictions } from './context/PredictionContext';
 import { useTheme } from './context/ThemeContext';
 import { validateTotalWinsLosses } from './utils/validation';
+import { exportAsJSON, importFromJSON, exportAsImage } from './utils/exportImport';
 import TeamList from './components/TeamList';
 import TeamDetail from './components/TeamDetail';
 import StandingsTable from './components/StandingsTable';
@@ -15,8 +16,11 @@ function App() {
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [currentView, setCurrentView] = useState('predictions'); // 'predictions', 'standings', or 'playoffs'
 
-  const { getPredictionCount, resetAllPredictions, predictions } = usePredictions();
+  const { getPredictionCount, resetAllPredictions, predictions, importPredictions } = usePredictions();
   const { darkMode, toggleDarkMode } = useTheme();
+  const fileInputRef = useRef(null);
+  const exportContainerRef = useRef(null);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     loadScheduleData()
@@ -31,6 +35,36 @@ function App() {
         console.error('Error loading data:', err);
       });
   }, []);
+
+  const handleExportJSON = () => {
+    exportAsJSON(predictions);
+  };
+
+  const handleImport = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const data = await importFromJSON(file);
+      importPredictions(data);
+      alert(`Imported predictions for ${Object.keys(data).length} teams.`);
+    } catch (err) {
+      alert(`Import failed: ${err.message}`);
+    }
+    // Reset file input so re-importing the same file works
+    e.target.value = '';
+  };
+
+  const handleExportImage = async () => {
+    setExporting(true);
+    // Wait for React to render the off-screen container
+    await new Promise(resolve => setTimeout(resolve, 500));
+    try {
+      await exportAsImage(exportContainerRef.current);
+    } catch (err) {
+      alert(`Image export failed: ${err.message}`);
+    }
+    setExporting(false);
+  };
 
   if (loading) {
     return (
@@ -112,6 +146,37 @@ function App() {
                 </div>
               )}
 
+              {/* Export / Import / Reset controls */}
+              {predictionCount > 0 && (
+                <button
+                  onClick={handleExportImage}
+                  disabled={exporting}
+                  className="px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors disabled:opacity-50"
+                >
+                  {exporting ? 'Exporting...' : 'Export Image'}
+                </button>
+              )}
+              {predictionCount > 0 && (
+                <button
+                  onClick={handleExportJSON}
+                  className="px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                >
+                  Export JSON
+                </button>
+              )}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="px-3 py-1.5 text-sm text-green-600 dark:text-green-400 border border-green-300 dark:border-green-700 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors"
+              >
+                Import
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleImport}
+                className="hidden"
+              />
               {predictionCount > 0 && (
                 <button
                   onClick={resetAllPredictions}
@@ -192,6 +257,23 @@ function App() {
           allTeams={scheduleData.teams}
           onClose={() => setSelectedTeam(null)}
         />
+      )}
+
+      {/* Off-screen container for image export — renders all views */}
+      {exporting && (
+        <div
+          ref={exportContainerRef}
+          style={{ position: 'absolute', left: '-9999px', top: 0, width: '1200px' }}
+          className="bg-gray-100 dark:bg-gray-900 p-8 space-y-8"
+        >
+          <div className="text-center mb-6">
+            <h1 className="text-4xl font-display tracking-wide text-gray-900 dark:text-white">NFL SEASON PREDICTOR</h1>
+            <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 mt-1">2026 SEASON — {predictionCount}/{totalTeams} Teams Predicted</p>
+          </div>
+          <TeamList teams={scheduleData.teams} onTeamClick={() => {}} />
+          <StandingsTable teams={scheduleData.teams} />
+          <PlayoffSeeding teams={scheduleData.teams} />
+        </div>
       )}
 
     </div>

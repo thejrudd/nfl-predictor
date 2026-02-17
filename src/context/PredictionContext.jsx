@@ -144,6 +144,12 @@ export const PredictionProvider = ({ children }) => {
     return Object.keys(predictions).length;
   };
 
+  // Import predictions from an exported JSON object
+  const importPredictions = (data) => {
+    setPredictions(data);
+    localStorage.setItem('nfl-predictions-2026', JSON.stringify(data));
+  };
+
   return (
     <PredictionContext.Provider
       value={{
@@ -151,7 +157,8 @@ export const PredictionProvider = ({ children }) => {
         setTeamRecord,
         getTeamRecord,
         resetAllPredictions,
-        getPredictionCount
+        getPredictionCount,
+        importPredictions
       }}
     >
       {children}

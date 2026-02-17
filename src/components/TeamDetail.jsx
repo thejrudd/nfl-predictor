@@ -337,25 +337,23 @@ const TeamDetail = ({ team, allTeams, onClose }) => {
                 </span>
               )}
             </div>
-            {/* Conference & Division record from picks */}
-            {pickedConfGames > 0 && (
-              <div className="flex space-x-4 mb-3 text-xs font-semibold">
-                <span className="text-purple-600 dark:text-purple-400">
-                  {team.conference}: {pickedConfWins}-{pickedConfLosses}{pickedConfTies > 0 && `-${pickedConfTies}`}
-                  {pickedConfGames < conferenceGameIndices.length && (
-                    <span className="text-gray-400 dark:text-gray-500 font-normal"> ({pickedConfGames}/{conferenceGameIndices.length})</span>
-                  )}
-                </span>
-                {pickedDivWins + pickedDivLosses + pickedDivTies > 0 && (
-                  <span className="text-blue-600 dark:text-blue-400">
-                    DIV: {pickedDivWins}-{pickedDivLosses}{pickedDivTies > 0 && `-${pickedDivTies}`}
-                    {pickedDivWins + pickedDivLosses + pickedDivTies < divisionGameIndices.length && (
-                      <span className="text-gray-400 dark:text-gray-500 font-normal"> ({pickedDivWins + pickedDivLosses + pickedDivTies}/{divisionGameIndices.length})</span>
-                    )}
-                  </span>
-                )}
-              </div>
-            )}
+            {/* Conference & Division record from picks — always visible to prevent layout shift */}
+            <div className="flex space-x-4 mb-3 text-xs font-semibold">
+              <span className={pickedConfGames > 0 ? 'text-purple-600 dark:text-purple-400' : 'text-gray-300 dark:text-gray-600'}>
+                {team.conference}: {pickedConfGames > 0
+                  ? <>{pickedConfWins}-{pickedConfLosses}{pickedConfTies > 0 && `-${pickedConfTies}`}</>
+                  : '—'
+                }
+                <span className="text-gray-400 dark:text-gray-500 font-normal"> ({pickedConfGames}/{conferenceGameIndices.length})</span>
+              </span>
+              <span className={pickedDivWins + pickedDivLosses + pickedDivTies > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-gray-300 dark:text-gray-600'}>
+                DIV: {pickedDivWins + pickedDivLosses + pickedDivTies > 0
+                  ? <>{pickedDivWins}-{pickedDivLosses}{pickedDivTies > 0 && `-${pickedDivTies}`}</>
+                  : '—'
+                }
+                <span className="text-gray-400 dark:text-gray-500 font-normal"> ({pickedDivWins + pickedDivLosses + pickedDivTies}/{divisionGameIndices.length})</span>
+              </span>
+            </div>
             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
               {(() => {
                 const midpoint = Math.ceil(opponents.length / 2);
