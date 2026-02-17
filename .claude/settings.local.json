@@ -4,7 +4,8 @@
       "Bash(node -e:*)",
       "Bash(npx vite build)",
       "Bash(npx tailwindcss --help:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }

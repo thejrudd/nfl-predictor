@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const RecordSetter = ({
   initialWins = 8,
@@ -11,55 +11,41 @@ const RecordSetter = ({
   minTies = 0,
   onChange
 }) => {
-  const [wins, setWins] = useState(initialWins);
-  const [ties, setTies] = useState(initialTies);
-  const [divisionWins, setDivisionWins] = useState(initialDivisionWins);
-  const losses = 17 - wins - ties;
-  const divisionLosses = 6 - divisionWins;
+  // Raw state from user input (sliders, buttons) and parent sync
+  const [rawWins, setRawWins] = useState(initialWins);
+  const [rawTies, setRawTies] = useState(initialTies);
+  const [rawDivisionWins, setRawDivisionWins] = useState(initialDivisionWins);
 
-  // Overall wins are constrained by:
-  // - Division budget: can't win more than maxDivisionWins + 11, can't win fewer than minDivisionWins
-  // - Global balance: total league wins must equal 272
+  // Sync from parent when parent drives changes (e.g., game pick snapping)
+  useEffect(() => { setRawWins(initialWins); }, [initialWins]);
+  useEffect(() => { setRawDivisionWins(initialDivisionWins); }, [initialDivisionWins]);
+  useEffect(() => { setRawTies(initialTies); }, [initialTies]);
+
+  // Clamp all values inline (during render, not in effects) so that
+  // derived values and onChange always see post-clamp state.
+  const ties = Math.min(Math.max(rawTies, minTies), 4);
+
   const maxWins = Math.min(17 - ties, maxDivisionWins + 11 - ties, globalMaxWins);
   const minWins = Math.max(0, minDivisionWins, globalMinWins);
+  const effectiveMaxWins = Math.max(maxWins, minWins); // impossible range: prefer min
+  const wins = Math.min(Math.max(rawWins, minWins), effectiveMaxWins);
 
-  // Division wins can't exceed overall wins, and division losses can't exceed overall losses
+  const losses = 17 - wins - ties;
+  const divisionLosses = 6 - rawDivisionWins; // use raw for display continuity
+
   const effectiveMaxDivisionWins = Math.min(maxDivisionWins, wins, 6);
   const effectiveMinDivisionWins = Math.max(minDivisionWins, wins + ties - 11, 0);
+  const effectiveMaxDivWinsClamped = Math.max(effectiveMaxDivisionWins, effectiveMinDivisionWins);
+  const divisionWins = Math.min(Math.max(rawDivisionWins, effectiveMinDivisionWins), effectiveMaxDivWinsClamped);
 
-  // Sync internal state from parent when parent drives changes (e.g., game pick clamping)
-  useEffect(() => { setWins(initialWins); }, [initialWins]);
-  useEffect(() => { setDivisionWins(initialDivisionWins); }, [initialDivisionWins]);
-  useEffect(() => { setTies(initialTies); }, [initialTies]);
-
-  // Clamp wins to valid range
+  // Update parent when clamped values change
+  const prevRef = useRef({ wins, losses, divisionWins, ties });
   useEffect(() => {
-    if (wins > maxWins) {
-      setWins(maxWins);
-    } else if (wins < minWins) {
-      setWins(minWins);
+    const prev = prevRef.current;
+    if (prev.wins !== wins || prev.losses !== losses || prev.divisionWins !== divisionWins || prev.ties !== ties) {
+      prevRef.current = { wins, losses, divisionWins, ties };
+      onChange(wins, losses, divisionWins, ties);
     }
-  }, [wins, maxWins, minWins]);
-
-  // Clamp ties to respect minimum from game picks
-  useEffect(() => {
-    if (ties < minTies) {
-      setTies(minTies);
-    }
-  }, [ties, minTies]);
-
-  // Clamp division wins to valid range when constraints change
-  useEffect(() => {
-    if (divisionWins > effectiveMaxDivisionWins) {
-      setDivisionWins(effectiveMaxDivisionWins);
-    } else if (divisionWins < effectiveMinDivisionWins) {
-      setDivisionWins(effectiveMinDivisionWins);
-    }
-  }, [effectiveMaxDivisionWins, effectiveMinDivisionWins, divisionWins]);
-
-  // Update parent when values change
-  useEffect(() => {
-    onChange(wins, losses, divisionWins, ties);
   }, [wins, losses, divisionWins, ties, onChange]);
 
   return (
@@ -83,29 +69,29 @@ const RecordSetter = ({
           <input
             type="range"
             min={minWins}
-            max={maxWins}
+            max={effectiveMaxWins}
             value={wins}
-            onChange={(e) => setWins(parseInt(e.target.value))}
+            onChange={(e) => setRawWins(parseInt(e.target.value))}
             className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
             style={{
-              background: `linear-gradient(to right, #10b981 0%, #10b981 ${maxWins > minWins ? ((wins - minWins) / (maxWins - minWins)) * 100 : 100}%, #e5e7eb ${maxWins > minWins ? ((wins - minWins) / (maxWins - minWins)) * 100 : 100}%, #e5e7eb 100%)`
+              background: `linear-gradient(to right, #10b981 0%, #10b981 ${effectiveMaxWins > minWins ? ((wins - minWins) / (effectiveMaxWins - minWins)) * 100 : 100}%, #e5e7eb ${effectiveMaxWins > minWins ? ((wins - minWins) / (effectiveMaxWins - minWins)) * 100 : 100}%, #e5e7eb 100%)`
             }}
           />
         </label>
 
         <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500">
           <span>{minWins}-{17 - ties - minWins}{ties > 0 && `-${ties}`}</span>
-          <span>{Math.floor((minWins + maxWins) / 2)}-{17 - ties - Math.floor((minWins + maxWins) / 2)}{ties > 0 && `-${ties}`}</span>
-          <span>{maxWins}-{17 - ties - maxWins}{ties > 0 && `-${ties}`}</span>
+          <span>{Math.floor((minWins + effectiveMaxWins) / 2)}-{17 - ties - Math.floor((minWins + effectiveMaxWins) / 2)}{ties > 0 && `-${ties}`}</span>
+          <span>{effectiveMaxWins}-{17 - ties - effectiveMaxWins}{ties > 0 && `-${ties}`}</span>
         </div>
       </div>
 
       {/* Quick preset buttons for wins */}
       <div className="grid grid-cols-6 gap-2 mt-4">
-        {[0, 3, 6, 9, 12, 17].filter(v => v >= minWins && v <= maxWins).map(value => (
+        {[0, 3, 6, 9, 12, 17].filter(v => v >= minWins && v <= effectiveMaxWins).map(value => (
           <button
             key={value}
-            onClick={() => setWins(value)}
+            onClick={() => setRawWins(value)}
             className={`py-2 px-3 rounded text-sm font-medium transition-colors ${
               wins === value
                 ? 'bg-blue-600 text-white'
@@ -129,7 +115,7 @@ const RecordSetter = ({
             min={minTies}
             max="4"
             value={ties}
-            onChange={(e) => setTies(parseInt(e.target.value))}
+            onChange={(e) => setRawTies(parseInt(e.target.value))}
             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
             style={{
               background: `linear-gradient(to right, #f59e0b 0%, #f59e0b ${4 - minTies > 0 ? ((ties - minTies) / (4 - minTies)) * 100 : 100}%, #e5e7eb ${4 - minTies > 0 ? ((ties - minTies) / (4 - minTies)) * 100 : 100}%, #e5e7eb 100%)`
@@ -148,11 +134,11 @@ const RecordSetter = ({
         <div className="flex justify-between items-center mb-2">
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Division Record (Tiebreaker)</span>
           <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-            {divisionWins}-{divisionLosses}
+            {divisionWins}-{6 - divisionWins}
           </span>
         </div>
 
-        {effectiveMinDivisionWins === effectiveMaxDivisionWins ? (
+        {effectiveMinDivisionWins === effectiveMaxDivWinsClamped ? (
           /* Locked - only one valid option */
           <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-3 text-center">
             <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">
@@ -169,29 +155,29 @@ const RecordSetter = ({
               <input
                 type="range"
                 min={effectiveMinDivisionWins}
-                max={effectiveMaxDivisionWins}
+                max={effectiveMaxDivWinsClamped}
                 value={divisionWins}
-                onChange={(e) => setDivisionWins(parseInt(e.target.value))}
+                onChange={(e) => setRawDivisionWins(parseInt(e.target.value))}
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                 style={{
-                  background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((divisionWins - effectiveMinDivisionWins) / (effectiveMaxDivisionWins - effectiveMinDivisionWins)) * 100}%, #e5e7eb ${((divisionWins - effectiveMinDivisionWins) / (effectiveMaxDivisionWins - effectiveMinDivisionWins)) * 100}%, #e5e7eb 100%)`
+                  background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((divisionWins - effectiveMinDivisionWins) / (effectiveMaxDivWinsClamped - effectiveMinDivisionWins)) * 100}%, #e5e7eb ${((divisionWins - effectiveMinDivisionWins) / (effectiveMaxDivWinsClamped - effectiveMinDivisionWins)) * 100}%, #e5e7eb 100%)`
                 }}
               />
               <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500 mt-1">
                 <span>{effectiveMinDivisionWins}-{6 - effectiveMinDivisionWins}</span>
-                <span>{Math.floor((effectiveMinDivisionWins + effectiveMaxDivisionWins) / 2)}-{6 - Math.floor((effectiveMinDivisionWins + effectiveMaxDivisionWins) / 2)}</span>
-                <span>{effectiveMaxDivisionWins}-{6 - effectiveMaxDivisionWins}</span>
+                <span>{Math.floor((effectiveMinDivisionWins + effectiveMaxDivWinsClamped) / 2)}-{6 - Math.floor((effectiveMinDivisionWins + effectiveMaxDivWinsClamped) / 2)}</span>
+                <span>{effectiveMaxDivWinsClamped}-{6 - effectiveMaxDivWinsClamped}</span>
               </div>
             </label>
 
             {/* Quick preset buttons */}
             <div className="grid grid-cols-7 gap-1 mt-3">
               {[0, 1, 2, 3, 4, 5, 6]
-                .filter(value => value >= effectiveMinDivisionWins && value <= effectiveMaxDivisionWins)
+                .filter(value => value >= effectiveMinDivisionWins && value <= effectiveMaxDivWinsClamped)
                 .map(value => (
                   <button
                     key={value}
-                    onClick={() => setDivisionWins(value)}
+                    onClick={() => setRawDivisionWins(value)}
                     className={`py-1.5 px-2 rounded text-xs font-medium transition-colors ${
                       divisionWins === value
                         ? 'bg-blue-600 text-white'

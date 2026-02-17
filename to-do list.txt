@@ -1,0 +1,17 @@
+Layout & Polish
+
+Two-column division grid — AFC on the left, NFC on the right (or 2 divisions per row on wide screens). Easy win for the blank space.
+Collapsible divisions — expand/collapse to reduce scrolling once predictions are set
+Quick-view tooltips — hover a team to see their game-by-game picks without opening the modal
+
+New Features
+
+Export/Share — generate a shareable image or URL of your full bracket (great for group competitions)
+Conference record tracking — auto-compute each team's record vs AFC/NFC opponents from game picks
+"Who beats who" matrix — a small grid per division showing head-to-head matchup picks at a glance
+Compare mode — import a friend's predictions and diff them against yours
+
+Fun/Analytics
+
+Season narrative — auto-generate a text summary of your predicted season ("The Bills go 14-3 and clinch the AFC East in Week 15...")
+Historical comparison — show how your predicted record compares to each team's actual record over the past few seasons

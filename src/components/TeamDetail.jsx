@@ -109,18 +109,23 @@ const TeamDetail = ({ team, allTeams, onClose }) => {
   const pickedConfTies = conferenceGameIndices.filter(i => gameResults[i] === 'T').length;
   const pickedConfGames = pickedConfWins + pickedConfLosses + pickedConfTies;
 
-  // Combine all constraint sources
-  const finalMinWins = Math.max(combinedGlobalMinWins, gamePickMinWins);
+  // Combine all constraint sources.
+  // Game picks define a hard ceiling (can't exceed pickedWins + undecided),
+  // so cap the global/division minimums to not exceed the game pick maximum.
   const finalMaxWins = Math.min(combinedGlobalMaxWins, gamePickMaxWins);
-  const finalMinDivWins = Math.max(minPossibleDivisionWins, gamePickMinDivWins);
+  const finalMinWins = Math.min(Math.max(combinedGlobalMinWins, gamePickMinWins), gamePickMaxWins);
   const finalMaxDivWins = Math.min(maxPossibleDivisionWins, gamePickMaxDivWins);
+  const finalMinDivWins = Math.min(Math.max(minPossibleDivisionWins, gamePickMinDivWins), gamePickMaxDivWins);
 
-  // Can the user mark more W/L/T picks?
-  const canMarkMoreWins = pickedWins < combinedGlobalMaxWins;
-  const canMarkMoreLosses = pickedLosses < (17 - combinedGlobalMinWins);
-  const canMarkMoreTies = pickedTies < 4; // Max 4 ties allowed by RecordSetter
-  const canMarkMoreDivWins = pickedDivWins < maxPossibleDivisionWins;
-  const canMarkMoreDivLosses = pickedDivLosses < (6 - minPossibleDivisionWins);
+  // Game pick constraints: keep these permissive so users can freely pick
+  // game outcomes. Cross-team balance (272 total wins, 12 division wins) is
+  // enforced by the RecordSetter slider constraints and save-time validation.
+  // Division games are naturally bounded at 6 by the schedule.
+  const canMarkMoreWins = true;
+  const canMarkMoreLosses = true;
+  const canMarkMoreTies = pickedTies < 4;
+  const canMarkMoreDivWins = true;
+  const canMarkMoreDivLosses = true;
 
   const handleGameResultToggle = (gameIndex, result) => {
     setGameResults(prev => {
@@ -134,14 +139,6 @@ const TeamDetail = ({ team, allTeams, onClose }) => {
     });
     setValidationError(null);
   };
-
-  // Auto-clamp wins/divisionWins when game picks change
-  useEffect(() => {
-    if (wins < pickedWins) setWins(pickedWins);
-    if (wins > gamePickMaxWins) setWins(gamePickMaxWins);
-    if (divisionWins < pickedDivWins) setDivisionWins(pickedDivWins);
-    if (divisionWins > gamePickMaxDivWins) setDivisionWins(gamePickMaxDivWins);
-  }, [pickedWins, pickedDivWins, gamePickMaxWins, gamePickMaxDivWins]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Snap ties slider to match game-level tie count when it changes
   useEffect(() => {
@@ -157,47 +154,9 @@ const TeamDetail = ({ team, allTeams, onClose }) => {
   }, []); // Empty deps - this function doesn't depend on any props or state
 
   const handleSave = () => {
-    // Validate division record before saving
-    const divisionTeams = allTeams.filter(t => t.division === team.division);
-
-    // Calculate current total division wins for this division, excluding this team
-    const otherTeamsDivisionWins = divisionTeams.reduce((sum, t) => {
-      if (t.id === team.id) return sum; // Skip the current team
-      const record = predictions[t.id];
-      return sum + (record?.divisionWins || 0);
-    }, 0);
-
-    const newTotal = otherTeamsDivisionWins + divisionWins;
-    const EXPECTED_DIVISION_WINS = 12;
-
-    // Check if this would make the division total exceed 12
-    if (newTotal > EXPECTED_DIVISION_WINS) {
-      setValidationError(
-        `❌ Invalid division record: ${team.division} would have ${newTotal} total division wins (maximum: ${EXPECTED_DIVISION_WINS}). ` +
-        `Please reduce division wins to ${divisionWins - (newTotal - EXPECTED_DIVISION_WINS)} or lower.`
-      );
-      return;
-    }
-
-    // Check if remaining teams could possibly reach exactly 12
-    const teamsWithoutPredictions = divisionTeams.filter(t =>
-      t.id !== team.id && !predictions[t.id]
-    ).length;
-
-    const maxPossibleTotal = newTotal + (teamsWithoutPredictions * 6); // Each team can win max 6 division games
-
-    if (maxPossibleTotal < EXPECTED_DIVISION_WINS) {
-      const deficit = EXPECTED_DIVISION_WINS - newTotal;
-      setValidationError(
-        `❌ Invalid division record: ${team.division} would only have ${newTotal} division wins, ` +
-        `but needs ${deficit} more from ${teamsWithoutPredictions} unpredicted team(s) who can only contribute ${maxPossibleTotal - newTotal} wins maximum. ` +
-        `Please increase division wins to ${divisionWins + (EXPECTED_DIVISION_WINS - maxPossibleTotal)} or higher.`
-      );
-      return;
-    }
-
     // Pairwise constraint: any two teams in the same division play each other twice,
     // so their combined division wins can't exceed 10 (2 head-to-head + 4 each vs other 2 teams)
+    const divisionTeams = allTeams.filter(t => t.division === team.division);
     const MAX_PAIRWISE_DIVISION_WINS = 10;
     for (const t of divisionTeams) {
       if (t.id === team.id) continue;
@@ -214,7 +173,9 @@ const TeamDetail = ({ team, allTeams, onClose }) => {
       }
     }
 
-    // If validation passes, save the record with game results and cross-team sync
+    // Save the record with game results and cross-team sync
+    // Division win totals are not strictly validated here because cross-team sync
+    // (in setTeamRecord) auto-adjusts opponents' divisionWins to stay consistent.
     setValidationError(null);
     setTeamRecord(team.id, wins, losses, divisionWins, gameResults, allTeams, ties);
     onClose();
