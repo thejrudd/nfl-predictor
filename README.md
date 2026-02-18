@@ -62,10 +62,16 @@ PORT=8080 docker compose up -d --build
 
 ## Roadmap
 
+**v1.1**
+- **Image Export Redesign** — Compact, shareable summary (~1080x1080) instead of a raw page screenshot
+
+**v2.0**
+- **Player Info & Rosters** — Player headshots, stats, and accomplishments pulled client-side from public APIs
+
+**Future**
+- **Historical Comparison** — Compare predicted records to each team's actual results from past seasons
 - **Compare Mode** — Import a friend's predictions and diff them against yours
-- **Season Narrative** — Auto-generate a text summary of your predicted season ("The Bills go 14-3 and clinch the AFC East in Week 15...")
-- **Historical Comparison** — Show how predicted records compare to each team's actual results from past seasons
-- **Team Rosters & Stats** — Display roster and player stats for each team
+- **Season Narrative** — Auto-generate a text summary of your predicted season
 
 ## Project Structure
 
