@@ -3,12 +3,13 @@ import { loadScheduleData } from './utils/scheduleParser';
 import { usePredictions } from './context/PredictionContext';
 import { useTheme } from './context/ThemeContext';
 import { validateTotalWinsLosses } from './utils/validation';
-import { exportAsJSON, importFromJSON, exportAsImage } from './utils/exportImport';
+import { exportAsJSON, importFromJSON } from './utils/exportImport';
 import TeamList from './components/TeamList';
 import TeamDetail from './components/TeamDetail';
 import StandingsTable from './components/StandingsTable';
 import PlayoffSeeding from './components/PlayoffSeeding';
 import Guide from './components/Guide';
+import ExportPreview from './components/ExportPreview';
 
 function App() {
   const [scheduleData, setScheduleData] = useState(null);
@@ -17,11 +18,10 @@ function App() {
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [currentView, setCurrentView] = useState('predictions'); // 'predictions', 'standings', or 'playoffs'
 
-  const { getPredictionCount, resetAllPredictions, predictions, importPredictions } = usePredictions();
+  const { getPredictionCount, resetAllPredictions, predictions, importPredictions, generateRandomPredictions } = usePredictions();
   const { darkMode, toggleDarkMode } = useTheme();
   const fileInputRef = useRef(null);
-  const exportContainerRef = useRef(null);
-  const [exporting, setExporting] = useState(false);
+  const [exportPreviewOpen, setExportPreviewOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
 
@@ -57,16 +57,8 @@ function App() {
     e.target.value = '';
   };
 
-  const handleExportImage = async () => {
-    setExporting(true);
-    // Wait for React to render the off-screen container
-    await new Promise(resolve => setTimeout(resolve, 500));
-    try {
-      await exportAsImage(exportContainerRef.current);
-    } catch (err) {
-      alert(`Image export failed: ${err.message}`);
-    }
-    setExporting(false);
+  const handleExportImage = () => {
+    setExportPreviewOpen(true);
   };
 
   if (loading) {
@@ -142,37 +134,43 @@ function App() {
               )}
 
               {/* Desktop controls */}
-              <div className="hidden sm:flex items-center space-x-4">
+              <div className="hidden sm:flex items-stretch space-x-1.5">
                 <button
                   onClick={() => setGuideOpen(true)}
-                  className="px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                  className="px-2 text-xs text-center whitespace-nowrap h-7 text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
                 >
                   Guide
                 </button>
                 <button
                   onClick={handleExportImage}
-                  disabled={exporting || predictionCount === 0}
-                  className="px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  disabled={predictionCount === 0}
+                  className="px-2 text-xs text-center whitespace-nowrap h-7 text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {exporting ? 'Exporting...' : 'Export Image'}
+                  Export Image
                 </button>
                 <button
                   onClick={handleExportJSON}
                   disabled={predictionCount === 0}
-                  className="px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-2 text-xs text-center whitespace-nowrap h-7 text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Export JSON
                 </button>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="px-3 py-1.5 text-sm text-green-600 dark:text-green-400 border border-green-300 dark:border-green-700 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors"
+                  className="px-2 text-xs text-center whitespace-nowrap h-7 text-green-600 dark:text-green-400 border border-green-300 dark:border-green-700 rounded-md hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors"
                 >
-                  Import
+                  Import JSON
+                </button>
+                <button
+                  onClick={() => generateRandomPredictions(scheduleData.teams)}
+                  className="px-2 text-xs text-center whitespace-nowrap h-7 text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-700 rounded-md hover:bg-amber-50 dark:hover:bg-amber-900/30 transition-colors"
+                >
+                  Random
                 </button>
                 <button
                   onClick={resetAllPredictions}
                   disabled={predictionCount === 0}
-                  className="px-3 py-1.5 text-sm text-red-600 dark:text-red-400 border border-red-300 dark:border-red-700 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-2 text-xs text-center whitespace-nowrap h-7 text-red-600 dark:text-red-400 border border-red-300 dark:border-red-700 rounded-md hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Reset All
                 </button>
@@ -195,10 +193,10 @@ function App() {
                     <div className="absolute right-0 top-full mt-1 z-50 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl py-1">
                       <button
                         onClick={() => { handleExportImage(); setMenuOpen(false); }}
-                        disabled={exporting || predictionCount === 0}
+                        disabled={predictionCount === 0}
                         className="w-full text-left px-4 py-2.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
                       >
-                        {exporting ? 'Exporting...' : 'Export Image'}
+                        Export Image
                       </button>
                       <button
                         onClick={() => { handleExportJSON(); setMenuOpen(false); }}
@@ -211,7 +209,7 @@ function App() {
                         onClick={() => { fileInputRef.current?.click(); setMenuOpen(false); }}
                         className="w-full text-left px-4 py-2.5 text-sm text-green-600 dark:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-700"
                       >
-                        Import
+                        Import JSON
                       </button>
                       <div className="border-t border-gray-200 dark:border-gray-600 my-1" />
                       <button
@@ -219,6 +217,12 @@ function App() {
                         className="w-full text-left px-4 py-2.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700"
                       >
                         Guide
+                      </button>
+                      <button
+                        onClick={() => { generateRandomPredictions(scheduleData.teams); setMenuOpen(false); }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-amber-600 dark:text-amber-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        Random
                       </button>
                       <div className="border-t border-gray-200 dark:border-gray-600 my-1" />
                       <button
@@ -308,6 +312,14 @@ function App() {
       {/* Guide Modal */}
       {guideOpen && <Guide onClose={() => setGuideOpen(false)} />}
 
+      {/* Export Preview Modal */}
+      {exportPreviewOpen && (
+        <ExportPreview
+          teams={scheduleData.teams}
+          onClose={() => setExportPreviewOpen(false)}
+        />
+      )}
+
       {/* Team Detail Modal */}
       {selectedTeam && (
         <TeamDetail
@@ -321,23 +333,6 @@ function App() {
       <footer className="mt-auto max-w-6xl mx-auto px-4 pb-6 sm:px-6 lg:px-8 text-center w-full">
         <p className="text-xs text-gray-400 dark:text-gray-600">V1.02</p>
       </footer>
-
-      {/* Off-screen container for image export — renders all views */}
-      {exporting && (
-        <div
-          ref={exportContainerRef}
-          style={{ position: 'absolute', left: '-9999px', top: 0, width: '1200px' }}
-          className="bg-gray-100 dark:bg-gray-900 p-8 space-y-8"
-        >
-          <div className="text-center mb-6">
-            <h1 className="text-4xl font-display tracking-wide text-gray-900 dark:text-white">NFL SEASON PREDICTOR</h1>
-            <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 mt-1">2026 SEASON — {predictionCount}/{totalTeams} Teams Predicted</p>
-          </div>
-          <TeamList teams={scheduleData.teams} onTeamClick={() => {}} />
-          <StandingsTable teams={scheduleData.teams} />
-          <PlayoffSeeding teams={scheduleData.teams} />
-        </div>
-      )}
 
     </div>
   );
