@@ -8,6 +8,7 @@ import TeamList from './components/TeamList';
 import TeamDetail from './components/TeamDetail';
 import StandingsTable from './components/StandingsTable';
 import PlayoffSeeding from './components/PlayoffSeeding';
+import Guide from './components/Guide';
 
 function App() {
   const [scheduleData, setScheduleData] = useState(null);
@@ -22,6 +23,7 @@ function App() {
   const exportContainerRef = useRef(null);
   const [exporting, setExporting] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
 
   useEffect(() => {
     loadScheduleData()
@@ -142,6 +144,12 @@ function App() {
               {/* Desktop controls */}
               <div className="hidden sm:flex items-center space-x-4">
                 <button
+                  onClick={() => setGuideOpen(true)}
+                  className="px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                >
+                  Guide
+                </button>
+                <button
                   onClick={handleExportImage}
                   disabled={exporting || predictionCount === 0}
                   className="px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
@@ -204,6 +212,13 @@ function App() {
                         className="w-full text-left px-4 py-2.5 text-sm text-green-600 dark:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-700"
                       >
                         Import
+                      </button>
+                      <div className="border-t border-gray-200 dark:border-gray-600 my-1" />
+                      <button
+                        onClick={() => { setGuideOpen(true); setMenuOpen(false); }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        Guide
                       </button>
                       <div className="border-t border-gray-200 dark:border-gray-600 my-1" />
                       <button
@@ -290,6 +305,9 @@ function App() {
         )}
       </div>
 
+      {/* Guide Modal */}
+      {guideOpen && <Guide onClose={() => setGuideOpen(false)} />}
+
       {/* Team Detail Modal */}
       {selectedTeam && (
         <TeamDetail
@@ -301,7 +319,7 @@ function App() {
 
       {/* Version Footer */}
       <footer className="mt-auto max-w-6xl mx-auto px-4 pb-6 sm:px-6 lg:px-8 text-center w-full">
-        <p className="text-xs text-gray-400 dark:text-gray-600">V1.01</p>
+        <p className="text-xs text-gray-400 dark:text-gray-600">V1.02</p>
       </footer>
 
       {/* Off-screen container for image export — renders all views */}

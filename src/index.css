@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Prevent white flash on iOS overscroll bounce */
+html {
+  background-color: #f3f4f6; /* gray-100 */
+}
+.dark html,
+html.dark {
+  background-color: #111827; /* gray-900 */
+}
+
 /* Show info buttons on touch devices (no fine pointer / hover) */
 @media (pointer: coarse) {
   .touch-info-btn {
