@@ -2,6 +2,6 @@ services:
   nfl-predictor:
     build: .
     ports:
-      - "${PORT:-80}:80"
+      - "${PORT:-9090}:80"
     restart: unless-stopped
     container_name: nfl-predictor
