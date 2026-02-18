@@ -21,6 +21,7 @@ function App() {
   const fileInputRef = useRef(null);
   const exportContainerRef = useRef(null);
   const [exporting, setExporting] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     loadScheduleData()
@@ -96,7 +97,7 @@ function App() {
   const hasPredictions = predictionCount > 0;
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors flex flex-col">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
@@ -108,7 +109,7 @@ function App() {
               <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 mt-1">2026 SEASON</p>
             </div>
 
-            <div className="mt-4 sm:mt-0 flex items-center space-x-4">
+            <div className="mt-4 sm:mt-0 flex items-center justify-between sm:justify-start space-x-4 w-full sm:w-auto">
               {/* Dark Mode Toggle */}
               <button
                 onClick={toggleDarkMode}
@@ -132,44 +133,91 @@ function App() {
               </div>
 
               {/* Validation Status Badge */}
-              {hasPredictions && (
-                <div>
-                  {validation.isValid ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 border border-green-300 dark:border-green-700">
-                      ✓ Valid
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-300 border border-red-300 dark:border-red-700">
-                      ⚠ Invalid
-                    </span>
-                  )}
-                </div>
+              {hasPredictions && validation.isValid && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 border border-green-300 dark:border-green-700">
+                  ✓ Valid
+                </span>
               )}
 
-              {/* Export / Import / Reset controls */}
-              {predictionCount > 0 && (
+              {/* Desktop controls */}
+              <div className="hidden sm:flex items-center space-x-4">
                 <button
                   onClick={handleExportImage}
-                  disabled={exporting}
-                  className="px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors disabled:opacity-50"
+                  disabled={exporting || predictionCount === 0}
+                  className="px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {exporting ? 'Exporting...' : 'Export Image'}
                 </button>
-              )}
-              {predictionCount > 0 && (
                 <button
                   onClick={handleExportJSON}
-                  className="px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                  disabled={predictionCount === 0}
+                  className="px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Export JSON
                 </button>
-              )}
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="px-3 py-1.5 text-sm text-green-600 dark:text-green-400 border border-green-300 dark:border-green-700 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors"
-              >
-                Import
-              </button>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-3 py-1.5 text-sm text-green-600 dark:text-green-400 border border-green-300 dark:border-green-700 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors"
+                >
+                  Import
+                </button>
+                <button
+                  onClick={resetAllPredictions}
+                  disabled={predictionCount === 0}
+                  className="px-3 py-1.5 text-sm text-red-600 dark:text-red-400 border border-red-300 dark:border-red-700 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Reset All
+                </button>
+              </div>
+
+              {/* Mobile menu button */}
+              <div className="relative sm:hidden ml-auto">
+                <button
+                  onClick={() => setMenuOpen(!menuOpen)}
+                  className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  aria-label="Open menu"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+                {menuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-50" onClick={() => setMenuOpen(false)} />
+                    <div className="absolute right-0 top-full mt-1 z-50 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl py-1">
+                      <button
+                        onClick={() => { handleExportImage(); setMenuOpen(false); }}
+                        disabled={exporting || predictionCount === 0}
+                        className="w-full text-left px-4 py-2.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {exporting ? 'Exporting...' : 'Export Image'}
+                      </button>
+                      <button
+                        onClick={() => { handleExportJSON(); setMenuOpen(false); }}
+                        disabled={predictionCount === 0}
+                        className="w-full text-left px-4 py-2.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        Export JSON
+                      </button>
+                      <button
+                        onClick={() => { fileInputRef.current?.click(); setMenuOpen(false); }}
+                        className="w-full text-left px-4 py-2.5 text-sm text-green-600 dark:text-green-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        Import
+                      </button>
+                      <div className="border-t border-gray-200 dark:border-gray-600 my-1" />
+                      <button
+                        onClick={() => { resetAllPredictions(); setMenuOpen(false); }}
+                        disabled={predictionCount === 0}
+                        className="w-full text-left px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        Reset All
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+
               <input
                 ref={fileInputRef}
                 type="file"
@@ -177,14 +225,6 @@ function App() {
                 onChange={handleImport}
                 className="hidden"
               />
-              {predictionCount > 0 && (
-                <button
-                  onClick={resetAllPredictions}
-                  className="px-3 py-1.5 text-sm text-red-600 dark:text-red-400 border border-red-300 dark:border-red-700 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
-                >
-                  Reset All
-                </button>
-              )}
             </div>
           </div>
 
@@ -235,7 +275,7 @@ function App() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <div className="flex-1 max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8 w-full">
         {currentView === 'predictions' && (
           <TeamList
             teams={scheduleData.teams}
@@ -258,6 +298,11 @@ function App() {
           onClose={() => setSelectedTeam(null)}
         />
       )}
+
+      {/* Version Footer */}
+      <footer className="mt-auto max-w-6xl mx-auto px-4 pb-6 sm:px-6 lg:px-8 text-center w-full">
+        <p className="text-xs text-gray-400 dark:text-gray-600">V1.01</p>
+      </footer>
 
       {/* Off-screen container for image export — renders all views */}
       {exporting && (

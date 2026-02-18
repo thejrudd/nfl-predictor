@@ -1,3 +1,17 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Show info buttons on touch devices (no fine pointer / hover) */
+@media (pointer: coarse) {
+  .touch-info-btn {
+    display: flex !important;
+  }
+}
+
+/* Hide tooltip close button on devices with a mouse */
+@media (pointer: fine) {
+  .tooltip-close-btn {
+    display: none;
+  }
+}

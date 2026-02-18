@@ -52,7 +52,7 @@ const GameTooltip = ({ team, allTeams, predictions, onClose, anchorRef }) => {
     >
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-bold text-gray-800 dark:text-gray-100">{team.name} — Game-by-Game</span>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-lg leading-none pointer-fine:hidden">×</button>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-lg leading-none tooltip-close-btn">×</button>
       </div>
       {!hasAnyResults ? (
         <p className="text-xs text-gray-400 dark:text-gray-500 italic">No game picks yet. Click to open and set predictions.</p>
@@ -245,6 +245,7 @@ const TeamRow = ({ team, record, implied, sos, hasGameData, showTooltip, allTeam
 // Collapsed team button with tooltip support
 const CollapsedTeamButton = ({ team, record, allTeams, predictions, onTeamClick, showTooltip, hoverTimeout, setTooltipTeamId }) => {
   const btnRef = useRef(null);
+  const hasData = record?.gameResults && Object.keys(record.gameResults).length > 0;
 
   return (
     <div className="relative">
@@ -275,6 +276,20 @@ const CollapsedTeamButton = ({ team, record, allTeams, predictions, onTeamClick,
           <span className="text-xs text-gray-400 dark:text-gray-500 italic">--</span>
         )}
       </button>
+      {hasData && (
+        <button
+          className="hidden absolute -top-1 -right-1 p-0.5 rounded-full text-gray-400 hover:text-blue-500 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm touch-info-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            setTooltipTeamId(showTooltip ? null : team.id);
+          }}
+          aria-label="View game picks"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
+      )}
       {showTooltip && (
         <GameTooltip
           team={team}
