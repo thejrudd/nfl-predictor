@@ -174,6 +174,14 @@ function App() {
                 >
                   Reset All
                 </button>
+                <a
+                  href="https://github.com/thejrudd/nfl-predictor"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-2 text-xs text-center whitespace-nowrap h-7 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-900/30 transition-colors"
+                >
+                  About
+                </a>
               </div>
 
               {/* Mobile menu button */}
@@ -232,6 +240,16 @@ function App() {
                       >
                         Reset All
                       </button>
+                      <div className="border-t border-gray-200 dark:border-gray-600 my-1" />
+                      <a
+                        href="https://github.com/thejrudd/nfl-predictor"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block px-4 py-2.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        About
+                      </a>
                     </div>
                   </>
                 )}
@@ -331,7 +349,7 @@ function App() {
 
       {/* Version Footer */}
       <footer className="mt-auto max-w-6xl mx-auto px-4 pb-6 sm:px-6 lg:px-8 text-center w-full">
-        <p className="text-xs text-gray-400 dark:text-gray-600">V1.02</p>
+        <p className="text-xs text-gray-400 dark:text-gray-600">V1.1.1</p>
       </footer>
 
     </div>
