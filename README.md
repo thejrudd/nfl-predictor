@@ -58,6 +58,7 @@ PORT=8080 docker compose up -d --build
 - **Vite** — Build tool and dev server
 - **Tailwind CSS** — Utility-first styling
 - **html2canvas** — Image export
+- **react-grid-layout** — Drag-and-resize bento grid for image export
 - **nginx** — Production static file serving (Docker)
 
 ## Roadmap
@@ -85,12 +86,16 @@ src/
 │   ├── PlayoffSeeding.jsx   # Playoff bracket view
 │   ├── RecordSetter.jsx     # Win-loss-tie record controls
 │   ├── GameResultToggle.jsx # Individual game outcome toggle
-│   └── DivisionMatrix.jsx   # Head-to-head results grid
+│   ├── DivisionMatrix.jsx   # Head-to-head results grid
+│   ├── ExportPreview.jsx    # Export modal with live preview and controls
+│   └── ShareableImage.jsx   # 1080x1080 infographic for image export
 ├── context/
 │   ├── PredictionContext.jsx # Prediction state and localStorage sync
 │   └── ThemeContext.jsx      # Dark mode state
 └── utils/
     ├── scheduleParser.js    # Team/division queries, strength of schedule
     ├── validation.js        # Constraint checking and balance validation
-    └── exportImport.js      # JSON and image export/import
+    ├── exportImport.js      # JSON and image export/import
+    ├── exportStats.js       # Highlight stat computations for export
+    └── layoutUtils.js       # Bento grid layout constants and helpers
 ```

@@ -144,6 +144,54 @@ export const PredictionProvider = ({ children }) => {
     return Object.keys(predictions).length;
   };
 
+  // Generate random predictions for all teams with consistent game results
+  const generateRandomPredictions = (allTeams) => {
+    if (!window.confirm('This will replace all current predictions with random ones. Continue?')) return;
+
+    const gameOutcomes = {};
+
+    for (const team of allTeams) {
+      for (let i = 0; i < team.opponents.length; i++) {
+        const key = `${team.id}-${i}`;
+        if (gameOutcomes[key]) continue;
+
+        const oppId = team.opponents[i];
+        const correspondingIdx = findCorrespondingGameIndex(allTeams, team.id, i, oppId);
+
+        const rand = Math.random();
+        const result = rand < 0.004 ? 'T' : rand < 0.502 ? 'W' : 'L';
+
+        gameOutcomes[key] = result;
+        if (correspondingIdx !== -1) {
+          const inverse = result === 'W' ? 'L' : result === 'L' ? 'W' : 'T';
+          gameOutcomes[`${oppId}-${correspondingIdx}`] = inverse;
+        }
+      }
+    }
+
+    const newPredictions = {};
+    for (const team of allTeams) {
+      const gameResults = {};
+      let wins = 0, losses = 0, ties = 0, divWins = 0;
+
+      for (let i = 0; i < team.opponents.length; i++) {
+        const result = gameOutcomes[`${team.id}-${i}`];
+        gameResults[i] = result;
+        if (result === 'W') wins++;
+        else if (result === 'L') losses++;
+        else ties++;
+
+        const opp = allTeams.find(t => t.id === team.opponents[i]);
+        if (opp && opp.division === team.division && result === 'W') divWins++;
+      }
+
+      newPredictions[team.id] = { wins, losses, ties, divisionWins: divWins, gameResults };
+    }
+
+    setPredictions(newPredictions);
+    localStorage.setItem('nfl-predictions-2026', JSON.stringify(newPredictions));
+  };
+
   // Import predictions from an exported JSON object
   const importPredictions = (data) => {
     setPredictions(data);
@@ -158,7 +206,8 @@ export const PredictionProvider = ({ children }) => {
         getTeamRecord,
         resetAllPredictions,
         getPredictionCount,
-        importPredictions
+        importPredictions,
+        generateRandomPredictions
       }}
     >
       {children}

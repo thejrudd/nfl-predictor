@@ -24,3 +24,39 @@ html.dark {
     display: none;
   }
 }
+
+/* react-grid-layout — disable text selection during drag */
+.react-grid-layout {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* react-grid-layout — grab cursor for draggable items */
+.react-grid-item {
+  cursor: grab;
+}
+.react-grid-item.react-draggable-dragging {
+  cursor: grabbing;
+}
+
+/* react-grid-layout resize handle — always-visible grip indicator */
+.react-grid-item > .react-resizable-handle {
+  opacity: 1 !important;
+  background: none !important;
+}
+.react-grid-item > .react-resizable-handle::after {
+  content: '' !important;
+  position: absolute !important;
+  right: 3px !important;
+  bottom: 3px !important;
+  width: 8px !important;
+  height: 8px !important;
+  border-right: 2px solid rgba(148, 163, 184, 0.5) !important;
+  border-bottom: 2px solid rgba(148, 163, 184, 0.5) !important;
+  border-top: none !important;
+  border-left: none !important;
+  cursor: se-resize !important;
+}
+.react-grid-item > .react-resizable-handle:hover::after {
+  border-color: rgba(96, 165, 250, 0.9) !important;
+}
