@@ -395,12 +395,25 @@ const DivisionCard = ({ division, onTeamClick, getTeamRecord, predictions, allTe
 
 const DIVISION_PAIRS = ['East', 'North', 'South', 'West'];
 
+const LG_BREAKPOINT = 1024; // matches Tailwind's lg: breakpoint
+
 const TeamList = ({ teams, onTeamClick }) => {
   const { getTeamRecord, predictions } = usePredictions();
-  const [collapsedRows, setCollapsedRows] = useState({});
+  const [collapsedDivs, setCollapsedDivs] = useState({});
 
-  const toggleRow = (subDiv) => {
-    setCollapsedRows(prev => ({ ...prev, [subDiv]: !prev[subDiv] }));
+  const toggleDiv = (division) => {
+    const isLg = window.innerWidth >= LG_BREAKPOINT;
+    if (isLg) {
+      // Two-column: toggle both AFC and NFC for this subdivision
+      const subDiv = division.split(' ').slice(1).join(' ');
+      const afc = `AFC ${subDiv}`;
+      const nfc = `NFC ${subDiv}`;
+      const newVal = !collapsedDivs[division];
+      setCollapsedDivs(prev => ({ ...prev, [afc]: newVal, [nfc]: newVal }));
+    } else {
+      // Single-column: toggle only the clicked division
+      setCollapsedDivs(prev => ({ ...prev, [division]: !prev[division] }));
+    }
   };
 
   return (
@@ -413,8 +426,8 @@ const TeamList = ({ teams, onTeamClick }) => {
             getTeamRecord={getTeamRecord}
             predictions={predictions}
             allTeams={teams}
-            collapsed={!!collapsedRows[subDiv]}
-            onToggle={() => toggleRow(subDiv)}
+            collapsed={!!collapsedDivs[`AFC ${subDiv}`]}
+            onToggle={() => toggleDiv(`AFC ${subDiv}`)}
           />
           <DivisionCard
             division={`NFC ${subDiv}`}
@@ -422,8 +435,8 @@ const TeamList = ({ teams, onTeamClick }) => {
             getTeamRecord={getTeamRecord}
             predictions={predictions}
             allTeams={teams}
-            collapsed={!!collapsedRows[subDiv]}
-            onToggle={() => toggleRow(subDiv)}
+            collapsed={!!collapsedDivs[`NFC ${subDiv}`]}
+            onToggle={() => toggleDiv(`NFC ${subDiv}`)}
           />
         </div>
       ))}

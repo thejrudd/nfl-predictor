@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.1.2 (2026-02-20)
+
+### Improvements
+
+- **Independent Division Collapse on Mobile** — On single-column (mobile) view, collapsing a division card now only collapses that individual division instead of both AFC and NFC. On two-column (desktop) view, clicking either card still collapses both side-by-side as before.
+
 ## v1.1.1 (2026-02-20)
 
 ### New Features
