@@ -146,7 +146,7 @@ function App() {
                   disabled={predictionCount === 0}
                   className="px-2 text-xs text-center whitespace-nowrap h-7 text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-700 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  Export Image
+                  Create Image
                 </button>
                 <button
                   onClick={handleExportJSON}
@@ -196,7 +196,7 @@ function App() {
                         disabled={predictionCount === 0}
                         className="w-full text-left px-4 py-2.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
                       >
-                        Export Image
+                        Create Image
                       </button>
                       <button
                         onClick={() => { handleExportJSON(); setMenuOpen(false); }}

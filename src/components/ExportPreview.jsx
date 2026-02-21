@@ -1,7 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { usePredictions } from '../context/PredictionContext';
-import { exportAsImage } from '../utils/exportImport';
 import ShareableImage from './ShareableImage';
+import {
+  BENTO_LAYOUTS, SECTION_ORDER, RGL_TOTAL_ROWS,
+  getCellInfo, matchSectionsToCells, bentoToRGL12,
+} from '../utils/layoutUtils';
 
 const SECTION_LABELS = {
   bestWorst: 'Best & Worst Teams',
@@ -10,12 +13,36 @@ const SECTION_LABELS = {
   conferenceShowdown: 'Conference Showdown',
   toughestDivision: 'Toughest Division',
   boldPredictions: 'Bold Predictions',
+  worstDivision: 'Worst Division',
+  strengthOfSchedule: 'Strength of Schedule',
+  closestRace: 'Closest Division Race',
+  wildCard: 'Wild Card Teams',
+  parityIndex: 'Parity Index',
 };
+
+// Compute default RGL layout from BENTO_LAYOUTS for the given active sections
+function computeDefaultLayout(enabledSections) {
+  const active = SECTION_ORDER.filter(k => enabledSections[k]);
+  const count = active.length;
+  if (count === 0) return [];
+
+  const bento = BENTO_LAYOUTS[count] || BENTO_LAYOUTS[1];
+  const cellInfos = bento.cells.map(([c1, c2, r1, r2]) =>
+    getCellInfo(c1, c2, r1, r2, bento.rowFrs)
+  );
+  const assignment = matchSectionsToCells(active, cellInfos);
+
+  // Build section keys ordered by cell assignment
+  const sectionKeysForCells = bento.cells.map((_, cellIdx) => {
+    const sectionIdx = assignment.indexOf(cellIdx);
+    return sectionIdx >= 0 ? active[sectionIdx] : String(cellIdx);
+  });
+
+  return bentoToRGL12(bento.cells, bento.rowFrs, sectionKeysForCells);
+}
 
 const ExportPreview = ({ teams, onClose }) => {
   const { predictions } = usePredictions();
-  const imageRef = useRef(null);
-  const [downloading, setDownloading] = useState(false);
   const [userName, setUserName] = useState('');
   const [enabledSections, setEnabledSections] = useState({
     bestWorst: true,
@@ -24,7 +51,23 @@ const ExportPreview = ({ teams, onClose }) => {
     conferenceShowdown: true,
     toughestDivision: true,
     boldPredictions: true,
+    worstDivision: false,
+    strengthOfSchedule: false,
+    closestRace: false,
+    wildCard: false,
+    parityIndex: false,
   });
+  const [rglLayout, setRglLayout] = useState(() => computeDefaultLayout({
+    bestWorst: true, playoffSeeds: true, divisionWinners: true,
+    conferenceShowdown: true, toughestDivision: true, boldPredictions: true,
+    worstDivision: false, strengthOfSchedule: false, closestRace: false,
+    wildCard: false, parityIndex: false,
+  }));
+
+  // Recompute default layout when sections are toggled
+  useEffect(() => {
+    setRglLayout(computeDefaultLayout(enabledSections));
+  }, [enabledSections]);
 
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) onClose();
@@ -46,17 +89,41 @@ const ExportPreview = ({ teams, onClose }) => {
     setEnabledSections(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const handleDownload = async () => {
-    if (!imageRef.current) return;
-    setDownloading(true);
-    // Small delay to ensure latest render is captured
-    await new Promise(resolve => setTimeout(resolve, 300));
-    try {
-      await exportAsImage(imageRef.current);
-    } catch (err) {
-      alert(`Export failed: ${err.message}`);
+  // Only update layout state on actual user drag/resize interactions,
+  // not on RGL's internal onLayoutChange which fires during section
+  // toggles and causes collision cascades.
+  const handleUserLayoutChange = useCallback((layout) => {
+    const cols = 4;
+    const rows = RGL_TOTAL_ROWS;
+
+    // Split into items that fit vs overflow
+    const inBounds = [];
+    const overflow = [];
+    for (const item of layout) {
+      if (item.y >= 0 && item.y + item.h <= rows) {
+        inBounds.push(item);
+      } else {
+        overflow.push(item);
+      }
     }
-    setDownloading(false);
+
+    if (overflow.length === 0) {
+      setRglLayout(layout);
+      return;
+    }
+
+    // Disable any overflowing sections instead of trying to repack
+    setEnabledSections(prev => {
+      const next = { ...prev };
+      for (const item of overflow) {
+        next[item.i] = false;
+      }
+      return next;
+    });
+  }, []);
+
+  const handleResetLayout = () => {
+    setRglLayout(computeDefaultLayout(enabledSections));
   };
 
   return (
@@ -67,7 +134,7 @@ const ExportPreview = ({ teams, onClose }) => {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-5xl w-full max-h-[95vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 flex items-center justify-between">
-          <h2 className="text-xl font-display tracking-wide">EXPORT IMAGE</h2>
+          <h2 className="text-xl font-display tracking-wide">CREATE IMAGE</h2>
           <button
             onClick={onClose}
             className="text-white hover:text-gray-200 text-3xl leading-none"
@@ -80,23 +147,17 @@ const ExportPreview = ({ teams, onClose }) => {
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-4">
           <div className="flex flex-col lg:flex-row gap-4">
-            {/* Preview — scaled to fit */}
+            {/* Interactive preview */}
             <div className="flex-1 flex items-start justify-center">
-              <div className="w-full max-w-[540px]">
-                <div style={{ aspectRatio: '1/1', position: 'relative' }}>
-                  <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
-                    <div style={{ transform: 'scale(0.5)', transformOrigin: 'top left', width: 1080, height: 1080 }}>
-                      <ShareableImage
-                        ref={imageRef}
-                        predictions={predictions}
-                        teams={teams}
-                        enabledSections={enabledSections}
-                        userName={userName}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <ShareableImage
+                predictions={predictions}
+                teams={teams}
+                enabledSections={enabledSections}
+                userName={userName}
+                rglLayout={rglLayout}
+                onDragStop={handleUserLayoutChange}
+                onResizeStop={handleUserLayoutChange}
+              />
             </div>
 
             {/* Controls */}
@@ -135,14 +196,14 @@ const ExportPreview = ({ teams, onClose }) => {
                 </div>
               </div>
 
-              {/* Download button */}
+              {/* Reset layout button */}
               <button
-                onClick={handleDownload}
-                disabled={downloading}
-                className="w-full px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleResetLayout}
+                className="w-full px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors border border-gray-300 dark:border-gray-600"
               >
-                {downloading ? 'Downloading...' : 'Download PNG'}
+                Reset Layout
               </button>
+
             </div>
           </div>
         </div>

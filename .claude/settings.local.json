@@ -8,7 +8,18 @@
       "Bash(npm run build:*)",
       "Bash(npm install:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(gh api:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(npm run lint:*)",
+      "Bash(ls:*)",
+      "Bash(node --input-type=module -e:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npm ls:*)",
+      "Bash(python3:*)",
+      "Bash(npm uninstall:*)"
     ]
   }
 }
