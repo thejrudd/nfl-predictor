@@ -277,7 +277,7 @@ function App() {
           </div>
 
           {/* View Toggle */}
-          <div className="mt-4 flex space-x-2">
+          <div className="mt-4 grid grid-cols-2 sm:flex gap-2">
             <button
               onClick={() => setCurrentView('predictions')}
               className={`px-4 py-2 rounded-lg font-semibold transition-colors ${

@@ -125,7 +125,7 @@ export async function fetchGameLog(playerId, teamId, season) {
   const isHistorical = season < CURRENT_SEASON;
   const ttl = isHistorical ? TTL.historical : TTL.stats;
 
-  return cachedFetch(`gamelog_v7_${playerId}_${season}`, async () => {
+  return cachedFetch(`gamelog_v8_${playerId}_${season}`, async () => {
     const abbrev = teamId.toUpperCase();
 
     // Step 1: Fetch the eventlog first — needed to resolve the actual team for this season.
@@ -188,7 +188,10 @@ export async function fetchGameLog(playerId, teamId, season) {
 
       if (!statsRef) return null;
       try {
-        const res = await fetch(statsRef);
+        // ESPN Core $ref URLs use http:// — upgrade to https:// to avoid mixed-content
+        // blocking when the app is served over HTTPS.
+        const secureRef = statsRef.replace(/^http:\/\//, 'https://');
+        const res = await fetch(secureRef);
         if (!res.ok) return null;
         return { eventId, meta: regMeta[eventId] ?? {}, statsJson: await res.json() };
       } catch { return null; }
