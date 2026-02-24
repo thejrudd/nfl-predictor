@@ -2,6 +2,14 @@
 
 ## Features
 
+### Fantasy Football Scoring & Recommendations
+Allow users to input their league's custom scoring settings (PPR, half-PPR, standard; bonus thresholds; defensive scoring; etc.) and surface fantasy-relevant insights from player stat data. Should include:
+- Custom scoring rule input (points per reception, passing/rushing/receiving TD values, bonus points, etc.)
+- Per-player fantasy point totals calculated from historical and current-season stats
+- Start/sit recommendations based on recent performance, matchup, and depth chart position
+- Waiver wire / pickup suggestions based on available players and projected output
+- Season-long projections and rankings by position under the user's scoring system
+
 ### Image Export Redesign
 Redesign as a compact, shareable summary (~1080x1080, Instagram post size) instead of a raw page screenshot. Show all team picks in a clean grid layout rather than dumping every app view into one tall image.
 

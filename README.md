@@ -74,6 +74,7 @@ PORT=8080 docker compose up -d --build
 ## Roadmap
 
 **Future**
+- **Fantasy Scoring & Recommendations** — Input your league's custom scoring rules and get per-player fantasy point totals, start/sit recommendations, and position rankings based on real stats
 - **Historical Comparison** — Compare predicted records to each team's actual results from past seasons
 - **Image Download** — Export the infographic as a downloadable PNG
 - **Compare Mode** — Import a friend's predictions and diff them against yours
