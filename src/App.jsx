@@ -10,6 +10,7 @@ import StandingsTable from './components/StandingsTable';
 import PlayoffSeeding from './components/PlayoffSeeding';
 import Guide from './components/Guide';
 import ExportPreview from './components/ExportPreview';
+import PlayerBrowser from './components/PlayerBrowser';
 
 function App() {
   const [scheduleData, setScheduleData] = useState(null);
@@ -307,6 +308,16 @@ function App() {
             >
               PLAYOFF SEEDING
             </button>
+            <button
+              onClick={() => setCurrentView('players')}
+              className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+                currentView === 'players'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              }`}
+            >
+              PLAYER STATS
+            </button>
           </div>
         </div>
       </div>
@@ -324,6 +335,9 @@ function App() {
         )}
         {currentView === 'playoffs' && (
           <PlayoffSeeding teams={scheduleData.teams} />
+        )}
+        {currentView === 'players' && (
+          <PlayerBrowser teams={scheduleData.teams} />
         )}
       </div>
 
