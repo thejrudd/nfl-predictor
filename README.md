@@ -61,14 +61,21 @@ PORT=8080 docker compose up -d --build
 - **react-grid-layout** — Drag-and-resize bento grid for the export infographic
 - **nginx** — Production static file serving (Docker)
 
-## Roadmap
+## What's New in v2.0
 
-**v2.0**
-- **Player Info & Rosters** — Player headshots, stats, and accomplishments pulled client-side from public APIs
-- **Image Download** — Export the infographic as a downloadable PNG
+- **Player Browser** — Browse all 32 rosters by conference, division, and position filter; search players by name across the league
+- **Depth Chart Ordering** — When filtering by position, players are sorted by their ESPN depth chart rank (RB1, RB2, etc.)
+- **Player Profiles** — Full player profile pages with headshot, career highlight pods, and per-season stat accordions
+- **Season Stats** — Grouped stat sections (Passing, Rushing, Negative Plays, etc.) with standard and advanced stat toggles
+- **Game Log** — Per-game stat table with an advanced stats toggle, for every season on record
+- **Awards & Honors** — Pro Bowl, All-Pro, and major award badges displayed on each season's accordion header
+- **Career Totals** — Lifetime stat pods shown in the player hero card, color-coded by stat type
+
+## Roadmap
 
 **Future**
 - **Historical Comparison** — Compare predicted records to each team's actual results from past seasons
+- **Image Download** — Export the infographic as a downloadable PNG
 - **Compare Mode** — Import a friend's predictions and diff them against yours
 - **Season Narrative** — Auto-generate a text summary of your predicted season
 
@@ -78,6 +85,9 @@ PORT=8080 docker compose up -d --build
 src/
 ├── App.jsx                  # Main app container and header controls
 ├── components/
+│   ├── PlayerBrowser.jsx    # Team/roster browser with position filter and player search
+│   ├── PlayerProfile.jsx    # Player profile page with hero card, stats, and game log
+│   ├── PlayerStatTable.jsx  # Accordion stat table with standard/advanced toggle and honors badges
 │   ├── TeamList.jsx         # Division cards with team rows and tooltips
 │   ├── TeamDetail.jsx       # Modal for editing team predictions
 │   ├── StandingsTable.jsx   # Division standings view
@@ -91,7 +101,12 @@ src/
 ├── context/
 │   ├── PredictionContext.jsx # Prediction state and localStorage sync
 │   └── ThemeContext.jsx      # Dark mode state
+├── data/
+│   └── honors.json          # Static Pro Bowl / All-Pro records by player and season
 └── utils/
+    ├── playerApi.js         # ESPN API fetches: roster, stats, game log, bio, depth chart
+    ├── playerCache.js       # localStorage cache with per-key TTLs
+    ├── playerMetrics.js     # Stat row definitions, headline metrics, and career highlights
     ├── scheduleParser.js    # Team/division queries, strength of schedule
     ├── validation.js        # Constraint checking and balance validation
     ├── exportImport.js      # JSON export/import

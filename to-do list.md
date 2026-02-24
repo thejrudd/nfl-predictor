@@ -28,6 +28,42 @@ Auto-generate a text summary of your predicted season (e.g. "The Bills go 14-3 a
 ### Historical Comparison
 Show how your predicted record for each team compares to their actual results from recent seasons. Highlight where you're more bullish or bearish than history.
 
+## ChatGPT Suggested
+
+### ~~Playoff Auto-Builder~~
+~~Compute a full playoff picture directly from saved picks — no backend needed. Use final records to:~~
+- ~~Sort divisions and assign division winners~~
+- ~~Rank wild card teams by record~~
+- ~~Apply simple tiebreakers (overall record → head-to-head → conference record)~~
+- ~~Assign seeds 1–7 for AFC and NFC~~
+
+~~Architecture: memoized standings selector, bracket as computed state, rendered with Tailwind grid.~~
+
+### Shareable Prediction Card
+A dedicated `<PredictionCard />` component that renders a clean per-team card showing:
+- Team name and logo
+- Predicted record
+- Projected seed
+- Division finish
+
+Export via canvas (`useRef` → render to canvas → `toBlob()`), avoiding HTML screenshot limitations. Described as the "viral feature."
+
+### Monte Carlo Simulation (Client-Side)
+Run 1,000 in-memory simulations using win probabilities derived from binary picks. Store results in a `Map` and calculate playoff odds as a percentage. Use a Web Worker if scaling above 5,000 simulations.
+
+Architecture: all simulation logic isolated in `/utils/simEngine.ts`, triggered only when picks change (not on every re-render).
+
+### Playoff Leverage Index
+For each game, run two simulations — one with each team winning — and compare the resulting playoff probability delta. Display something like: *"This game swings playoff odds by 18%."* Built on top of the Monte Carlo simulation engine.
+
+### Strength of Schedule Bias Slider
+A global "Team Rating Bias" slider that bumps win probability by ~5–7% per unit and applies the modifier before simulation runs. Low implementation cost, high perceived sophistication.
+
+### Future Analytics (Post-Simulation)
+- Weekly playoff probability graph (Recharts)
+- Momentum graph per team
+- Seed movement animation (Tailwind transitions)
+
 ## Claude Suggested
 
 ### Community & Social

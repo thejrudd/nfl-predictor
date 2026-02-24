@@ -1,0 +1,293 @@
+import { cachedFetch, TTL } from './playerCache';
+
+const ESPN_BASE = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl';
+const ESPN_CORE = 'https://sports.core.api.espn.com/v2/sports/football/leagues/nfl';
+const CURRENT_SEASON = 2025;
+
+// Some app IDs differ from ESPN's roster endpoint slug
+const TEAM_ESPN_ID = {
+  WSH: 'wsh',
+  LAR: 'lar',
+  NE:  'ne',
+  LV:  'lv',
+  LAC: 'lac',
+  NYG: 'nyg',
+  NYJ: 'nyj',
+  NO:  'no',
+  TB:  'tb',
+  KC:  'kc',
+  SF:  'sf',
+  GB:  'gb',
+};
+const toEspnTeamId = id => TEAM_ESPN_ID[id] ?? id.toLowerCase();
+
+// Headshot URL — will 404 for some players; handle with onError
+export const headshot = id =>
+  `https://a.espncdn.com/i/headshots/nfl/players/full/${id}.png`;
+
+// Normalize a raw ESPN athlete entry from a roster response
+function normalizePlayer(athlete, teamId) {
+  return {
+    id:          athlete.id,
+    displayName: athlete.displayName ?? athlete.fullName ?? '',
+    jersey:      athlete.jersey ?? '',
+    position:    athlete.position?.abbreviation ?? '',
+    positionName: athlete.position?.displayName ?? '',
+    experience:  athlete.experience?.years ?? 0,
+    status:      athlete.status?.type?.description ?? 'Active',
+    teamId,
+  };
+}
+
+/**
+ * Fetch the roster for a team.
+ * Returns normalized player array: { id, displayName, jersey, position, experience, status, teamId }
+ */
+export async function fetchRoster(teamId) {
+  return cachedFetch(`roster_${teamId}`, async () => {
+    const url = `${ESPN_BASE}/teams/${toEspnTeamId(teamId)}/roster`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Roster fetch failed: ${res.status}`);
+    const json = await res.json();
+
+    // ESPN roster response wraps athletes in groups by position category
+    const athletes = [];
+    const groups = json.athletes ?? [];
+    for (const group of groups) {
+      for (const a of (group.items ?? [])) {
+        athletes.push(normalizePlayer(a, teamId));
+      }
+    }
+    return athletes;
+  }, TTL.roster);
+}
+
+/**
+ * Fetch season stats for a player.
+ * season: 4-digit year for a specific season, or null for the current season.
+ * Correct endpoint: /seasons/{year}/types/2/athletes/{id}/statistics/0
+ */
+export async function fetchPlayerStats(playerId, season = null) {
+  const s = season ?? CURRENT_SEASON;
+  const isHistorical = s < CURRENT_SEASON;
+  // v2 prefix busts old cache entries that incorrectly stored career totals
+  const cacheKey = `stats_v2_${playerId}_${s}`;
+  const ttl = isHistorical ? TTL.historical : TTL.stats;
+
+  return cachedFetch(cacheKey, async () => {
+    const url = `${ESPN_CORE}/seasons/${s}/types/2/athletes/${playerId}/statistics/0?lang=en&region=us`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Stats fetch failed: ${res.status}`);
+    return res.json();
+  }, ttl);
+}
+
+// Playoff week number → round label
+function playoffRoundLabel(weekNum) {
+  // Week 4 is the bye between Conference Championships and the Super Bowl
+  return { 1: 'Wild Card', 2: 'Divisional', 3: 'Conf. Champ.', 5: 'Super Bowl' }[weekNum] ?? 'Playoffs';
+}
+
+// Build an eventId → meta map from a site-API schedule response
+function buildMetaMap(schedData, teamAbbrev, isPostseason) {
+  const map = {};
+  for (const event of (schedData.events ?? [])) {
+    const comp = event.competitions?.[0];
+    if (!comp) continue;
+    const myComp  = comp.competitors?.find(c => c.team?.abbreviation === teamAbbrev);
+    const oppComp = comp.competitors?.find(c => c.team?.abbreviation !== teamAbbrev);
+    if (!myComp || !oppComp) continue;
+    const away   = myComp.homeAway === 'away';
+    const winner = myComp.winner;
+    map[event.id] = {
+      week:        event.week?.number ?? null,
+      opponent:    `${away ? '@' : 'vs '}${oppComp.team?.abbreviation ?? '?'}`,
+      result:      winner === true ? 'W' : winner === false ? 'L' : '-',
+      score:       `${myComp.score?.displayValue ?? '?'}-${oppComp.score?.displayValue ?? '?'}`,
+      myTeam:      myComp.team?.abbreviation ?? null,
+      isPostseason,
+      roundLabel:  isPostseason ? playoffRoundLabel(event.week?.number) : null,
+      completed:   comp.status?.type?.completed ?? false,
+    };
+  }
+  return map;
+}
+
+/**
+ * Fetch game-by-game stats for a player for a given season, including playoffs.
+ * Combines:
+ *   - ESPN Core eventlog (regular season)  → per-game statistics $refs
+ *   - ESPN Site team schedule (reg + post)  → opponent, date, result, score
+ *   - Constructed stats URLs for postseason games (eventlog ignores seasontype param)
+ * Returns [{ eventId, meta, statsJson }] sorted reg-season first, then playoffs.
+ */
+export async function fetchGameLog(playerId, teamId, season) {
+  const isHistorical = season < CURRENT_SEASON;
+  const ttl = isHistorical ? TTL.historical : TTL.stats;
+
+  return cachedFetch(`gamelog_v7_${playerId}_${season}`, async () => {
+    const abbrev = teamId.toUpperCase();
+
+    // Step 1: Fetch the eventlog first — needed to resolve the actual team for this season.
+    // The passed-in teamId is the player's *current* team, which may differ for historical seasons.
+    const logRes = await fetch(`${ESPN_CORE}/seasons/${season}/athletes/${playerId}/eventlog?lang=en&region=us`);
+    if (!logRes.ok) return [];
+
+    const logData = await logRes.json();
+    const rawItems = logData.events?.items ?? [];
+    const items = Array.isArray(rawItems) ? rawItems : Object.values(rawItems);
+
+    // Extract ESPN numeric competitor ID from any regular-season stats $ref
+    // e.g. ".../competitors/25/roster/..." → "25"  (25 = SEA's ESPN team ID)
+    let espnCompetitorId = null;
+    for (const item of items) {
+      const m = (item.statistics?.$ref ?? '').match(/competitors\/(\d+)\/roster/);
+      if (m) { espnCompetitorId = m[1]; break; }
+    }
+
+    // Step 2: Resolve the actual team abbreviation for this season.
+    // The competitor ID in the stats $ref URL is ESPN's persistent numeric team ID.
+    // Fetching /teams/{id} returns the abbreviation directly (unlike the competitor endpoint,
+    // which wraps team data in a $ref pointer and would silently return undefined).
+    let actualAbbrev = abbrev;
+    if (espnCompetitorId) {
+      try {
+        const teamRes = await fetch(`${ESPN_CORE}/teams/${espnCompetitorId}?lang=en&region=us`);
+        if (teamRes.ok) {
+          const teamData = await teamRes.json();
+          actualAbbrev = teamData.abbreviation ?? abbrev;
+        }
+      } catch { /* use fallback */ }
+    }
+
+    // Step 3: Fetch the correct team's schedule (reg + post) in parallel
+    const [schedRes, postSchedRes] = await Promise.all([
+      fetch(`${ESPN_BASE}/teams/${toEspnTeamId(actualAbbrev)}/schedule?season=${season}&seasontype=2`),
+      fetch(`${ESPN_BASE}/teams/${toEspnTeamId(actualAbbrev)}/schedule?season=${season}&seasontype=3`),
+    ]);
+
+    // Build metadata maps using the resolved team abbreviation
+    const regMeta  = schedRes.ok      ? buildMetaMap(await schedRes.json(),      actualAbbrev, false) : {};
+    const postMeta = postSchedRes.ok  ? buildMetaMap(await postSchedRes.json(),  actualAbbrev, true)  : {};
+
+    // Regular-season per-game stats (via eventlog $refs), including inactive/DNP games
+    const regGamesRaw = await Promise.all(items.map(async (item) => {
+      // Get event ID from stats $ref or event $ref (inactive games may lack stats $ref)
+      const statsRef = item.statistics?.$ref;
+      const eventRef = item.event?.$ref ?? '';
+      const eventId = statsRef?.match(/events\/(\d+)/)?.[1]
+        ?? eventRef.match(/events\/(\d+)/)?.[1];
+      if (!eventId) return null;
+
+      if (!item.played) {
+        // Include completed games where the player was inactive
+        const meta = regMeta[eventId];
+        if (!meta?.completed) return null;
+        return { eventId, meta: { ...meta, isInactive: true }, statsJson: null };
+      }
+
+      if (!statsRef) return null;
+      try {
+        const res = await fetch(statsRef);
+        if (!res.ok) return null;
+        return { eventId, meta: regMeta[eventId] ?? {}, statsJson: await res.json() };
+      } catch { return null; }
+    }));
+
+    const regGames = regGamesRaw.filter(Boolean);
+
+    // Insert synthetic BYE rows for missing week numbers between 1 and the highest week played
+    const coveredWeeks = new Set(regGames.map(g => g.meta?.week).filter(w => w != null));
+    const maxWeek = coveredWeeks.size > 0 ? Math.max(...coveredWeeks) : 0;
+    for (let w = 1; w <= maxWeek; w++) {
+      if (!coveredWeeks.has(w)) {
+        regGames.push({
+          eventId: `bye_${w}`,
+          meta: { week: w, opponent: 'BYE', result: '-', score: '', myTeam: actualAbbrev, isBye: true },
+          statsJson: null,
+        });
+      }
+    }
+
+    // Sort regular-season games by week number
+    regGames.sort((a, b) => (a.meta?.week ?? 99) - (b.meta?.week ?? 99));
+
+    // Postseason per-game stats (constructed URL — eventlog can't be filtered by seasontype)
+    const postGames = espnCompetitorId
+      ? await Promise.all(
+          Object.entries(postMeta)
+            .filter(([, m]) => m.completed)
+            .map(async ([eventId, meta]) => {
+              try {
+                const url = `${ESPN_CORE}/events/${eventId}/competitions/${eventId}/competitors/${espnCompetitorId}/roster/${playerId}/statistics/0?lang=en&region=us`;
+                const res = await fetch(url);
+                if (!res.ok) return null;
+                return { eventId, meta, statsJson: await res.json() };
+              } catch { return null; }
+            })
+        )
+      : [];
+
+    return [...regGames, ...postGames.filter(Boolean)];
+  }, ttl);
+}
+
+/**
+ * Fetch career stats (all-time totals) for a player.
+ * Uses the /statistics/0 endpoint on the core API.
+ */
+export async function fetchPlayerCareerStats(playerId) {
+  return cachedFetch(`stats_${playerId}_career`, async () => {
+    const url = `${ESPN_CORE}/athletes/${playerId}/statistics/0?lang=en&region=us`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Career stats fetch failed: ${res.status}`);
+    return res.json();
+  }, TTL.historical);
+}
+
+/**
+ * Fetch player bio, which includes major league award history.
+ * Returns { awards: [{ id, name, displayCount, seasons: ['2024', ...] }] }
+ * Awards covered: NFL MVP, Super Bowl MVP, OPOY, DPOY, ROTY, DROTY,
+ *                 Comeback POTY, Walter Payton MOTY.
+ * Pro Bowl / All-Pro are NOT in this API — use honors.json for those.
+ */
+export async function fetchPlayerBio(playerId) {
+  return cachedFetch(`bio_${playerId}`, async () => {
+    const url = `https://site.web.api.espn.com/apis/common/v3/sports/football/nfl/athletes/${playerId}/bio`;
+    const res = await fetch(url);
+    if (!res.ok) return { awards: [] };
+    return res.json();
+  }, TTL.bio);
+}
+
+/**
+ * Fetch the depth chart for a team.
+ * Returns a flat map: { [playerId]: rank } where rank is 1-based (1 = starter).
+ * Players not on the depth chart are absent from the map.
+ */
+export async function fetchDepthChart(teamId) {
+  // v2: corrected for actual ESPN response shape:
+  //   data.depthchart[] → group.positions{} → posSlot.athletes[] (order = depth rank)
+  return cachedFetch(`depthchart_v2_${teamId}`, async () => {
+    const url = `${ESPN_BASE}/teams/${toEspnTeamId(teamId)}/depthcharts`;
+    const res = await fetch(url);
+    if (!res.ok) return {};
+    const data = await res.json();
+    const rankMap = {};
+    for (const group of (data.depthchart ?? [])) {
+      for (const posSlot of Object.values(group.positions ?? {})) {
+        (posSlot.athletes ?? []).forEach((athlete, idx) => {
+          const id = String(athlete.id ?? '');
+          const rank = idx + 1; // array order is depth order; make 1-based
+          if (id && (rankMap[id] == null || rank < rankMap[id])) {
+            rankMap[id] = rank; // keep best (lowest) rank if player appears in multiple slots
+          }
+        });
+      }
+    }
+    return rankMap;
+  }, TTL.roster);
+}
+
+export { CURRENT_SEASON, toEspnTeamId };
