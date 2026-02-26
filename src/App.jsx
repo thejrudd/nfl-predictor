@@ -384,7 +384,7 @@ function App() {
 
       {/* Version Footer */}
       <footer className="mt-auto max-w-6xl mx-auto px-4 pb-6 sm:px-6 lg:px-8 text-center w-full">
-        <p className="text-xs text-gray-400 dark:text-gray-600">V2.0.1</p>
+        <p className="text-xs text-gray-400 dark:text-gray-600">V2.1</p>
       </footer>
 
     </div>
