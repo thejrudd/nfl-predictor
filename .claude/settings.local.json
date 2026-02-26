@@ -24,7 +24,12 @@
       "WebFetch(domain:sports.core.api.espn.com)",
       "Bash(npx vite build:*)",
       "Bash(curl:*)",
-      "Bash(# Check what award IDs exist for NFL - look at all awards for season 2024 curl -s \"\"https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/awards?lang=en&region=us&limit=50\"\" | python3 -m json.tool)"
+      "Bash(# Check what award IDs exist for NFL - look at all awards for season 2024 curl -s \"\"https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2024/awards?lang=en&region=us&limit=50\"\" | python3 -m json.tool)",
+      "Bash(git checkout -b v2.1)",
+      "Bash(git checkout main)",
+      "Bash(git checkout -b v4.0-visual)",
+      "Bash(git checkout v2.1)",
+      "Bash(npm run generate-pwa-assets)"
     ]
   }
 }

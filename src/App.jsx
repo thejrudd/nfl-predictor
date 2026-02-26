@@ -11,6 +11,7 @@ import PlayoffSeeding from './components/PlayoffSeeding';
 import Guide from './components/Guide';
 import ExportPreview from './components/ExportPreview';
 import PlayerBrowser from './components/PlayerBrowser';
+import { usePWAInstall } from './hooks/usePWAInstall';
 
 function App() {
   const [scheduleData, setScheduleData] = useState(null);
@@ -25,6 +26,7 @@ function App() {
   const [exportPreviewOpen, setExportPreviewOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const { isInstallable, isInstalled, triggerInstall } = usePWAInstall();
 
   useEffect(() => {
     loadScheduleData()
@@ -175,6 +177,14 @@ function App() {
                 >
                   Reset All
                 </button>
+                {isInstallable && !isInstalled && (
+                  <button
+                    onClick={triggerInstall}
+                    className="px-2 text-xs text-center whitespace-nowrap h-7 text-emerald-600 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700 rounded-md hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors"
+                  >
+                    Install App
+                  </button>
+                )}
                 <a
                   href="https://github.com/thejrudd/nfl-predictor"
                   target="_blank"
@@ -241,6 +251,17 @@ function App() {
                       >
                         Reset All
                       </button>
+                      {isInstallable && !isInstalled && (
+                        <>
+                          <div className="border-t border-gray-200 dark:border-gray-600 my-1" />
+                          <button
+                            onClick={() => { triggerInstall(); setMenuOpen(false); }}
+                            className="w-full text-left px-4 py-2.5 text-sm text-emerald-600 dark:text-emerald-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          >
+                            Install App
+                          </button>
+                        </>
+                      )}
                       <div className="border-t border-gray-200 dark:border-gray-600 my-1" />
                       <a
                         href="https://github.com/thejrudd/nfl-predictor"

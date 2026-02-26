@@ -61,6 +61,13 @@ PORT=8080 docker compose up -d --build
 - **react-grid-layout** — Drag-and-resize bento grid for the export infographic
 - **nginx** — Production static file serving (Docker)
 
+## What's New in v2.1
+
+- **PWA Support** — Install the app to your home screen on iOS and Android; runs in standalone mode with no browser chrome
+- **Asset Caching** — Static assets, team logos, and data file precached on install for faster repeat loads
+- **ESPN API Caching** — Roster, stats, and game log requests cached at the service worker level (network-first with offline fallback)
+- **Install Button** — "Install App" button appears in the header on supported browsers (Chrome, Edge)
+
 ## What's New in v2.0
 
 - **Player Browser** — Browse all 32 rosters by conference, division, and position filter; search players by name across the league
@@ -73,12 +80,12 @@ PORT=8080 docker compose up -d --build
 
 ## Roadmap
 
-**Future**
-- **Fantasy Scoring & Recommendations** — Input your league's custom scoring rules and get per-player fantasy point totals, start/sit recommendations, and position rankings based on real stats
-- **Historical Comparison** — Compare predicted records to each team's actual results from past seasons
-- **Image Download** — Export the infographic as a downloadable PNG
-- **Compare Mode** — Import a friend's predictions and diff them against yours
-- **Season Narrative** — Auto-generate a text summary of your predicted season
+**v2.2** — Search / filter teams by name, division, or conference
+**v2.3** — Week-by-week schedule view
+**v2.4** — Season narrative (auto-generated text summary of your predicted season)
+**v2.5** — Historical comparison (predicted records vs. each team's actual past results)
+**v3.0** — Fantasy football / Sleeper league integration (custom scoring, start/sit recommendations, projections)
+**v4.0** — Visual overhaul (unified design system, redesigned cards and bracket, polished mobile experience)
 
 ## Project Structure
 
