@@ -35,6 +35,7 @@ function App() {
   const tabsRef = useRef(null);
   const controlsRowRef = useRef(null);
   const prevCollapsedRef = useRef(false);
+  const spacerRef = useRef(null);
 
   useEffect(() => {
     const isMobile = () => window.innerWidth < 640;
@@ -62,12 +63,16 @@ function App() {
       if (controlsRowRef.current) {
         controlsRowRef.current.style.marginTop = `${(1 - p) * CONTROLS_MARGIN}px`;
       }
+      if (spacerRef.current) {
+        spacerRef.current.style.height = `${p * COLLAPSE_ZONE}px`;
+      }
     };
 
     const clearStyles = () => {
       if (titleRef.current) { titleRef.current.style.maxHeight = ''; titleRef.current.style.opacity = ''; }
       if (tabsRef.current) { tabsRef.current.style.maxHeight = ''; tabsRef.current.style.opacity = ''; }
       if (controlsRowRef.current) { controlsRowRef.current.style.marginTop = ''; }
+      if (spacerRef.current) { spacerRef.current.style.height = ''; }
     };
 
     const onScroll = () => {
@@ -454,6 +459,9 @@ function App() {
         </div>
       </div>
 
+      {/* Spacer — grows 1:1 with header collapse on mobile so content stays locked to header bottom */}
+      <div ref={spacerRef} />
+
       {/* Main Content */}
       <div className="flex-1 max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8 w-full">
         {currentView === 'predictions' && (
@@ -495,7 +503,7 @@ function App() {
 
       {/* Version Footer */}
       <footer className="mt-auto max-w-6xl mx-auto px-4 pb-6 sm:px-6 lg:px-8 text-center w-full">
-        <p className="text-xs text-gray-400 dark:text-gray-600">V2.2.3</p>
+        <p className="text-xs text-gray-400 dark:text-gray-600">V2.2.4</p>
       </footer>
 
     </div>
