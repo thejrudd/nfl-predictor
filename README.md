@@ -61,6 +61,13 @@ PORT=8080 docker compose up -d --build
 - **react-grid-layout** — Drag-and-resize bento grid for the export infographic
 - **nginx** — Production static file serving (Docker)
 
+## What's New in v2.2
+
+- **Collapsing Header** — On mobile, the app title, progress bar, and view tabs slide out of view when scrolling down, leaving only the essential controls visible; full header restores on scroll up
+- **Navigation in Menu** — When the header is collapsed, the hamburger menu shows a "Navigate" section at the top for quick access to all four views
+- **Desktop Unaffected** — Header always stays fully expanded on wider screens; collapse only activates below the Tailwind `sm` breakpoint (640px)
+- **iOS Overscroll Fix** — Scroll position clamped to prevent the elastic rubber-band bounce at the bottom of the page from triggering spurious collapse/expand flicker
+
 ## What's New in v2.1
 
 - **PWA Support** — Install the app to your home screen on iOS and Android; runs in standalone mode with no browser chrome
@@ -80,10 +87,10 @@ PORT=8080 docker compose up -d --build
 
 ## Roadmap
 
-**v2.2** — Search / filter teams by name, division, or conference
-**v2.3** — Week-by-week schedule view
-**v2.4** — Season narrative (auto-generated text summary of your predicted season)
-**v2.5** — Historical comparison (predicted records vs. each team's actual past results)
+**v2.3** — Search / filter teams by name, division, or conference
+**v2.4** — Week-by-week schedule view
+**v2.5** — Season narrative (auto-generated text summary of your predicted season)
+**v2.6** — Historical comparison (predicted records vs. each team's actual past results)
 **v3.0** — Fantasy football / Sleeper league integration (custom scoring, start/sit recommendations, projections)
 **v4.0** — Visual overhaul (unified design system, redesigned cards and bracket, polished mobile experience)
 
