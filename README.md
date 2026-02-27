@@ -61,6 +61,11 @@ PORT=8080 docker compose up -d --build
 - **react-grid-layout** — Drag-and-resize bento grid for the export infographic
 - **nginx** — Production static file serving (Docker)
 
+## What's New in v2.2.3
+
+- **Content Locks to Header Bottom** — Switched to position-based collapse driven by measured DOM heights; the collapse zone now equals the exact collapsible header height so content tracks the header bottom 1:1 throughout the transition
+- **No Content Behind Partially-Collapsed Header** — Content only starts scrolling behind the header once it is fully collapsed; on the way back up, the header only begins expanding when content has scrolled back flush with the collapsed header edge
+
 ## What's New in v2.2.2
 
 - **Jitter Fix** — 3px dead zone filters out iOS scroll oscillations that caused the header to micro-collapse and micro-expand during a clean scroll

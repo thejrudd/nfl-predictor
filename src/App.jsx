@@ -28,31 +28,39 @@ function App() {
   const [guideOpen, setGuideOpen] = useState(false);
   const { isInstallable, isInstalled, triggerInstall } = usePWAInstall();
 
-  // Collapsing header — delta-based, direct DOM manipulation so it tracks scroll speed exactly
+  // Collapsing header — position-based, collapse zone = exact measured collapsible height
+  // so content stays locked to the header bottom throughout the transition.
   const [headerCollapsed, setHeaderCollapsed] = useState(false); // drives hamburger nav only
   const titleRef = useRef(null);
   const tabsRef = useRef(null);
   const controlsRowRef = useRef(null);
-  const virtualY = useRef(0);      // virtual 0→COLLAPSE_ZONE position driving progress
-  const lastScrollY = useRef(0);   // previous raw scrollY for delta calculation
   const prevCollapsedRef = useRef(false);
 
   useEffect(() => {
-    // px of scroll travel required to fully collapse or fully expand
-    const COLLAPSE_ZONE = 160;
     const isMobile = () => window.innerWidth < 640;
+    const CONTROLS_MARGIN = 16; // mt-4 = 1rem = 16px, collapses to 0 // mt-4 = 1rem = 16px, collapses to 0
+    const DEAD_ZONE = 3;        // px — suppress iOS scroll jitter
+
+    // Measure the natural (uncollapsed) heights of each collapsible section.
+    // COLLAPSE_ZONE is set to their sum so that p = scrollY / COLLAPSE_ZONE
+    // causes content to track the header bottom 1:1 during the transition.
+    let titleNaturalH = titleRef.current?.scrollHeight ?? 90;
+    let tabsNaturalH  = tabsRef.current?.scrollHeight  ?? 160;
+    let COLLAPSE_ZONE = titleNaturalH + CONTROLS_MARGIN + tabsNaturalH;
+
+    let lastY = 0;
 
     const applyProgress = (p) => {
       if (titleRef.current) {
-        titleRef.current.style.maxHeight = `${(1 - p) * 90}px`;
+        titleRef.current.style.maxHeight = `${(1 - p) * titleNaturalH}px`;
         titleRef.current.style.opacity = `${1 - p}`;
       }
       if (tabsRef.current) {
-        tabsRef.current.style.maxHeight = `${(1 - p) * 160}px`;
+        tabsRef.current.style.maxHeight = `${(1 - p) * tabsNaturalH}px`;
         tabsRef.current.style.opacity = `${1 - p}`;
       }
       if (controlsRowRef.current) {
-        controlsRowRef.current.style.marginTop = `${(1 - p) * 16}px`;
+        controlsRowRef.current.style.marginTop = `${(1 - p) * CONTROLS_MARGIN}px`;
       }
     };
 
@@ -62,29 +70,21 @@ function App() {
       if (controlsRowRef.current) { controlsRowRef.current.style.marginTop = ''; }
     };
 
-    const DEAD_ZONE = 3; // px — ignore tiny scroll oscillations that cause jitter
-
     const onScroll = () => {
       if (!isMobile()) return;
       const maxScrollY = document.documentElement.scrollHeight - window.innerHeight;
       const y = Math.max(0, Math.min(window.scrollY, maxScrollY));
-      const delta = y - lastScrollY.current;
-      lastScrollY.current = y;
 
-      // Skip sub-threshold movements to filter out iOS scroll jitter
-      if (Math.abs(delta) < DEAD_ZONE) return;
+      // Suppress jitter — skip events that are too small to matter
+      if (Math.abs(y - lastY) < DEAD_ZONE) return;
+      lastY = y;
 
-      // Advance virtual position by scroll delta, clamped to [0, COLLAPSE_ZONE]
-      let vY = virtualY.current + delta;
-      vY = Math.max(0, Math.min(COLLAPSE_ZONE, vY));
-      // Constrain virtual position to actual scroll position so the header
-      // always fully expands as scrollY naturally returns to 0 (no hard snap)
-      vY = Math.min(vY, y);
-      virtualY.current = vY;
-
-      const p = vY / COLLAPSE_ZONE;
+      // p is driven purely by absolute scroll position.
+      // When COLLAPSE_ZONE = collapsible header height, p reaches 1 exactly
+      // when the content has scrolled up to sit flush against the collapsed header.
+      const p = Math.max(0, Math.min(1, y / COLLAPSE_ZONE));
       applyProgress(p);
-      // Update React state only at the midpoint threshold to avoid excess re-renders
+
       const collapsed = p > 0.5;
       if (collapsed !== prevCollapsedRef.current) {
         prevCollapsedRef.current = collapsed;
@@ -95,8 +95,6 @@ function App() {
     const onResize = () => {
       if (!isMobile()) {
         clearStyles();
-        virtualY.current = 0;
-        lastScrollY.current = 0;
         setHeaderCollapsed(false);
         prevCollapsedRef.current = false;
       }
@@ -497,7 +495,7 @@ function App() {
 
       {/* Version Footer */}
       <footer className="mt-auto max-w-6xl mx-auto px-4 pb-6 sm:px-6 lg:px-8 text-center w-full">
-        <p className="text-xs text-gray-400 dark:text-gray-600">V2.2.2</p>
+        <p className="text-xs text-gray-400 dark:text-gray-600">V2.2.3</p>
       </footer>
 
     </div>
