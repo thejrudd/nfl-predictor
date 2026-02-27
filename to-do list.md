@@ -10,16 +10,19 @@ Make the app installable as a native-feeling app on iOS and Android home screens
 - Link manifest in `index.html`
 - Integrate via `vite-plugin-pwa` for automatic manifest + service worker generation
 
-### v2.2 — Search / Filter
+### ~~v2.2 — Collapsing Header~~
+~~Maximize usable screen space by collapsing the header on scroll. When scrolling down, the app title, view tab buttons, and desktop controls slide up and out of view, leaving only the dark/light mode toggle, teams-predicted count, and menu button visible. Scrolling back up reveals the full header again. Implemented via scroll direction tracking and CSS height/opacity transitions on the sticky header.~~ **Shipped in v2.2.**
+
+### v2.3 — Search / Filter
 Quick-find a team or filter by division/conference directly from the main predictions view.
 
-### v2.3 — Week-by-Week View
+### v2.4 — Week-by-Week View
 Browse the schedule by week instead of by team, to see all matchups for a given week.
 
-### v2.4 — Season Narrative
+### v2.5 — Season Narrative
 Auto-generate a text summary of your predicted season (e.g. "The Bills go 14-3 and clinch the AFC East in Week 15..."). Could include division race storylines, upset picks, and playoff implications.
 
-### v2.5 — Historical Comparison
+### v2.6 — Historical Comparison
 Show how your predicted record for each team compares to their actual results from recent seasons. Highlight where you're more bullish or bearish than history.
 
 ### v3.0 — Fantasy Football / Sleeper League Integration
@@ -58,10 +61,10 @@ Import a friend's exported JSON predictions and diff them against yours — high
 ## Fun / Analytics
 
 ### ~~Season Narrative~~
-~~Auto-generate a text summary of your predicted season.~~ **Planned for v2.4.**
+~~Auto-generate a text summary of your predicted season.~~ **Planned for v2.5.**
 
 ### ~~Historical Comparison~~
-~~Show how your predicted record for each team compares to their actual results from recent seasons.~~ **Planned for v2.5.**
+~~Show how your predicted record for each team compares to their actual results from recent seasons.~~ **Planned for v2.6.**
 
 ---
 
