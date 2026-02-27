@@ -11,8 +11,11 @@ An interactive web app for predicting the 2026 NFL season. Pick game-by-game out
 - **Division Standings** — Auto-generated standings sorted by wins, division record, and strength of schedule
 - **Playoff Seeding** — AFC and NFC brackets with division winners and wild card spots
 - **Shareable Infographic** — Create a custom bento-grid graphic with up to 11 insight sections (Best & Worst Records, Playoff Seeds, Division Winners, Conference Showdown, Toughest Division, Bold Predictions, Worst Division, Strength of Schedule, Closest Division Race, Wild Card Teams, Parity Index). Drag and resize sections to build your layout.
+- **Player Browser** — Browse all 32 rosters by conference, division, and position; search players by name across the league
+- **Player Profiles** — Full profile pages with headshot, career stats, game log, and Pro Bowl / All-Pro honors
 - **Export/Import** — Save predictions as JSON; import JSON to restore picks
 - **Dark Mode** — Toggle between light and dark themes
+- **PWA / Installable** — Install to your home screen on iOS and Android; runs in standalone mode with asset caching
 - **Responsive Design** — Works on desktop and mobile
 - **Client-Side Only** — All data stored in localStorage, nothing leaves your browser
 
@@ -60,37 +63,6 @@ PORT=8080 docker compose up -d --build
 - **Tailwind CSS** — Utility-first styling
 - **react-grid-layout** — Drag-and-resize bento grid for the export infographic
 - **nginx** — Production static file serving (Docker)
-
-## What's New in v2.2.7
-
-- **Font-Aware Collapse Measurement** — Added `document.fonts.ready` re-measurement to fix a root-cause bug: `COLLAPSE_ZONE` was measured at mount with the system fallback font, but "NFL SEASON PREDICTOR" at `text-4xl` wraps to a different number of lines with Barlow Condensed vs. the fallback sans-serif. The wrong `titleNaturalH` (~40px off) caused the header to start collapsing late and jump at the boundary. Now re-measured the moment the web font is ready, then re-applied immediately.
-
-## What's New in v2.2.6
-
-- **Synchronous Scroll Updates** — Reverted to a direct synchronous scroll handler (no `requestAnimationFrame`); rAF added a 1-frame lag that caused the spacer and header to be out of sync at the start of every gesture and at the collapse boundary, producing the visible jump
-
-## What's New in v2.2.5
-
-- **Removed Dead Zone** — Dropped the 3px dead zone that caused a sticky start; position-based collapse has no accumulation error so jitter suppression is not needed
-
-## What's New in v2.2.4
-
-- **Content Locked to Header Bottom** — Added a spacer div between the sticky header and main content whose height grows 1:1 with the collapse progress (`p × COLLAPSE_ZONE`). This exactly cancels the document-flow shift caused by the header shrinking, so the first content row stays flush with the header bottom throughout the transition — no content slipping behind a partially-collapsed header, and on the way back up the header expands only as the content pulls it open
-
-## What's New in v2.2.3
-
-- **Content Locks to Header Bottom** — Switched to position-based collapse driven by measured DOM heights; the collapse zone now equals the exact collapsible header height so content tracks the header bottom 1:1 throughout the transition
-- **No Content Behind Partially-Collapsed Header** — Content only starts scrolling behind the header once it is fully collapsed; on the way back up, the header only begins expanding when content has scrolled back flush with the collapsed header edge
-
-## What's New in v2.2.2
-
-- **Jitter Fix** — 3px dead zone filters out iOS scroll oscillations that caused the header to micro-collapse and micro-expand during a clean scroll
-- **Smooth Top Expansion** — Replaced the hard reset-to-zero guard at the top of the page with a natural constraint (`virtualY ≤ scrollY`), eliminating the snap when momentum carries scroll back to the top
-
-## What's New in v2.2.1
-
-- **Scroll Tracking Fix** — Collapsing header now uses delta-based tracking; collapse and expand both follow scroll speed exactly rather than snapping
-- **Larger Collapse Zone** — Header collapses and expands over 160px of scroll travel (up from 80px), making the motion feel proportional at any scroll speed
 
 ## What's New in v2.2
 
