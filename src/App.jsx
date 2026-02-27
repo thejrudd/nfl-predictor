@@ -62,6 +62,8 @@ function App() {
       if (controlsRowRef.current) { controlsRowRef.current.style.marginTop = ''; }
     };
 
+    const DEAD_ZONE = 3; // px — ignore tiny scroll oscillations that cause jitter
+
     const onScroll = () => {
       if (!isMobile()) return;
       const maxScrollY = document.documentElement.scrollHeight - window.innerHeight;
@@ -69,11 +71,15 @@ function App() {
       const delta = y - lastScrollY.current;
       lastScrollY.current = y;
 
+      // Skip sub-threshold movements to filter out iOS scroll jitter
+      if (Math.abs(delta) < DEAD_ZONE) return;
+
       // Advance virtual position by scroll delta, clamped to [0, COLLAPSE_ZONE]
       let vY = virtualY.current + delta;
       vY = Math.max(0, Math.min(COLLAPSE_ZONE, vY));
-      // Always fully expanded at the very top regardless of virtual state
-      if (y < 10) vY = 0;
+      // Constrain virtual position to actual scroll position so the header
+      // always fully expands as scrollY naturally returns to 0 (no hard snap)
+      vY = Math.min(vY, y);
       virtualY.current = vY;
 
       const p = vY / COLLAPSE_ZONE;
@@ -491,7 +497,7 @@ function App() {
 
       {/* Version Footer */}
       <footer className="mt-auto max-w-6xl mx-auto px-4 pb-6 sm:px-6 lg:px-8 text-center w-full">
-        <p className="text-xs text-gray-400 dark:text-gray-600">V2.2.1</p>
+        <p className="text-xs text-gray-400 dark:text-gray-600">V2.2.2</p>
       </footer>
 
     </div>

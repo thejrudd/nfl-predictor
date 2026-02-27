@@ -61,6 +61,11 @@ PORT=8080 docker compose up -d --build
 - **react-grid-layout** — Drag-and-resize bento grid for the export infographic
 - **nginx** — Production static file serving (Docker)
 
+## What's New in v2.2.2
+
+- **Jitter Fix** — 3px dead zone filters out iOS scroll oscillations that caused the header to micro-collapse and micro-expand during a clean scroll
+- **Smooth Top Expansion** — Replaced the hard reset-to-zero guard at the top of the page with a natural constraint (`virtualY ≤ scrollY`), eliminating the snap when momentum carries scroll back to the top
+
 ## What's New in v2.2.1
 
 - **Scroll Tracking Fix** — Collapsing header now uses delta-based tracking; collapse and expand both follow scroll speed exactly rather than snapping
