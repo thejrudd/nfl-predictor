@@ -39,17 +39,16 @@ function App() {
 
   useEffect(() => {
     const isMobile = () => window.innerWidth < 640;
-    const CONTROLS_MARGIN = 16; // mt-4 = 1rem = 16px, collapses to 0 // mt-4 = 1rem = 16px, collapses to 0
-    const DEAD_ZONE = 3;        // px — suppress iOS scroll jitter
+    const CONTROLS_MARGIN = 16; // mt-4 = 1rem = 16px, collapses to 0
 
     // Measure the natural (uncollapsed) heights of each collapsible section.
-    // COLLAPSE_ZONE is set to their sum so that p = scrollY / COLLAPSE_ZONE
+    // COLLAPSE_ZONE equals their sum so that p = scrollY / COLLAPSE_ZONE
     // causes content to track the header bottom 1:1 during the transition.
     let titleNaturalH = titleRef.current?.scrollHeight ?? 90;
     let tabsNaturalH  = tabsRef.current?.scrollHeight  ?? 160;
     let COLLAPSE_ZONE = titleNaturalH + CONTROLS_MARGIN + tabsNaturalH;
 
-    let lastY = 0;
+    let rafId = null;
 
     const applyProgress = (p) => {
       if (titleRef.current) {
@@ -75,26 +74,25 @@ function App() {
       if (spacerRef.current) { spacerRef.current.style.height = ''; }
     };
 
-    const onScroll = () => {
-      if (!isMobile()) return;
+    // rAF gate: one DOM update per animation frame, reads scrollY at frame time.
+    // No dead zone needed — position-based math means 1-2px iOS jitter just
+    // oscillates the spacer by 1-2px (imperceptible, no accumulation errors).
+    const update = () => {
+      rafId = null;
       const maxScrollY = document.documentElement.scrollHeight - window.innerHeight;
       const y = Math.max(0, Math.min(window.scrollY, maxScrollY));
-
-      // Suppress jitter — skip events that are too small to matter
-      if (Math.abs(y - lastY) < DEAD_ZONE) return;
-      lastY = y;
-
-      // p is driven purely by absolute scroll position.
-      // When COLLAPSE_ZONE = collapsible header height, p reaches 1 exactly
-      // when the content has scrolled up to sit flush against the collapsed header.
       const p = Math.max(0, Math.min(1, y / COLLAPSE_ZONE));
       applyProgress(p);
-
       const collapsed = p > 0.5;
       if (collapsed !== prevCollapsedRef.current) {
         prevCollapsedRef.current = collapsed;
         setHeaderCollapsed(collapsed);
       }
+    };
+
+    const onScroll = () => {
+      if (!isMobile()) return;
+      if (rafId === null) rafId = requestAnimationFrame(update);
     };
 
     const onResize = () => {
@@ -110,6 +108,7 @@ function App() {
     return () => {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onResize);
+      if (rafId !== null) cancelAnimationFrame(rafId);
     };
   }, []);
 
@@ -503,7 +502,7 @@ function App() {
 
       {/* Version Footer */}
       <footer className="mt-auto max-w-6xl mx-auto px-4 pb-6 sm:px-6 lg:px-8 text-center w-full">
-        <p className="text-xs text-gray-400 dark:text-gray-600">V2.2.4</p>
+        <p className="text-xs text-gray-400 dark:text-gray-600">V2.2.5</p>
       </footer>
 
     </div>

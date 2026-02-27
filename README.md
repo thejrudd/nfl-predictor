@@ -61,6 +61,10 @@ PORT=8080 docker compose up -d --build
 - **react-grid-layout** — Drag-and-resize bento grid for the export infographic
 - **nginx** — Production static file serving (Docker)
 
+## What's New in v2.2.5
+
+- **Smooth Collapse Start** — Removed the 3px dead zone and replaced the scroll handler with a `requestAnimationFrame` gate; the header now responds to the very first pixel of scroll with no sticky delay or initial jump
+
 ## What's New in v2.2.4
 
 - **Content Locked to Header Bottom** — Added a spacer div between the sticky header and main content whose height grows 1:1 with the collapse progress (`p × COLLAPSE_ZONE`). This exactly cancels the document-flow shift caused by the header shrinking, so the first content row stays flush with the header bottom throughout the transition — no content slipping behind a partially-collapsed header, and on the way back up the header expands only as the content pulls it open
