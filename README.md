@@ -64,6 +64,11 @@ PORT=8080 docker compose up -d --build
 - **react-grid-layout** — Drag-and-resize bento grid for the export infographic
 - **nginx** — Production static file serving (Docker)
 
+## What's New in v2.2.8
+
+- **Eliminated Gesture-Detection Bounce** — Added a `touchmove` listener alongside `scroll`; iOS fires `touchmove` during the gesture-detection phase (before the first `scroll` event), and `window.scrollY` is already updated by then, so the animation now starts on the first pixel of finger movement
+- **Sub-Pixel Boundary Snap** — `maxHeight` values below 1px are snapped to `0px`, preventing a sub-pixel sliver of clipped text from flickering when inertial scroll oscillates near the collapse boundary
+
 ## What's New in v2.2
 
 - **Collapsing Header** — On mobile, the app title, progress bar, and view tabs slide out of view when scrolling down, leaving only the essential controls visible; full header restores on scroll up

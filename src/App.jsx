@@ -59,11 +59,15 @@ function App() {
 
     const applyProgress = (p) => {
       if (titleRef.current) {
-        titleRef.current.style.maxHeight = `${(1 - p) * titleNaturalH}px`;
+        const h = (1 - p) * titleNaturalH;
+        // Snap sub-pixel values to 0 to prevent a 1-pixel sliver of text
+        // flickering when inertial scroll oscillates near the COLLAPSE_ZONE boundary.
+        titleRef.current.style.maxHeight = h < 1 ? '0px' : `${h}px`;
         titleRef.current.style.opacity = `${1 - p}`;
       }
       if (tabsRef.current) {
-        tabsRef.current.style.maxHeight = `${(1 - p) * tabsNaturalH}px`;
+        const h = (1 - p) * tabsNaturalH;
+        tabsRef.current.style.maxHeight = h < 1 ? '0px' : `${h}px`;
         tabsRef.current.style.opacity = `${1 - p}`;
       }
       if (controlsRowRef.current) {
@@ -104,7 +108,13 @@ function App() {
       applyCurrentScroll();
     });
 
+    // Both scroll and touchmove call the same handler.
+    // touchmove fires during iOS gesture-detection before the first scroll event,
+    // and window.scrollY is already updated by then — so the animation starts
+    // on the first pixel of finger movement rather than after the ~50-100ms
+    // gesture-detection delay that caused the boundary to bounce before moving.
     const onScroll = () => applyCurrentScroll();
+    const onTouchMove = () => applyCurrentScroll();
 
     const onResize = () => {
       if (!isMobile()) {
@@ -119,9 +129,11 @@ function App() {
     };
 
     window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
     window.addEventListener('resize', onResize, { passive: true });
     return () => {
       window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('touchmove', onTouchMove);
       window.removeEventListener('resize', onResize);
     };
   }, []);
@@ -516,7 +528,7 @@ function App() {
 
       {/* Version Footer */}
       <footer className="mt-auto max-w-6xl mx-auto px-4 pb-6 sm:px-6 lg:px-8 text-center w-full">
-        <p className="text-xs text-gray-400 dark:text-gray-600">V2.2.7</p>
+        <p className="text-xs text-gray-400 dark:text-gray-600">V2.2.8</p>
       </footer>
 
     </div>
