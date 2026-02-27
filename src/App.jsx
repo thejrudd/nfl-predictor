@@ -28,16 +28,18 @@ function App() {
   const [guideOpen, setGuideOpen] = useState(false);
   const { isInstallable, isInstalled, triggerInstall } = usePWAInstall();
 
-  // Collapsing header — position-based, direct DOM manipulation so it tracks scroll linearly
+  // Collapsing header — delta-based, direct DOM manipulation so it tracks scroll speed exactly
   const [headerCollapsed, setHeaderCollapsed] = useState(false); // drives hamburger nav only
   const titleRef = useRef(null);
   const tabsRef = useRef(null);
   const controlsRowRef = useRef(null);
-  const collapseProgressRef = useRef(0);
+  const virtualY = useRef(0);      // virtual 0→COLLAPSE_ZONE position driving progress
+  const lastScrollY = useRef(0);   // previous raw scrollY for delta calculation
   const prevCollapsedRef = useRef(false);
 
   useEffect(() => {
-    const COLLAPSE_ZONE = 80; // px of scroll over which the header fully collapses
+    // px of scroll travel required to fully collapse or fully expand
+    const COLLAPSE_ZONE = 160;
     const isMobile = () => window.innerWidth < 640;
 
     const applyProgress = (p) => {
@@ -64,8 +66,17 @@ function App() {
       if (!isMobile()) return;
       const maxScrollY = document.documentElement.scrollHeight - window.innerHeight;
       const y = Math.max(0, Math.min(window.scrollY, maxScrollY));
-      const p = Math.max(0, Math.min(1, y / COLLAPSE_ZONE));
-      collapseProgressRef.current = p;
+      const delta = y - lastScrollY.current;
+      lastScrollY.current = y;
+
+      // Advance virtual position by scroll delta, clamped to [0, COLLAPSE_ZONE]
+      let vY = virtualY.current + delta;
+      vY = Math.max(0, Math.min(COLLAPSE_ZONE, vY));
+      // Always fully expanded at the very top regardless of virtual state
+      if (y < 10) vY = 0;
+      virtualY.current = vY;
+
+      const p = vY / COLLAPSE_ZONE;
       applyProgress(p);
       // Update React state only at the midpoint threshold to avoid excess re-renders
       const collapsed = p > 0.5;
@@ -78,9 +89,10 @@ function App() {
     const onResize = () => {
       if (!isMobile()) {
         clearStyles();
+        virtualY.current = 0;
+        lastScrollY.current = 0;
         setHeaderCollapsed(false);
         prevCollapsedRef.current = false;
-        collapseProgressRef.current = 0;
       }
     };
 
