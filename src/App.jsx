@@ -28,6 +28,41 @@ function App() {
   const [guideOpen, setGuideOpen] = useState(false);
   const { isInstallable, isInstalled, triggerInstall } = usePWAInstall();
 
+  const [headerCollapsed, setHeaderCollapsed] = useState(false);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const isMobile = () => window.innerWidth < 640;
+
+    const COLLAPSE_THRESHOLD = 72; // px from top before collapse can trigger
+
+    const onScroll = () => {
+      if (!isMobile()) return;
+      // Clamp to valid scroll range to ignore iOS rubber-band overscroll at top/bottom
+      const maxScrollY = document.documentElement.scrollHeight - window.innerHeight;
+      const y = Math.max(0, Math.min(window.scrollY, maxScrollY));
+      if (y < 10) {
+        setHeaderCollapsed(false);
+      } else if (y > lastScrollY.current && y > COLLAPSE_THRESHOLD) {
+        setHeaderCollapsed(true);
+      } else if (y < lastScrollY.current) {
+        setHeaderCollapsed(false);
+      }
+      lastScrollY.current = y;
+    };
+
+    const onResize = () => {
+      if (!isMobile()) setHeaderCollapsed(false);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
+    };
+  }, []);
+
   useEffect(() => {
     loadScheduleData()
       .then(data => {
@@ -99,14 +134,20 @@ function App() {
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-4xl font-display tracking-wide text-gray-900 dark:text-white">
-                NFL SEASON PREDICTOR
-              </h1>
-              <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 mt-1">2026 SEASON</p>
+            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
+              headerCollapsed
+                ? 'max-h-0 opacity-0 sm:max-h-40 sm:opacity-100'
+                : 'max-h-40 opacity-100'
+            }`}>
+              <div>
+                <h1 className="text-4xl font-display tracking-wide text-gray-900 dark:text-white">
+                  NFL SEASON PREDICTOR
+                </h1>
+                <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 mt-1">2026 SEASON</p>
+              </div>
             </div>
 
-            <div className="mt-4 sm:mt-0 flex items-center justify-between sm:justify-start space-x-4 w-full sm:w-auto">
+            <div className={`${headerCollapsed ? 'mt-0' : 'mt-4'} sm:mt-0 flex items-center justify-between sm:justify-start space-x-4 w-full sm:w-auto transition-all duration-300`}>
               {/* Dark Mode Toggle */}
               <button
                 onClick={toggleDarkMode}
@@ -210,6 +251,32 @@ function App() {
                   <>
                     <div className="fixed inset-0 z-50" onClick={() => setMenuOpen(false)} />
                     <div className="absolute right-0 top-full mt-1 z-50 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl py-1">
+                      {headerCollapsed && (
+                        <>
+                          <div className="px-4 py-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                            Navigate
+                          </div>
+                          {[
+                            { view: 'predictions', label: 'Make Predictions' },
+                            { view: 'standings',   label: 'View Standings' },
+                            { view: 'playoffs',    label: 'Playoff Seeding' },
+                            { view: 'players',     label: 'Player Stats' },
+                          ].map(({ view, label }) => (
+                            <button
+                              key={view}
+                              onClick={() => { setCurrentView(view); setMenuOpen(false); }}
+                              className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                                currentView === view
+                                  ? 'text-blue-600 dark:text-blue-400 font-semibold'
+                                  : 'text-gray-700 dark:text-gray-300'
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                          <div className="border-t border-gray-200 dark:border-gray-600 my-1" />
+                        </>
+                      )}
                       <button
                         onClick={() => { handleExportImage(); setMenuOpen(false); }}
                         disabled={predictionCount === 0}
@@ -287,6 +354,11 @@ function App() {
             </div>
           </div>
 
+          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
+            headerCollapsed
+              ? 'max-h-0 opacity-0 sm:max-h-64 sm:opacity-100'
+              : 'max-h-64 opacity-100'
+          }`}>
           {/* Progress Bar */}
           <div className="mt-4">
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -301,7 +373,7 @@ function App() {
           <div className="mt-4 grid grid-cols-2 sm:flex gap-2">
             <button
               onClick={() => setCurrentView('predictions')}
-              className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+              className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
                 currentView === 'predictions'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
@@ -311,7 +383,7 @@ function App() {
             </button>
             <button
               onClick={() => setCurrentView('standings')}
-              className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+              className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
                 currentView === 'standings'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
@@ -321,7 +393,7 @@ function App() {
             </button>
             <button
               onClick={() => setCurrentView('playoffs')}
-              className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+              className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
                 currentView === 'playoffs'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
@@ -331,7 +403,7 @@ function App() {
             </button>
             <button
               onClick={() => setCurrentView('players')}
-              className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+              className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
                 currentView === 'players'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
@@ -340,6 +412,7 @@ function App() {
               PLAYER STATS
             </button>
           </div>
+          </div>{/* end collapsible: progress bar + view tabs */}
         </div>
       </div>
 
@@ -384,7 +457,7 @@ function App() {
 
       {/* Version Footer */}
       <footer className="mt-auto max-w-6xl mx-auto px-4 pb-6 sm:px-6 lg:px-8 text-center w-full">
-        <p className="text-xs text-gray-400 dark:text-gray-600">V2.1</p>
+        <p className="text-xs text-gray-400 dark:text-gray-600">V2.2</p>
       </footer>
 
     </div>

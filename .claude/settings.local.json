@@ -29,7 +29,8 @@
       "Bash(git checkout main)",
       "Bash(git checkout -b v4.0-visual)",
       "Bash(git checkout v2.1)",
-      "Bash(npm run generate-pwa-assets)"
+      "Bash(npm run generate-pwa-assets)",
+      "Bash(git checkout -b v2.2)"
     ]
   }
 }
