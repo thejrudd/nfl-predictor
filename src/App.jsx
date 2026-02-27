@@ -41,12 +41,21 @@ function App() {
     const isMobile = () => window.innerWidth < 640;
     const CONTROLS_MARGIN = 16; // mt-4 = 1rem = 16px, collapses to 0
 
-    // Measure the natural (uncollapsed) heights of each collapsible section.
-    // COLLAPSE_ZONE equals their sum so that p = scrollY / COLLAPSE_ZONE
-    // causes content to track the header bottom 1:1 during the transition.
-    let titleNaturalH = titleRef.current?.scrollHeight ?? 90;
-    let tabsNaturalH  = tabsRef.current?.scrollHeight  ?? 160;
-    let COLLAPSE_ZONE = titleNaturalH + CONTROLS_MARGIN + tabsNaturalH;
+    // Mutable measurements — updated by measure() whenever layout may have changed.
+    let titleNaturalH = 0;
+    let tabsNaturalH  = 0;
+    let COLLAPSE_ZONE = 0;
+
+    // Read the live scrollHeight of each collapsible section.
+    // Must be called (a) at mount and (b) after fonts load, because
+    // "NFL SEASON PREDICTOR" at text-4xl may wrap differently with the
+    // fallback sans-serif vs. Barlow Condensed, changing titleNaturalH by
+    // ~40px and making COLLAPSE_ZONE wrong until the font is ready.
+    const measure = () => {
+      titleNaturalH = titleRef.current?.scrollHeight ?? 90;
+      tabsNaturalH  = tabsRef.current?.scrollHeight  ?? 160;
+      COLLAPSE_ZONE = titleNaturalH + CONTROLS_MARGIN + tabsNaturalH;
+    };
 
     const applyProgress = (p) => {
       if (titleRef.current) {
@@ -72,13 +81,7 @@ function App() {
       if (spacerRef.current) { spacerRef.current.style.height = ''; }
     };
 
-    // Synchronous handler — no rAF, no dead zone.
-    // rAF adds a 1-frame lag (browser scrolls first, rAF fires next vsync) which
-    // causes the spacer and header to be out of sync for one frame at the start
-    // of every gesture and at the COLLAPSE_ZONE boundary.
-    // Position-based approach needs no dead zone: there is no accumulation error,
-    // so 1-2px iOS jitter only oscillates the spacer by 1-2px (imperceptible).
-    const onScroll = () => {
+    const applyCurrentScroll = () => {
       if (!isMobile()) return;
       const maxScrollY = document.documentElement.scrollHeight - window.innerHeight;
       const y = Math.max(0, Math.min(window.scrollY, maxScrollY));
@@ -91,11 +94,27 @@ function App() {
       }
     };
 
+    // Initial measurement (may use fallback font metrics).
+    measure();
+
+    // Re-measure once the web font is ready and immediately re-apply so the
+    // spacer and header heights are corrected before the user scrolls.
+    document.fonts.ready.then(() => {
+      measure();
+      applyCurrentScroll();
+    });
+
+    const onScroll = () => applyCurrentScroll();
+
     const onResize = () => {
       if (!isMobile()) {
         clearStyles();
         setHeaderCollapsed(false);
         prevCollapsedRef.current = false;
+      } else {
+        // Re-measure on orientation change — font-size / layout may differ.
+        measure();
+        applyCurrentScroll();
       }
     };
 
@@ -497,7 +516,7 @@ function App() {
 
       {/* Version Footer */}
       <footer className="mt-auto max-w-6xl mx-auto px-4 pb-6 sm:px-6 lg:px-8 text-center w-full">
-        <p className="text-xs text-gray-400 dark:text-gray-600">V2.2.6</p>
+        <p className="text-xs text-gray-400 dark:text-gray-600">V2.2.7</p>
       </footer>
 
     </div>

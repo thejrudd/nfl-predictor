@@ -61,6 +61,10 @@ PORT=8080 docker compose up -d --build
 - **react-grid-layout** — Drag-and-resize bento grid for the export infographic
 - **nginx** — Production static file serving (Docker)
 
+## What's New in v2.2.7
+
+- **Font-Aware Collapse Measurement** — Added `document.fonts.ready` re-measurement to fix a root-cause bug: `COLLAPSE_ZONE` was measured at mount with the system fallback font, but "NFL SEASON PREDICTOR" at `text-4xl` wraps to a different number of lines with Barlow Condensed vs. the fallback sans-serif. The wrong `titleNaturalH` (~40px off) caused the header to start collapsing late and jump at the boundary. Now re-measured the moment the web font is ready, then re-applied immediately.
+
 ## What's New in v2.2.6
 
 - **Synchronous Scroll Updates** — Reverted to a direct synchronous scroll handler (no `requestAnimationFrame`); rAF added a 1-frame lag that caused the spacer and header to be out of sync at the start of every gesture and at the collapse boundary, producing the visible jump
