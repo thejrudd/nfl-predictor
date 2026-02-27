@@ -36,6 +36,7 @@ Allow users to connect their Sleeper league and surface fantasy-relevant insight
 
 ### v4.0 — Visual Overhaul
 A ground-up redesign of the app's visual language and UI consistency. Goals:
+- **Bottom tab bar navigation** — split the app into two distinct top-level domains: "Season" (Make Predictions, Standings, Playoff Seeding) and "Players" (Player Browser, Player Profiles, future Fantasy/Sleeper integration). Each tab has its own scroll context and sub-navigation. This is the standard pattern for mobile sports apps (ESPN, NFL app) and scales naturally as each domain grows.
 - Unified design system — consistent spacing, typography scale, and color tokens across all views
 - Redesigned prediction cards and team rows with richer visual hierarchy
 - Improved standings and playoff bracket presentation
