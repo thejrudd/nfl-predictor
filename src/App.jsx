@@ -28,6 +28,70 @@ function App() {
   const [guideOpen, setGuideOpen] = useState(false);
   const { isInstallable, isInstalled, triggerInstall } = usePWAInstall();
 
+  // Collapsing header — position-based, direct DOM manipulation so it tracks scroll linearly
+  const [headerCollapsed, setHeaderCollapsed] = useState(false); // drives hamburger nav only
+  const titleRef = useRef(null);
+  const tabsRef = useRef(null);
+  const controlsRowRef = useRef(null);
+  const collapseProgressRef = useRef(0);
+  const prevCollapsedRef = useRef(false);
+
+  useEffect(() => {
+    const COLLAPSE_ZONE = 80; // px of scroll over which the header fully collapses
+    const isMobile = () => window.innerWidth < 640;
+
+    const applyProgress = (p) => {
+      if (titleRef.current) {
+        titleRef.current.style.maxHeight = `${(1 - p) * 90}px`;
+        titleRef.current.style.opacity = `${1 - p}`;
+      }
+      if (tabsRef.current) {
+        tabsRef.current.style.maxHeight = `${(1 - p) * 160}px`;
+        tabsRef.current.style.opacity = `${1 - p}`;
+      }
+      if (controlsRowRef.current) {
+        controlsRowRef.current.style.marginTop = `${(1 - p) * 16}px`;
+      }
+    };
+
+    const clearStyles = () => {
+      if (titleRef.current) { titleRef.current.style.maxHeight = ''; titleRef.current.style.opacity = ''; }
+      if (tabsRef.current) { tabsRef.current.style.maxHeight = ''; tabsRef.current.style.opacity = ''; }
+      if (controlsRowRef.current) { controlsRowRef.current.style.marginTop = ''; }
+    };
+
+    const onScroll = () => {
+      if (!isMobile()) return;
+      const maxScrollY = document.documentElement.scrollHeight - window.innerHeight;
+      const y = Math.max(0, Math.min(window.scrollY, maxScrollY));
+      const p = Math.max(0, Math.min(1, y / COLLAPSE_ZONE));
+      collapseProgressRef.current = p;
+      applyProgress(p);
+      // Update React state only at the midpoint threshold to avoid excess re-renders
+      const collapsed = p > 0.5;
+      if (collapsed !== prevCollapsedRef.current) {
+        prevCollapsedRef.current = collapsed;
+        setHeaderCollapsed(collapsed);
+      }
+    };
+
+    const onResize = () => {
+      if (!isMobile()) {
+        clearStyles();
+        setHeaderCollapsed(false);
+        prevCollapsedRef.current = false;
+        collapseProgressRef.current = 0;
+      }
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
+    };
+  }, []);
+
   useEffect(() => {
     loadScheduleData()
       .then(data => {
@@ -99,14 +163,16 @@ function App() {
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-4xl font-display tracking-wide text-gray-900 dark:text-white">
-                NFL SEASON PREDICTOR
-              </h1>
-              <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 mt-1">2026 SEASON</p>
+            <div ref={titleRef} className="overflow-hidden">
+              <div>
+                <h1 className="text-4xl font-display tracking-wide text-gray-900 dark:text-white">
+                  NFL SEASON PREDICTOR
+                </h1>
+                <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 mt-1">2026 SEASON</p>
+              </div>
             </div>
 
-            <div className="mt-4 sm:mt-0 flex items-center justify-between sm:justify-start space-x-4 w-full sm:w-auto">
+            <div ref={controlsRowRef} className="mt-4 sm:mt-0 flex items-center justify-between sm:justify-start space-x-4 w-full sm:w-auto">
               {/* Dark Mode Toggle */}
               <button
                 onClick={toggleDarkMode}
@@ -210,6 +276,32 @@ function App() {
                   <>
                     <div className="fixed inset-0 z-50" onClick={() => setMenuOpen(false)} />
                     <div className="absolute right-0 top-full mt-1 z-50 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl py-1">
+                      {headerCollapsed && (
+                        <>
+                          <div className="px-4 py-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                            Navigate
+                          </div>
+                          {[
+                            { view: 'predictions', label: 'Make Predictions' },
+                            { view: 'standings',   label: 'View Standings' },
+                            { view: 'playoffs',    label: 'Playoff Seeding' },
+                            { view: 'players',     label: 'Player Stats' },
+                          ].map(({ view, label }) => (
+                            <button
+                              key={view}
+                              onClick={() => { setCurrentView(view); setMenuOpen(false); }}
+                              className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                                currentView === view
+                                  ? 'text-blue-600 dark:text-blue-400 font-semibold'
+                                  : 'text-gray-700 dark:text-gray-300'
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                          <div className="border-t border-gray-200 dark:border-gray-600 my-1" />
+                        </>
+                      )}
                       <button
                         onClick={() => { handleExportImage(); setMenuOpen(false); }}
                         disabled={predictionCount === 0}
@@ -287,58 +379,61 @@ function App() {
             </div>
           </div>
 
-          {/* Progress Bar */}
-          <div className="mt-4">
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-              <div
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${(predictionCount / totalTeams) * 100}%` }}
-              />
+          {/* Progress bar + view tabs — collapse together, tracked by tabsRef */}
+          <div ref={tabsRef} className="overflow-hidden">
+            {/* Progress Bar */}
+            <div className="mt-4">
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${(predictionCount / totalTeams) * 100}%` }}
+                />
+              </div>
             </div>
-          </div>
 
-          {/* View Toggle */}
-          <div className="mt-4 grid grid-cols-2 sm:flex gap-2">
-            <button
-              onClick={() => setCurrentView('predictions')}
-              className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-                currentView === 'predictions'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-              }`}
-            >
-              MAKE PREDICTIONS
-            </button>
-            <button
-              onClick={() => setCurrentView('standings')}
-              className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-                currentView === 'standings'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-              }`}
-            >
-              VIEW STANDINGS
-            </button>
-            <button
-              onClick={() => setCurrentView('playoffs')}
-              className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-                currentView === 'playoffs'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-              }`}
-            >
-              PLAYOFF SEEDING
-            </button>
-            <button
-              onClick={() => setCurrentView('players')}
-              className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-                currentView === 'players'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-              }`}
-            >
-              PLAYER STATS
-            </button>
+            {/* View Toggle */}
+            <div className="mt-4 grid grid-cols-2 sm:flex gap-2">
+              <button
+                onClick={() => setCurrentView('predictions')}
+                className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
+                  currentView === 'predictions'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                MAKE PREDICTIONS
+              </button>
+              <button
+                onClick={() => setCurrentView('standings')}
+                className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
+                  currentView === 'standings'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                VIEW STANDINGS
+              </button>
+              <button
+                onClick={() => setCurrentView('playoffs')}
+                className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
+                  currentView === 'playoffs'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                PLAYOFF SEEDING
+              </button>
+              <button
+                onClick={() => setCurrentView('players')}
+                className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
+                  currentView === 'players'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                }`}
+              >
+                PLAYER STATS
+              </button>
+            </div>
           </div>
         </div>
       </div>
