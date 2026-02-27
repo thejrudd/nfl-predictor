@@ -61,9 +61,13 @@ PORT=8080 docker compose up -d --build
 - **react-grid-layout** — Drag-and-resize bento grid for the export infographic
 - **nginx** — Production static file serving (Docker)
 
+## What's New in v2.2.6
+
+- **Synchronous Scroll Updates** — Reverted to a direct synchronous scroll handler (no `requestAnimationFrame`); rAF added a 1-frame lag that caused the spacer and header to be out of sync at the start of every gesture and at the collapse boundary, producing the visible jump
+
 ## What's New in v2.2.5
 
-- **Smooth Collapse Start** — Removed the 3px dead zone and replaced the scroll handler with a `requestAnimationFrame` gate; the header now responds to the very first pixel of scroll with no sticky delay or initial jump
+- **Removed Dead Zone** — Dropped the 3px dead zone that caused a sticky start; position-based collapse has no accumulation error so jitter suppression is not needed
 
 ## What's New in v2.2.4
 

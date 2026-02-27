@@ -48,8 +48,6 @@ function App() {
     let tabsNaturalH  = tabsRef.current?.scrollHeight  ?? 160;
     let COLLAPSE_ZONE = titleNaturalH + CONTROLS_MARGIN + tabsNaturalH;
 
-    let rafId = null;
-
     const applyProgress = (p) => {
       if (titleRef.current) {
         titleRef.current.style.maxHeight = `${(1 - p) * titleNaturalH}px`;
@@ -74,11 +72,14 @@ function App() {
       if (spacerRef.current) { spacerRef.current.style.height = ''; }
     };
 
-    // rAF gate: one DOM update per animation frame, reads scrollY at frame time.
-    // No dead zone needed — position-based math means 1-2px iOS jitter just
-    // oscillates the spacer by 1-2px (imperceptible, no accumulation errors).
-    const update = () => {
-      rafId = null;
+    // Synchronous handler — no rAF, no dead zone.
+    // rAF adds a 1-frame lag (browser scrolls first, rAF fires next vsync) which
+    // causes the spacer and header to be out of sync for one frame at the start
+    // of every gesture and at the COLLAPSE_ZONE boundary.
+    // Position-based approach needs no dead zone: there is no accumulation error,
+    // so 1-2px iOS jitter only oscillates the spacer by 1-2px (imperceptible).
+    const onScroll = () => {
+      if (!isMobile()) return;
       const maxScrollY = document.documentElement.scrollHeight - window.innerHeight;
       const y = Math.max(0, Math.min(window.scrollY, maxScrollY));
       const p = Math.max(0, Math.min(1, y / COLLAPSE_ZONE));
@@ -88,11 +89,6 @@ function App() {
         prevCollapsedRef.current = collapsed;
         setHeaderCollapsed(collapsed);
       }
-    };
-
-    const onScroll = () => {
-      if (!isMobile()) return;
-      if (rafId === null) rafId = requestAnimationFrame(update);
     };
 
     const onResize = () => {
@@ -108,7 +104,6 @@ function App() {
     return () => {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onResize);
-      if (rafId !== null) cancelAnimationFrame(rafId);
     };
   }, []);
 
@@ -502,7 +497,7 @@ function App() {
 
       {/* Version Footer */}
       <footer className="mt-auto max-w-6xl mx-auto px-4 pb-6 sm:px-6 lg:px-8 text-center w-full">
-        <p className="text-xs text-gray-400 dark:text-gray-600">V2.2.5</p>
+        <p className="text-xs text-gray-400 dark:text-gray-600">V2.2.6</p>
       </footer>
 
     </div>
