@@ -61,6 +61,11 @@ PORT=8080 docker compose up -d --build
 - **react-grid-layout** — Drag-and-resize bento grid for the export infographic
 - **nginx** — Production static file serving (Docker)
 
+## What's New in v2.2.1
+
+- **Scroll Tracking Fix** — Collapsing header now uses delta-based tracking; collapse and expand both follow scroll speed exactly rather than snapping
+- **Larger Collapse Zone** — Header collapses and expands over 160px of scroll travel (up from 80px), making the motion feel proportional at any scroll speed
+
 ## What's New in v2.2
 
 - **Collapsing Header** — On mobile, the app title, progress bar, and view tabs slide out of view when scrolling down, leaving only the essential controls visible; full header restores on scroll up
