@@ -65,6 +65,10 @@ PORT=8080 docker compose up -d --build
 - **react-grid-layout** — Drag-and-resize bento grid for the export infographic
 - **nginx** — Production static file serving (Docker)
 
+## What's New in v2.3.1
+
+- **iOS Auto-Zoom Fix** — All text inputs (player search, team filter bar, export username field) bumped to `font-size: 16px`; iOS Safari no longer zooms in when tapping a search field
+
 ## What's New in v2.3
 
 - **Team Search** — Type a team name or abbreviation (e.g. "Patriots" or "buf") to instantly filter the predictions view to matching divisions

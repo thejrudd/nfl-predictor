@@ -530,7 +530,7 @@ function App() {
                 value={teamSearch}
                 onChange={e => setTeamSearch(e.target.value)}
                 placeholder="Search teams..."
-                className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full pl-8 pr-3 py-1.5 text-base rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
             <div className="flex gap-1.5 shrink-0">
@@ -604,7 +604,7 @@ function App() {
 
       {/* Version Footer */}
       <footer className="mt-auto max-w-6xl mx-auto px-4 pb-6 sm:px-6 lg:px-8 text-center w-full">
-        <p className="text-xs text-gray-400 dark:text-gray-600">V2.3</p>
+        <p className="text-xs text-gray-400 dark:text-gray-600">V2.3.1</p>
       </footer>
 
     </div>
