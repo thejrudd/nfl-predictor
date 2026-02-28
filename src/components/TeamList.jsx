@@ -397,7 +397,7 @@ const DIVISION_PAIRS = ['East', 'North', 'South', 'West'];
 
 const LG_BREAKPOINT = 1024; // matches Tailwind's lg: breakpoint
 
-const TeamList = ({ teams, onTeamClick }) => {
+const TeamList = ({ teams, onTeamClick, teamSearch = '', divisionFilter = '' }) => {
   const { getTeamRecord, predictions } = usePredictions();
   const [collapsedDivs, setCollapsedDivs] = useState({});
 
@@ -416,30 +416,48 @@ const TeamList = ({ teams, onTeamClick }) => {
     }
   };
 
+  const query = teamSearch.toLowerCase().trim();
+  const isFiltering = query !== '' || divisionFilter !== '';
+
+  const divisionVisible = (division) => {
+    if (divisionFilter && !division.startsWith(divisionFilter)) return false;
+    if (query) {
+      const divTeams = getTeamsByDivision(teams, division);
+      return divTeams.some(t =>
+        t.name.toLowerCase().includes(query) || t.id.toLowerCase().includes(query)
+      );
+    }
+    return true;
+  };
+
+  const rows = DIVISION_PAIRS.flatMap(subDiv => {
+    const afcDiv = `AFC ${subDiv}`;
+    const nfcDiv = `NFC ${subDiv}`;
+    const showAfc = divisionVisible(afcDiv);
+    const showNfc = divisionVisible(nfcDiv);
+    if (!showAfc && !showNfc) return [];
+    if (showAfc && showNfc) {
+      return [(
+        <div key={subDiv} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <DivisionCard division={afcDiv} onTeamClick={onTeamClick} getTeamRecord={getTeamRecord} predictions={predictions} allTeams={teams} collapsed={!!collapsedDivs[afcDiv]} onToggle={() => toggleDiv(afcDiv)} />
+          <DivisionCard division={nfcDiv} onTeamClick={onTeamClick} getTeamRecord={getTeamRecord} predictions={predictions} allTeams={teams} collapsed={!!collapsedDivs[nfcDiv]} onToggle={() => toggleDiv(nfcDiv)} />
+        </div>
+      )];
+    }
+    const division = showAfc ? afcDiv : nfcDiv;
+    return [(
+      <DivisionCard key={division} division={division} onTeamClick={onTeamClick} getTeamRecord={getTeamRecord} predictions={predictions} allTeams={teams} collapsed={!!collapsedDivs[division]} onToggle={() => toggleDiv(division)} />
+    )];
+  });
+
   return (
     <div className="space-y-6">
-      {DIVISION_PAIRS.map(subDiv => (
-        <div key={subDiv} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <DivisionCard
-            division={`AFC ${subDiv}`}
-            onTeamClick={onTeamClick}
-            getTeamRecord={getTeamRecord}
-            predictions={predictions}
-            allTeams={teams}
-            collapsed={!!collapsedDivs[`AFC ${subDiv}`]}
-            onToggle={() => toggleDiv(`AFC ${subDiv}`)}
-          />
-          <DivisionCard
-            division={`NFC ${subDiv}`}
-            onTeamClick={onTeamClick}
-            getTeamRecord={getTeamRecord}
-            predictions={predictions}
-            allTeams={teams}
-            collapsed={!!collapsedDivs[`NFC ${subDiv}`]}
-            onToggle={() => toggleDiv(`NFC ${subDiv}`)}
-          />
+      {rows}
+      {isFiltering && rows.length === 0 && (
+        <div className="text-center py-12 text-gray-400 dark:text-gray-500">
+          <p className="text-sm">No teams match your search.</p>
         </div>
-      ))}
+      )}
     </div>
   );
 };

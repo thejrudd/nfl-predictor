@@ -2,33 +2,16 @@
 
 ## Versioned Releases
 
-### v2.1 — PWA Support
-Make the app installable as a native-feeling app on iOS and Android home screens.
-- Add `manifest.json` with app name, icons, theme color, and `display: standalone`
-- Register a service worker for asset caching and faster repeat loads
-- Generate required icon sizes (192px, 512px minimum)
-- Link manifest in `index.html`
-- Integrate via `vite-plugin-pwa` for automatic manifest + service worker generation
+### ~~v2.3 — Search / Filter~~
+~~Quick-find a team or filter by division/conference directly from the main predictions view. A search icon in the existing controls row (alongside dark mode toggle, count badge, menu button) expands an inline search/filter bar that slides in below the header between the header and the first team card. Dismissed via X button or completing a search. Zero permanent screen space cost, no interaction with the scroll/collapse system.~~ **Shipped in v2.3.**
 
-### ~~v2.2 — Collapsing Header~~
-~~Maximize usable screen space by collapsing the header on scroll. When scrolling down, the app title, view tab buttons, and desktop controls slide up and out of view, leaving only the dark/light mode toggle, teams-predicted count, and menu button visible. Scrolling back up reveals the full header again. Implemented via scroll direction tracking and CSS height/opacity transitions on the sticky header.~~ **Shipped in v2.2. Patched in v2.2.1** (delta-based scroll tracking, larger collapse zone). **Patched in v2.2.2** (jitter dead zone, smooth top expansion). **Patched in v2.2.3** (position-based with measured heights; content locked to header bottom). **Patched in v2.2.4** (spacer div cancels document-flow shift; content truly locked to header bottom with no slipping). **Patched in v2.2.5** (removed dead zone, rAF-gated scroll handler; collapse starts on first pixel with no stickiness or initial jump). **Patched in v2.2.6** (reverted to synchronous scroll handler; rAF was adding a 1-frame lag causing spacer and header to be out of sync at gesture start and at collapse boundary). **Patched in v2.2.7** (font-aware measurement: COLLAPSE_ZONE is re-measured in document.fonts.ready callback so Barlow Condensed's actual line-wrapping is used instead of the fallback font, which caused ~40px error and the jump/stickiness).
-
-### v2.3 — Search / Filter
-Quick-find a team or filter by division/conference directly from the main predictions view.
-
-### v2.4 — Week-by-Week View
-Browse the schedule by week instead of by team, to see all matchups for a given week.
-
-### v2.5 — Season Narrative
-Auto-generate a text summary of your predicted season (e.g. "The Bills go 14-3 and clinch the AFC East in Week 15..."). Could include division race storylines, upset picks, and playoff implications.
-
-### v2.6 — Historical Comparison
+### v2.4 — Historical Comparison
 Show how your predicted record for each team compares to their actual results from recent seasons. Highlight where you're more bullish or bearish than history.
 
 ### v3.0 — Fantasy Football / Sleeper League Integration
 Allow users to connect their Sleeper league and surface fantasy-relevant insights from player stat data. Should include:
 - Sleeper league import (connect via Sleeper username or league ID)
-- Custom scoring rule input (PPR, half-PPR, standard; passing/rushing/receiving TD values; bonus thresholds; etc.)
+- Custom scoring rule input (PPR, half-PPR, standard; passing/rushing/receiving TD values; bonus thresholds; defensive scoring; etc.)
 - Per-player fantasy point totals calculated from historical and current-season stats
 - Start/sit recommendations based on recent performance, matchup, and depth chart position
 - Waiver wire / pickup suggestions based on available players and projected output
@@ -44,35 +27,32 @@ A ground-up redesign of the app's visual language and UI consistency. Goals:
 - Smoother transitions and micro-animations throughout
 - Potential dark mode refinement or new theme options
 
+### v4.5 — Week-by-Week View
+Browse the full schedule by week — see all matchups for a given week, with current predictions reflected. Navigate between weeks via prev/next controls. **Blocked on 2026 season schedule data.** When the NFL releases the 2026 schedule, update the schedule data source and implement this view. Read-only in v4.5 (reflects existing team-level picks); interactive game picking from the week view is a future enhancement.
+
 ---
 
 ## Features (Unversioned)
 
+### Season Narrative
+Auto-generate a text summary of your predicted season (e.g. "The Bills go 14-3 and clinch the AFC East in Week 15..."). Could include division race storylines, upset picks, and playoff implications. Punted from versioned roadmap — revisit when Apple Intelligence or a viable in-browser LLM option matures.
+
 ### Image Export Redesign
 Redesign as a compact, shareable summary (~1080x1080, Instagram post size) instead of a raw page screenshot. Show all team picks in a clean grid layout rather than dumping every app view into one tall image.
 
-### ~~Player Info & Rosters~~
-~~Add a player info section accessible from each team view, pulled client-side from a public API (e.g. ESPN, nfl.com, or sportsdata.io) to keep server load minimal.~~ **Shipped in v2.0.**
+### Player Info & Rosters — Expanded
+The basic player browser and profiles are live. Future expansion should include:
+- Interesting tidbits and facts about the player
+- Team history and historical records
+- Player rankings
+- Career length (starting year)
 
 ### Compare Mode
 Import a friend's exported JSON predictions and diff them against yours — highlight where you agree/disagree, show side-by-side records, and surface the biggest divergences.
 
 ---
 
-## Fun / Analytics
-
-### ~~Season Narrative~~
-~~Auto-generate a text summary of your predicted season.~~ **Planned for v2.5.**
-
-### ~~Historical Comparison~~
-~~Show how your predicted record for each team compares to their actual results from recent seasons.~~ **Planned for v2.6.**
-
----
-
 ## ChatGPT Suggested
-
-### ~~Playoff Auto-Builder~~
-~~Compute a full playoff picture directly from saved picks — no backend needed.~~ **Shipped in v1.x.**
 
 ### Shareable Prediction Card
 A dedicated `<PredictionCard />` component that renders a clean per-team card showing:
@@ -116,9 +96,6 @@ Once the real season starts, track how accurate each user's predictions were wee
 #### Undo/Redo
 Add undo support so users can back out of recent changes without resetting everything.
 
-#### ~~Randomize Predictions~~
-~~A "fill random" button that generates a valid set of predictions instantly.~~ **Shipped in v1.x.**
-
 ### Data & Analytics
 
 #### Strength of Schedule Visualization
@@ -131,9 +108,6 @@ Pull Vegas odds or public power rankings to show how your picks compare to conse
 Show projected draft order for non-playoff teams based on predicted records.
 
 ### Polish
-
-#### ~~PWA Support~~
-~~Add a manifest and service worker so the app can be installed on mobile home screens as a native-feeling app.~~ **Shipped in v2.1.**
 
 #### Richer PWA Install UI *(backburner)*
 Add `screenshots` to the web manifest so Chrome shows the enhanced install dialog with app previews. Requires one desktop screenshot (1280×800, `form_factor: wide`) and one mobile screenshot (390×844, `form_factor: narrow`) saved to `public/screenshots/` and referenced in the `screenshots` array in `vite.config.js`. Non-blocking — basic install prompt works without this.

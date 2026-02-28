@@ -26,6 +26,9 @@ function App() {
   const [exportPreviewOpen, setExportPreviewOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [teamSearch, setTeamSearch] = useState('');
+  const [divisionFilter, setDivisionFilter] = useState('');
   const { isInstallable, isInstalled, triggerInstall } = usePWAInstall();
 
   // Collapsing header — position-based, collapse zone = exact measured collapsible height
@@ -36,6 +39,7 @@ function App() {
   const controlsRowRef = useRef(null);
   const prevCollapsedRef = useRef(false);
   const spacerRef = useRef(null);
+  const searchInputRef = useRef(null);
 
   useEffect(() => {
     const isMobile = () => window.innerWidth < 640;
@@ -137,6 +141,12 @@ function App() {
       window.removeEventListener('resize', onResize);
     };
   }, []);
+
+  useEffect(() => {
+    setSearchOpen(false);
+    setTeamSearch('');
+    setDivisionFilter('');
+  }, [currentView]);
 
   useEffect(() => {
     loadScheduleData()
@@ -306,6 +316,19 @@ function App() {
                   About
                 </a>
               </div>
+
+              {/* Search button — mobile only, predictions view only */}
+              {currentView === 'predictions' && (
+                <button
+                  onClick={() => setSearchOpen(s => !s)}
+                  className={`sm:hidden p-2 rounded-lg transition-colors ${searchOpen ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                  aria-label="Search and filter teams"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </button>
+              )}
 
               {/* Mobile menu button */}
               <div className="relative sm:hidden ml-auto">
@@ -487,12 +510,65 @@ function App() {
       {/* Spacer — grows 1:1 with header collapse on mobile so content stays locked to header bottom */}
       <div ref={spacerRef} />
 
+      {/* Search / Filter bar — slides in below header on predictions view */}
+      <div
+        style={{
+          maxHeight: (searchOpen && currentView === 'predictions') ? '56px' : '0px',
+          overflow: 'hidden',
+          transition: 'max-height 200ms ease-in-out',
+        }}
+      >
+        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-2">
+          <div className="max-w-6xl mx-auto flex items-center gap-2">
+            <div className="flex-1 relative">
+              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={teamSearch}
+                onChange={e => setTeamSearch(e.target.value)}
+                placeholder="Search teams..."
+                className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            <div className="flex gap-1.5 shrink-0">
+              {[['', 'All'], ['AFC', 'AFC'], ['NFC', 'NFC']].map(([val, label]) => (
+                <button
+                  key={val}
+                  onClick={() => setDivisionFilter(val)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${
+                    divisionFilter === val
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => { setSearchOpen(false); setTeamSearch(''); setDivisionFilter(''); }}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shrink-0"
+              aria-label="Close search"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Main Content */}
       <div className="flex-1 max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8 w-full">
         {currentView === 'predictions' && (
           <TeamList
             teams={scheduleData.teams}
             onTeamClick={setSelectedTeam}
+            teamSearch={teamSearch}
+            divisionFilter={divisionFilter}
           />
         )}
         {currentView === 'standings' && (
@@ -528,7 +604,7 @@ function App() {
 
       {/* Version Footer */}
       <footer className="mt-auto max-w-6xl mx-auto px-4 pb-6 sm:px-6 lg:px-8 text-center w-full">
-        <p className="text-xs text-gray-400 dark:text-gray-600">V2.2.8</p>
+        <p className="text-xs text-gray-400 dark:text-gray-600">V2.3</p>
       </footer>
 
     </div>

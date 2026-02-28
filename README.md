@@ -11,6 +11,7 @@ An interactive web app for predicting the 2026 NFL season. Pick game-by-game out
 - **Division Standings** — Auto-generated standings sorted by wins, division record, and strength of schedule
 - **Playoff Seeding** — AFC and NFC brackets with division winners and wild card spots
 - **Shareable Infographic** — Create a custom bento-grid graphic with up to 11 insight sections (Best & Worst Records, Playoff Seeds, Division Winners, Conference Showdown, Toughest Division, Bold Predictions, Worst Division, Strength of Schedule, Closest Division Race, Wild Card Teams, Parity Index). Drag and resize sections to build your layout.
+- **Team Search & Filter** — Search teams by name or abbreviation and filter by conference (AFC/NFC) from the predictions view; toggled via a search icon in the header controls with zero persistent screen cost
 - **Player Browser** — Browse all 32 rosters by conference, division, and position; search players by name across the league
 - **Player Profiles** — Full profile pages with headshot, career stats, game log, and Pro Bowl / All-Pro honors
 - **Export/Import** — Save predictions as JSON; import JSON to restore picks
@@ -64,10 +65,12 @@ PORT=8080 docker compose up -d --build
 - **react-grid-layout** — Drag-and-resize bento grid for the export infographic
 - **nginx** — Production static file serving (Docker)
 
-## What's New in v2.2.8
+## What's New in v2.3
 
-- **Eliminated Gesture-Detection Bounce** — Added a `touchmove` listener alongside `scroll`; iOS fires `touchmove` during the gesture-detection phase (before the first `scroll` event), and `window.scrollY` is already updated by then, so the animation now starts on the first pixel of finger movement
-- **Sub-Pixel Boundary Snap** — `maxHeight` values below 1px are snapped to `0px`, preventing a sub-pixel sliver of clipped text from flickering when inertial scroll oscillates near the collapse boundary
+- **Team Search** — Type a team name or abbreviation (e.g. "Patriots" or "buf") to instantly filter the predictions view to matching divisions
+- **Conference Filter** — All / AFC / NFC chips in the filter bar let you narrow to one conference with a single tap
+- **Space-Efficient Design** — The filter bar is hidden by default and slides in below the header via a search icon in the controls row; no persistent screen space used, no interaction with the collapsing header
+- **Auto-Clears on Navigation** — Filter state resets whenever you switch to a different view
 
 ## What's New in v2.2
 
@@ -95,12 +98,10 @@ PORT=8080 docker compose up -d --build
 
 ## Roadmap
 
-**v2.3** — Search / filter teams by name, division, or conference
-**v2.4** — Week-by-week schedule view
-**v2.5** — Season narrative (auto-generated text summary of your predicted season)
-**v2.6** — Historical comparison (predicted records vs. each team's actual past results)
+**v2.4** — Historical comparison (predicted records vs. each team's actual past results)
 **v3.0** — Fantasy football / Sleeper league integration (custom scoring, start/sit recommendations, projections)
-**v4.0** — Visual overhaul (unified design system, redesigned cards and bracket, polished mobile experience)
+**v4.0** — Visual overhaul (unified design system, bottom tab bar, redesigned cards and bracket, polished mobile experience)
+**v4.5** — Week-by-week schedule view *(blocked on 2026 season schedule data)*
 
 ## Project Structure
 
