@@ -9,6 +9,8 @@ export default function ActionSheet({
   onRandom,
   onReset,
   onInstall,
+  onMyTeam,
+  favoriteTeam,
 }) {
   const hasPicks = predictionCount > 0;
   const isPredictions = activeTab === 'predictions';
@@ -47,6 +49,11 @@ export default function ActionSheet({
 
         {/* Primary actions group */}
         <div className="px-4 py-2">
+          <ActionRow
+            label={favoriteTeam ? `My Team — ${favoriteTeam.toUpperCase()}` : 'My Team'}
+            onClick={onMyTeam}
+          />
+          <Divider />
           <ActionRow label="Guide" onClick={onGuide} />
           {isPredictions && (
             <>

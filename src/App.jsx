@@ -17,6 +17,7 @@ import BottomTabBar from './components/BottomTabBar';
 import SeasonSubNav from './components/SeasonSubNav';
 import ActionSheet from './components/ActionSheet';
 import Sidebar from './components/Sidebar';
+import FavoriteTeamPicker from './components/FavoriteTeamPicker';
 
 function App() {
   const [scheduleData, setScheduleData] = useState(null);
@@ -29,12 +30,13 @@ function App() {
   const [seasonView, setSeasonView] = useState('predictions');
 
   const { getPredictionCount, resetAllPredictions, predictions, importPredictions, generateRandomPredictions } = usePredictions();
-  const { darkMode, toggleDarkMode } = useTheme();
+  const { darkMode, toggleDarkMode, favoriteTeam, setFavoriteTeam } = useTheme();
   const fileInputRef = useRef(null);
 
   const [exportPreviewOpen, setExportPreviewOpen] = useState(false);
   const [actionSheetOpen, setActionSheetOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [teamPickerOpen, setTeamPickerOpen] = useState(false);
 
   const [teamSearch, setTeamSearch] = useState('');
   const [divisionFilter, setDivisionFilter] = useState('');
@@ -87,6 +89,7 @@ function App() {
   };
   const handleInstall = () => { triggerInstall(); setActionSheetOpen(false); };
   const handleImportClick = () => { fileInputRef.current?.click(); setActionSheetOpen(false); };
+  const handleMyTeam = () => { setTeamPickerOpen(true); setActionSheetOpen(false); };
 
   if (loading) {
     return (
@@ -130,6 +133,8 @@ function App() {
         isInstallable={isInstallable}
         isInstalled={isInstalled}
         onInstall={handleInstall}
+        favoriteTeam={favoriteTeam}
+        onMyTeam={handleMyTeam}
       />
 
       {/* ── Main panel ───────────────────────────────────────── */}
@@ -207,7 +212,7 @@ function App() {
                           className="px-3 py-2 rounded-xl text-xs font-semibold transition-colors"
                           style={{
                             background: divisionFilter === val ? 'var(--color-signature)' : 'var(--color-fill-secondary)',
-                            color: divisionFilter === val ? '#0C0F14' : 'var(--color-label-secondary)',
+                            color: divisionFilter === val ? 'var(--color-signature-fg)' : 'var(--color-label-secondary)',
                           }}
                           aria-pressed={divisionFilter === val}
                         >
@@ -287,11 +292,14 @@ function App() {
           onRandom={handleRandom}
           onReset={handleReset}
           onInstall={isInstallable && !isInstalled ? handleInstall : null}
+          onMyTeam={handleMyTeam}
+          favoriteTeam={favoriteTeam}
         />
       )}
 
       {/* ── Modals ────────────────────────────────────────────── */}
       {guideOpen && <Guide onClose={() => setGuideOpen(false)} activeTab={activeTab} />}
+      {teamPickerOpen && <FavoriteTeamPicker onClose={() => setTeamPickerOpen(false)} />}
 
       {exportPreviewOpen && (
         <ExportPreview teams={scheduleData.teams} onClose={() => setExportPreviewOpen(false)} />

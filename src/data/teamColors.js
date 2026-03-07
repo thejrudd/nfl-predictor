@@ -1,4 +1,48 @@
 // Official NFL team color palettes — all 32 teams.
+// TEAM_NAMES: full team name keyed by lowercase abbreviation.
+// TEAM_DIVISIONS: conference/division structure for the team picker UI.
+
+export const TEAM_NAMES = {
+  buf: 'Buffalo Bills',        mia: 'Miami Dolphins',
+  ne:  'New England Patriots', nyj: 'New York Jets',
+  bal: 'Baltimore Ravens',     cin: 'Cincinnati Bengals',
+  cle: 'Cleveland Browns',     pit: 'Pittsburgh Steelers',
+  hou: 'Houston Texans',       ind: 'Indianapolis Colts',
+  jax: 'Jacksonville Jaguars', ten: 'Tennessee Titans',
+  den: 'Denver Broncos',       kc:  'Kansas City Chiefs',
+  lv:  'Las Vegas Raiders',    lac: 'Los Angeles Chargers',
+  dal: 'Dallas Cowboys',       nyg: 'New York Giants',
+  phi: 'Philadelphia Eagles',  wsh: 'Washington Commanders',
+  chi: 'Chicago Bears',        det: 'Detroit Lions',
+  gb:  'Green Bay Packers',    min: 'Minnesota Vikings',
+  atl: 'Atlanta Falcons',      car: 'Carolina Panthers',
+  no:  'New Orleans Saints',   tb:  'Tampa Bay Buccaneers',
+  ari: 'Arizona Cardinals',    la:  'Los Angeles Rams',
+  sf:  'San Francisco 49ers',  sea: 'Seattle Seahawks',
+};
+
+export const TEAM_DIVISIONS = [
+  {
+    conference: 'AFC',
+    divisions: [
+      { name: 'AFC East',  teams: ['buf', 'mia', 'ne',  'nyj'] },
+      { name: 'AFC North', teams: ['bal', 'cin', 'cle', 'pit'] },
+      { name: 'AFC South', teams: ['hou', 'ind', 'jax', 'ten'] },
+      { name: 'AFC West',  teams: ['den', 'kc',  'lv',  'lac'] },
+    ],
+  },
+  {
+    conference: 'NFC',
+    divisions: [
+      { name: 'NFC East',  teams: ['dal', 'nyg', 'phi', 'wsh'] },
+      { name: 'NFC North', teams: ['chi', 'det', 'gb',  'min'] },
+      { name: 'NFC South', teams: ['atl', 'car', 'no',  'tb']  },
+      { name: 'NFC West',  teams: ['ari', 'la',  'sf',  'sea'] },
+    ],
+  },
+];
+
+
 // primary/secondary: used in light mode contexts.
 // darkPrimary/darkSecondary: adjusted for dark mode where the primary
 // is too dark to read on a dark background (e.g. Raiders black → silver,
