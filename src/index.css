@@ -38,6 +38,8 @@
 
   /* Signature amber — decorative only, never for small body text */
   --color-signature:       #F5B700;
+  /* Foreground color for text/icons placed on a --color-signature background */
+  --color-signature-fg:    #0C0F14;
 
   /* Bars */
   --bar-bg:                rgba(242, 241, 236, 0.88);
@@ -72,6 +74,7 @@
 
   /* Signature amber — same in both modes, always decorative */
   --color-signature:       #F5B700;
+  --color-signature-fg:    #0C0F14;
 
   /* Bars */
   --bar-bg:                rgba(12, 15, 20, 0.90);

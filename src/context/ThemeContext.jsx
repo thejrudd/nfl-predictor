@@ -1,6 +1,20 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { TEAM_COLORS } from '../data/teamColors';
 
 const ThemeContext = createContext();
+
+// Returns the relative luminance of an RGB hex color (0–1).
+function getLuminance(hex) {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  return 0.299 * r + 0.587 * g + 0.114 * b;
+}
+
+// Returns the best foreground text color to place on top of a given hex bg.
+export function getSignatureFg(hex) {
+  return getLuminance(hex) > 0.45 ? '#0C0F14' : '#FFFFFF';
+}
 
 export const ThemeProvider = ({ children }) => {
   const [darkMode, setDarkMode] = useState(() => {
@@ -9,6 +23,11 @@ export const ThemeProvider = ({ children }) => {
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
+  const [favoriteTeam, setFavoriteTeamState] = useState(() => {
+    return localStorage.getItem('nfl-predictor-favorite-team') || null;
+  });
+
+  // Apply dark mode class
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -18,10 +37,34 @@ export const ThemeProvider = ({ children }) => {
     localStorage.setItem('nfl-predictor-dark-mode', darkMode);
   }, [darkMode]);
 
+  // Apply team CSS vars whenever favoriteTeam or darkMode changes
+  useEffect(() => {
+    const root = document.documentElement;
+    const colors = favoriteTeam ? TEAM_COLORS[favoriteTeam] : null;
+
+    if (colors) {
+      const sig = darkMode ? colors.darkPrimary : colors.primary;
+      root.style.setProperty('--color-signature', sig);
+      root.style.setProperty('--color-signature-fg', getSignatureFg(sig));
+    } else {
+      root.style.removeProperty('--color-signature');
+      root.style.removeProperty('--color-signature-fg');
+    }
+  }, [favoriteTeam, darkMode]);
+
   const toggleDarkMode = () => setDarkMode(prev => !prev);
 
+  const setFavoriteTeam = (teamKey) => {
+    setFavoriteTeamState(teamKey);
+    if (teamKey) {
+      localStorage.setItem('nfl-predictor-favorite-team', teamKey);
+    } else {
+      localStorage.removeItem('nfl-predictor-favorite-team');
+    }
+  };
+
   return (
-    <ThemeContext.Provider value={{ darkMode, toggleDarkMode }}>
+    <ThemeContext.Provider value={{ darkMode, toggleDarkMode, favoriteTeam, setFavoriteTeam }}>
       {children}
     </ThemeContext.Provider>
   );

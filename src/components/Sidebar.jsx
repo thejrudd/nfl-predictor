@@ -15,6 +15,8 @@ export default function Sidebar({
   isInstallable,
   isInstalled,
   onInstall,
+  favoriteTeam,
+  onMyTeam,
 }) {
   const progress = totalTeams > 0 ? (predictionCount / totalTeams) * 100 : 0;
 
@@ -34,11 +36,25 @@ export default function Sidebar({
         >
           PREDICTOR
         </div>
-        <div
-          className="font-semibold mt-2"
-          style={{ fontSize: '11px', color: 'var(--color-signature)', letterSpacing: '0.06em' }}
-        >
-          2026 SEASON
+        <div className="flex items-center justify-between mt-2">
+          <div
+            className="font-semibold"
+            style={{ fontSize: '11px', color: 'var(--color-signature)', letterSpacing: '0.06em' }}
+          >
+            2026 SEASON
+          </div>
+          {favoriteTeam && (
+            <button
+              onClick={onMyTeam}
+              title={`My Team: ${favoriteTeam.toUpperCase()}`}
+              className="flex items-center gap-1.5 px-2 py-0.5 rounded-full transition-opacity active:opacity-60"
+              style={{ background: 'var(--color-signature)', color: 'var(--color-signature-fg)' }}
+            >
+              <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em' }}>
+                {favoriteTeam.toUpperCase()}
+              </span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -130,6 +146,24 @@ export default function Sidebar({
       {/* Footer */}
       <div className="sidebar-footer">
         <button
+          onClick={onMyTeam}
+          className="sidebar-action-item"
+          style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          </svg>
+          My Team
+          {favoriteTeam && (
+            <span
+              className="ml-auto text-xs font-bold"
+              style={{ color: 'var(--color-signature)' }}
+            >
+              {favoriteTeam.toUpperCase()}
+            </span>
+          )}
+        </button>
+        <button
           onClick={onToggleDarkMode}
           className="sidebar-action-item"
           aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -163,7 +197,7 @@ export default function Sidebar({
           className="px-5 py-3 text-xs"
           style={{ color: 'var(--color-label-tertiary)' }}
         >
-          v3.0
+          v3.1
         </div>
       </div>
     </aside>
