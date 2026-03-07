@@ -24,8 +24,11 @@ export const PredictionProvider = ({ children }) => {
   // Save predictions to localStorage whenever they change
   useEffect(() => {
     if (Object.keys(predictions).length > 0) {
-      localStorage.setItem('nfl-predictions-2026', JSON.stringify(predictions));
-      console.log('Saved predictions to localStorage');
+      try {
+        localStorage.setItem('nfl-predictions-2026', JSON.stringify(predictions));
+      } catch (e) {
+        console.warn('Could not save predictions to localStorage:', e);
+      }
     }
   }, [predictions]);
 
@@ -132,11 +135,8 @@ export const PredictionProvider = ({ children }) => {
 
   // Reset all predictions
   const resetAllPredictions = () => {
-    if (window.confirm('Are you sure you want to reset all predictions? This cannot be undone.')) {
-      setPredictions({});
-      localStorage.removeItem('nfl-predictions-2026');
-      console.log('All predictions reset');
-    }
+    setPredictions({});
+    try { localStorage.removeItem('nfl-predictions-2026'); } catch (e) { console.warn(e); }
   };
 
   // Get count of teams with predictions
@@ -146,7 +146,6 @@ export const PredictionProvider = ({ children }) => {
 
   // Generate random predictions for all teams with consistent game results
   const generateRandomPredictions = (allTeams) => {
-    if (!window.confirm('This will replace all current predictions with random ones. Continue?')) return;
 
     const gameOutcomes = {};
 
@@ -176,6 +175,7 @@ export const PredictionProvider = ({ children }) => {
 
       for (let i = 0; i < team.opponents.length; i++) {
         const result = gameOutcomes[`${team.id}-${i}`];
+        if (!result) continue; // skip unresolved games (correspondingIdx === -1 edge case)
         gameResults[i] = result;
         if (result === 'W') wins++;
         else if (result === 'L') losses++;
@@ -189,13 +189,13 @@ export const PredictionProvider = ({ children }) => {
     }
 
     setPredictions(newPredictions);
-    localStorage.setItem('nfl-predictions-2026', JSON.stringify(newPredictions));
+    try { localStorage.setItem('nfl-predictions-2026', JSON.stringify(newPredictions)); } catch (e) { console.warn(e); }
   };
 
   // Import predictions from an exported JSON object
   const importPredictions = (data) => {
     setPredictions(data);
-    localStorage.setItem('nfl-predictions-2026', JSON.stringify(data));
+    try { localStorage.setItem('nfl-predictions-2026', JSON.stringify(data)); } catch (e) { console.warn(e); }
   };
 
   return (

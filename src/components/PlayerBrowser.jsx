@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { fetchRoster, fetchDepthChart, headshot } from '../utils/playerApi';
+import { fetchRoster, headshot } from '../utils/playerApi';
 import PlayerProfile from './PlayerProfile';
+import TeamPage from './TeamPage';
 
 const POSITION_FILTERS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'OL', 'DL', 'LB', 'DB', 'K', 'P'];
 
@@ -28,21 +29,16 @@ function matchesFilter(position, filter) {
 }
 
 const PlayerBrowser = ({ teams }) => {
+  const [selectedTeam, setSelectedTeam]     = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
-  const [expandedTeam, setExpandedTeam] = useState(null);
-  const [rosters, setRosters] = useState({});
-  const [depthCharts, setDepthCharts] = useState({});
-  const [loadingTeam, setLoadingTeam] = useState(null);
-  const [rosterError, setRosterError] = useState(null);
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchQuery, setSearchQuery]               = useState('');
+  const [searchResults, setSearchResults]           = useState([]);
+  const [searchLoading, setSearchLoading]           = useState(false);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [positionFilter, setPositionFilter]         = useState('ALL');
 
-  const [positionFilter, setPositionFilter] = useState('ALL');
-
-  const searchRef = useRef(null);
+  const searchRef  = useRef(null);
   const debounceRef = useRef(null);
 
   // Debounced client-side search across all team rosters (rosters are cached in localStorage)
@@ -95,30 +91,6 @@ const PlayerBrowser = ({ teams }) => {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const handleTeamClick = async (teamId) => {
-    if (expandedTeam === teamId) {
-      setExpandedTeam(null);
-      return;
-    }
-    setExpandedTeam(teamId);
-    setRosterError(null);
-    if (!rosters[teamId]) {
-      setLoadingTeam(teamId);
-      try {
-        const [players, depthChart] = await Promise.all([
-          fetchRoster(teamId),
-          fetchDepthChart(teamId).catch(() => ({})),
-        ]);
-        setRosters(prev => ({ ...prev, [teamId]: players }));
-        setDepthCharts(prev => ({ ...prev, [teamId]: depthChart }));
-      } catch {
-        setRosterError(teamId);
-      } finally {
-        setLoadingTeam(null);
-      }
-    }
-  };
-
   const handleSelectPlayer = (player) => {
     setSelectedPlayer(player);
     setShowSearchDropdown(false);
@@ -126,9 +98,8 @@ const PlayerBrowser = ({ teams }) => {
     setSearchResults([]);
   };
 
-  const handleBack = () => setSelectedPlayer(null);
+  // ── Render priority: player profile → team page → browser list ────────────
 
-  // Full-page profile
   if (selectedPlayer) {
     return (
       <PlayerProfile
@@ -136,7 +107,17 @@ const PlayerBrowser = ({ teams }) => {
         playerMeta={selectedPlayer}
         teamId={selectedPlayer.teamId}
         teams={teams}
-        onBack={handleBack}
+        onBack={() => setSelectedPlayer(null)}
+      />
+    );
+  }
+
+  if (selectedTeam) {
+    return (
+      <TeamPage
+        team={selectedTeam}
+        onBack={() => setSelectedTeam(null)}
+        onSelectPlayer={handleSelectPlayer}
       />
     );
   }
@@ -179,7 +160,7 @@ const PlayerBrowser = ({ teams }) => {
                   onClick={() => handleSelectPlayer(player)}
                   className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 text-left transition-colors"
                 >
-                  <PlayerThumbnail id={player.id} name={player.displayName} size={8} />
+                  <PlayerThumbnail id={player.id} name={player.displayName} />
                   <div className="min-w-0">
                     <div className="font-semibold text-gray-800 dark:text-gray-100 text-sm truncate">{player.displayName}</div>
                     <div className="text-xs text-gray-400">
@@ -227,14 +208,7 @@ const PlayerBrowser = ({ teams }) => {
                       <TeamCard
                         key={team.id}
                         team={team}
-                        expanded={expandedTeam === team.id}
-                        loading={loadingTeam === team.id}
-                        error={rosterError === team.id}
-                        roster={rosters[team.id] ?? null}
-                        depthChart={depthCharts[team.id] ?? {}}
-                        positionFilter={positionFilter}
-                        onTeamClick={() => handleTeamClick(team.id)}
-                        onPlayerClick={handleSelectPlayer}
+                        onClick={() => setSelectedTeam(team)}
                       />
                     ))}
                   </div>
@@ -248,112 +222,39 @@ const PlayerBrowser = ({ teams }) => {
   );
 };
 
-// ---- Team Card ----
+// ── Team Card — simple drill-down button ──────────────────────────────────────
 
-const TeamCard = ({ team, expanded, loading, error, roster, depthChart, positionFilter, onTeamClick, onPlayerClick }) => {
-  const filteredRoster = roster
-    ? roster
-        .filter(p => matchesFilter(p.position, positionFilter))
-        .sort((a, b) => {
-          const ra = depthChart[a.id] ?? Infinity;
-          const rb = depthChart[b.id] ?? Infinity;
-          return ra - rb;
-        })
-    : [];
-
-  return (
-    <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-all ${expanded ? 'col-span-2 sm:col-span-4' : ''}`}>
-      {/* Team header */}
-      <button
-        onClick={onTeamClick}
-        className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-      >
-        <img
-          src={`https://a.espncdn.com/i/teamlogos/nfl/500/${team.id}.png`}
-          alt={team.name}
-          className="w-10 h-10 object-contain shrink-0"
-          onError={e => { e.target.style.display = 'none'; }}
-        />
-        <div className="flex-1 text-left min-w-0">
-          <div className="font-bold text-gray-800 dark:text-gray-100 text-sm truncate">{team.name}</div>
-          <div className="text-xs text-gray-400 font-mono">{team.id}</div>
-        </div>
-        {loading ? (
-          <svg className="animate-spin w-4 h-4 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-        ) : (
-          <svg className={`w-4 h-4 text-gray-400 transition-transform shrink-0 ${expanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        )}
-      </button>
-
-      {/* Expanded roster */}
-      {expanded && (
-        <div className="border-t border-gray-100 dark:border-gray-700">
-          {error && (
-            <p className="px-4 py-3 text-sm text-red-500 dark:text-red-400 italic">Failed to load roster.</p>
-          )}
-          {!error && filteredRoster.length === 0 && !loading && (
-            <p className="px-4 py-3 text-sm text-gray-400 italic">
-              {roster ? 'No players match this position filter.' : 'Loading…'}
-            </p>
-          )}
-          {filteredRoster.length > 0 && (
-            <div className="divide-y divide-gray-100 dark:divide-gray-700 max-h-80 overflow-y-auto">
-              {filteredRoster.map(player => {
-                const rank = depthChart[player.id];
-                const showRank = positionFilter !== 'ALL' && rank != null;
-                return (
-                  <button
-                    key={player.id}
-                    onClick={() => onPlayerClick(player)}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-left transition-colors"
-                  >
-                    <PlayerThumbnail id={player.id} name={player.displayName} size={8} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="font-semibold text-gray-800 dark:text-gray-100 text-sm truncate">
-                          {player.displayName}
-                        </span>
-                        {showRank && (
-                          <span className="shrink-0 text-[10px] font-bold tabular-nums text-blue-500 dark:text-blue-400">
-                            {positionFilter}{rank}
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        #{player.jersey} · {player.positionName || player.position}
-                      </div>
-                    </div>
-                    <svg className="w-4 h-4 text-gray-300 dark:text-gray-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
+const TeamCard = ({ team, onClick }) => (
+  <button
+    onClick={onClick}
+    className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-3 flex items-center gap-3 w-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
+    style={{ height: '64px' }}
+  >
+    <img
+      src={`https://a.espncdn.com/i/teamlogos/nfl/500/${team.id.toLowerCase()}.png`}
+      alt={team.name}
+      className="w-10 h-10 object-contain shrink-0"
+      onError={e => { e.target.style.display = 'none'; }}
+    />
+    <div className="flex-1 min-w-0">
+      <div className="font-bold text-gray-800 dark:text-gray-100 text-sm leading-tight">{team.name}</div>
     </div>
-  );
-};
+    <svg className="w-4 h-4 text-gray-300 dark:text-gray-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    </svg>
+  </button>
+);
 
-// Small headshot with initials fallback
-const PlayerThumbnail = ({ id, name, size = 8 }) => {
+// Small headshot with initials fallback (used in search dropdown)
+const PlayerThumbnail = ({ id, name }) => {
   const [err, setErr] = useState(false);
   const initials = (name ?? '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-  const cls = `w-${size} h-${size} rounded-full object-cover bg-gray-100 dark:bg-gray-700 shrink-0`;
-
   return err ? (
-    <div className={`w-${size} h-${size} rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center shrink-0`}>
+    <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center shrink-0">
       <span className="text-[10px] font-bold text-gray-400">{initials}</span>
     </div>
   ) : (
-    <img src={headshot(id)} alt="" className={cls} onError={() => setErr(true)} />
+    <img src={headshot(id)} alt="" className="w-8 h-8 rounded-full object-cover bg-gray-100 dark:bg-gray-700 shrink-0" onError={() => setErr(true)} />
   );
 };
 

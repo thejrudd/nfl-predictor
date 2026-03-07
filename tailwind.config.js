@@ -15,7 +15,7 @@ export default {
         // 'Teko' - Very condensed, NFL Network style
         // 'Anton' - Super bold, impact style
         'display': ['"Barlow Condensed"', 'sans-serif'],
-        'sans': ['Inter', 'system-ui', 'sans-serif'],
+        'sans': ['"Figtree"', 'system-ui', 'sans-serif'],
       },
     },
   },

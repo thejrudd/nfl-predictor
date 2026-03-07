@@ -5,19 +5,10 @@
 ### ~~v2.3 — Search / Filter~~
 ~~Quick-find a team or filter by division/conference directly from the main predictions view. A search icon in the existing controls row (alongside dark mode toggle, count badge, menu button) expands an inline search/filter bar that slides in below the header between the header and the first team card. Dismissed via X button or completing a search. Zero permanent screen space cost, no interaction with the scroll/collapse system.~~ **Shipped in v2.3.**
 
-### v2.4 — Historical Comparison
+### v3.1 — Historical Comparison
 Show how your predicted record for each team compares to their actual results from recent seasons. Highlight where you're more bullish or bearish than history.
 
-### v3.0 — Fantasy Football / Sleeper League Integration
-Allow users to connect their Sleeper league and surface fantasy-relevant insights from player stat data. Should include:
-- Sleeper league import (connect via Sleeper username or league ID)
-- Custom scoring rule input (PPR, half-PPR, standard; passing/rushing/receiving TD values; bonus thresholds; defensive scoring; etc.)
-- Per-player fantasy point totals calculated from historical and current-season stats
-- Start/sit recommendations based on recent performance, matchup, and depth chart position
-- Waiver wire / pickup suggestions based on available players and projected output
-- Season-long projections and rankings by position under the user's scoring system
-
-### v4.0 — Visual Overhaul
+### v3.0 — Visual Overhaul
 A ground-up redesign of the app's visual language and UI consistency. Goals:
 - **Bottom tab bar navigation** — split the app into two distinct top-level domains: "Season" (Make Predictions, Standings, Playoff Seeding) and "Players" (Player Browser, Player Profiles, future Fantasy/Sleeper integration). Each tab has its own scroll context and sub-navigation. This is the standard pattern for mobile sports apps (ESPN, NFL app) and scales naturally as each domain grows.
 - Unified design system — consistent spacing, typography scale, and color tokens across all views
@@ -25,7 +16,16 @@ A ground-up redesign of the app's visual language and UI consistency. Goals:
 - Improved standings and playoff bracket presentation
 - Polished mobile experience with touch-optimized interactions
 - Smoother transitions and micro-animations throughout
-- Potential dark mode refinement or new theme options
+- **Team color theming** — when viewing a specific team's detail or profile, the UI adopts that team's colors: styled buttons, accent highlights, and iconography derived from the team identity. Requires separate light and dark palettes per team since some primaries contrast better on dark backgrounds and others on light. Highlight/accent colors should be derived from the team's secondary color where the primary is too saturated or low-contrast.
+
+### v4.0 — Fantasy Football / Sleeper League Integration
+Allow users to connect their Sleeper league and surface fantasy-relevant insights from player stat data. Should include:
+- Sleeper league import (connect via Sleeper username or league ID)
+- Custom scoring rule input (PPR, half-PPR, standard; passing/rushing/receiving TD values; bonus thresholds; defensive scoring; etc.)
+- Per-player fantasy point totals calculated from historical and current-season stats
+- Start/sit recommendations based on recent performance, matchup, and depth chart position
+- Waiver wire / pickup suggestions based on available players and projected output
+- Season-long projections and rankings by position under the user's scoring system
 
 ### v4.5 — Week-by-Week View
 Browse the full schedule by week — see all matchups for a given week, with current predictions reflected. Navigate between weeks via prev/next controls. **Blocked on 2026 season schedule data.** When the NFL releases the 2026 schedule, update the schedule data source and implement this view. Read-only in v4.5 (reflects existing team-level picks); interactive game picking from the week view is a future enhancement.

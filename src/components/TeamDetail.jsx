@@ -46,6 +46,13 @@ const TeamDetail = ({ team, allTeams, onClose }) => {
     if (id === team.id) return sum;
     return sum + record.losses;
   }, 0);
+  // Ties reduce available wins: each tied game contributes 2 tie entries (one per team)
+  const otherTies = Object.entries(predictions).reduce((sum, [id, record]) => {
+    if (id === team.id) return sum;
+    return sum + (record.ties || 0);
+  }, 0);
+  const totalLeagueTies = otherTies + ties;
+  const expectedWins = TOTAL_GAMES - Math.round(totalLeagueTies / 2);
   const remainingUnpredicted = allTeams.filter(t => t.id !== team.id && !predictions[t.id]).length;
 
   // This team's wins + remaining unpredicted teams' wins must fill the gap to 272
@@ -66,6 +73,7 @@ const TeamDetail = ({ team, allTeams, onClose }) => {
 
   // Calculate max possible division wins for this team
   const divisionTeams = allTeams.filter(t => t.division === team.division);
+  const allDivisionPredicted = divisionTeams.every(t => t.id === team.id || !!predictions[t.id]);
   const otherTeamsDivisionWins = divisionTeams.reduce((sum, t) => {
     if (t.id === team.id) return sum;
     const record = predictions[t.id];
@@ -249,11 +257,26 @@ const TeamDetail = ({ team, allTeams, onClose }) => {
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-800 dark:text-gray-200">League Balance</p>
                     <p className="text-xs mt-1 text-gray-600 dark:text-gray-400">
-                      <strong>{otherPredictedWins}</strong> of <strong>272</strong> total wins assigned.
-                      {remainingUnpredicted > 0 && (
-                        <> {remainingUnpredicted} team{remainingUnpredicted !== 1 ? 's' : ''} still unpredicted.</>
-                      )}
-                      {' '}This team can have <strong>{combinedGlobalMinWins}-{combinedGlobalMaxWins}</strong> wins.
+                      {(() => {
+                        const totalAssigned = otherPredictedWins + wins;
+                        const effectiveMin = Math.min(finalMinWins, finalMaxWins);
+                        const effectiveMax = Math.max(finalMinWins, finalMaxWins);
+                        if (remainingUnpredicted === 0 && existingRecord) {
+                          return <><strong>{totalAssigned}</strong> of <strong>{expectedWins}</strong> total wins assigned.</>;
+                        }
+                        return (
+                          <>
+                            <strong>{totalAssigned}</strong> of <strong>{expectedWins}</strong> total wins assigned.
+                            {remainingUnpredicted > 0 && (
+                              <> {remainingUnpredicted} team{remainingUnpredicted !== 1 ? 's' : ''} still unpredicted.</>
+                            )}
+                            {effectiveMin === effectiveMax
+                              ? <> This team needs exactly <strong>{effectiveMin}</strong> wins.</>
+                              : <> This team can have <strong>{effectiveMin}–{effectiveMax}</strong> wins.</>
+                            }
+                          </>
+                        );
+                      })()}
                     </p>
                   </div>
                 </div>
@@ -261,7 +284,7 @@ const TeamDetail = ({ team, allTeams, onClose }) => {
             )}
 
             {/* Division Wins Constraint Info */}
-            {divisionTeams.filter(t => t.id !== team.id && predictions[t.id]).length > 0 && (
+            {divisionTeams.filter(t => t.id !== team.id && predictions[t.id]).length > 0 && !(existingRecord && allDivisionPredicted) && (
               <div className={`mb-4 p-3 rounded-lg border-2 ${
                 maxPossibleDivisionWins === 6
                   ? 'bg-green-50 dark:bg-green-900/30 border-green-300 dark:border-green-700'
@@ -296,8 +319,11 @@ const TeamDetail = ({ team, allTeams, onClose }) => {
                         ? 'text-blue-700 dark:text-blue-400'
                         : 'text-orange-700 dark:text-orange-400'
                     }`}>
-                      {team.division} has used <strong>{otherTeamsDivisionWins} of 12</strong> total division wins.
-                      {' '}This team can have <strong>{minPossibleDivisionWins}-{maxPossibleDivisionWins}</strong> division wins.
+                      {team.division} has used <strong>{otherTeamsDivisionWins + divisionWins} of 12</strong> total division wins.
+                      {' '}{minPossibleDivisionWins === maxPossibleDivisionWins
+                        ? <>This team needs exactly <strong>{minPossibleDivisionWins}</strong> division wins.</>
+                        : <>This team can have <strong>{minPossibleDivisionWins}–{maxPossibleDivisionWins}</strong> division wins.</>
+                      }
                     </p>
                   </div>
                 </div>

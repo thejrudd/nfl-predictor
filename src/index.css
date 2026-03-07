@@ -2,48 +2,512 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Prevent white flash on iOS overscroll bounce */
-html {
-  background-color: #f3f4f6; /* gray-100 */
-}
-.dark html,
-html.dark {
-  background-color: #111827; /* gray-900 */
+/* ─────────────────────────────────────────────────────────────
+   Broadcast Editorial — Design Token System
+   v3.0 — NFL Season Predictor
+
+   Aesthetic: Stadium amber/gold against deep slate-charcoal.
+   The signature amber (#F5B700) anchors every active state —
+   sidebar indicators, tab underlines, progress fills — while
+   keeping interactive elements readable across light and dark.
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* Light mode — warm off-white, like newsprint */
+  --color-bg:              #F2F1EC;
+  --color-bg-secondary:    #FFFFFF;
+  --color-bg-tertiary:     #E9E8E2;
+
+  --color-label:           rgba(12, 15, 20, 1);
+  --color-label-secondary: rgba(12, 15, 20, 0.58);
+  --color-label-tertiary:  rgba(12, 15, 20, 0.35);
+  --color-label-quaternary: rgba(12, 15, 20, 0.20);
+
+  --color-fill:            rgba(12, 15, 20, 0.07);
+  --color-fill-secondary:  rgba(12, 15, 20, 0.05);
+  --color-fill-tertiary:   rgba(12, 15, 20, 0.03);
+
+  --color-separator:       rgba(12, 15, 20, 0.12);
+  --color-separator-opaque: #D0CFC8;
+
+  /* Interactive accent — vivid blue (readable in light mode) */
+  --color-accent:          #1A6EFF;
+  --color-accent-green:    #00A844;
+  --color-accent-red:      #E0270F;
+  --color-accent-orange:   #E07800;
+
+  /* Signature amber — decorative only, never for small body text */
+  --color-signature:       #F5B700;
+
+  /* Bars */
+  --bar-bg:                rgba(242, 241, 236, 0.88);
+  --bar-border:            rgba(12, 15, 20, 0.12);
+  --bar-height-nav:        44px;
+  --bar-height-tab:        49px;
 }
 
-/* Show info buttons on touch devices (no fine pointer / hover) */
-@media (pointer: coarse) {
-  .touch-info-btn {
-    display: flex !important;
+.dark {
+  /* Dark mode — deep slate-charcoal, not pure black */
+  --color-bg:              #0C0F14;
+  --color-bg-secondary:    #141A22;
+  --color-bg-tertiary:     #1C2332;
+
+  --color-label:           rgba(228, 235, 244, 1);
+  --color-label-secondary: rgba(228, 235, 244, 0.58);
+  --color-label-tertiary:  rgba(228, 235, 244, 0.35);
+  --color-label-quaternary: rgba(228, 235, 244, 0.20);
+
+  --color-fill:            rgba(228, 235, 244, 0.09);
+  --color-fill-secondary:  rgba(228, 235, 244, 0.06);
+  --color-fill-tertiary:   rgba(228, 235, 244, 0.04);
+
+  --color-separator:       rgba(228, 235, 244, 0.10);
+  --color-separator-opaque: #252E3C;
+
+  /* Interactive accent — cool sky blue (readable in dark mode) */
+  --color-accent:          #5AADFF;
+  --color-accent-green:    #2ED578;
+  --color-accent-red:      #FF4433;
+  --color-accent-orange:   #FF8C1A;
+
+  /* Signature amber — same in both modes, always decorative */
+  --color-signature:       #F5B700;
+
+  /* Bars */
+  --bar-bg:                rgba(12, 15, 20, 0.90);
+  --bar-border:            rgba(228, 235, 244, 0.10);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Base / Reset
+   ───────────────────────────────────────────────────────────── */
+
+html {
+  background-color: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior-y: none;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-label);
+  padding-top: env(safe-area-inset-top);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   App Shell — two-panel layout on lg+
+   ───────────────────────────────────────────────────────────── */
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+@media (min-width: 1024px) {
+  .app-shell {
+    flex-direction: row;
   }
 }
 
-/* Hide tooltip close button on devices with a mouse */
-@media (pointer: fine) {
-  .tooltip-close-btn {
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* prevent flex overflow */
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Desktop Sidebar (lg+)
+   Fixed 240px left panel — brand, nav, actions
+   ───────────────────────────────────────────────────────────── */
+
+.app-sidebar {
+  display: none; /* hidden below lg */
+  width: 240px;
+  flex-shrink: 0;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow-y: auto;
+  background: var(--color-bg-secondary);
+  border-right: 1px solid var(--color-separator);
+}
+
+@media (min-width: 1024px) {
+  .app-sidebar {
+    display: flex;
+  }
+}
+
+.sidebar-brand {
+  padding: 22px 20px 16px;
+  border-bottom: 1px solid var(--color-separator);
+}
+
+.sidebar-progress {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--color-separator);
+}
+
+.sidebar-nav {
+  padding: 8px 0;
+}
+
+/* Nav items: large tap targets, amber left border when active */
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 13px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-label-secondary);
+  border-left: 3px solid transparent;
+  text-align: left;
+  transition: color 150ms, background 150ms, border-color 150ms;
+}
+
+.sidebar-nav-item:active {
+  opacity: 0.65;
+}
+
+.sidebar-nav-item.active {
+  color: var(--color-label);
+  background: var(--color-fill);
+  border-left-color: var(--color-signature);
+}
+
+.sidebar-nav-icon {
+  color: currentColor;
+  flex-shrink: 0;
+}
+
+.sidebar-divider {
+  height: 1px;
+  background: var(--color-separator);
+  margin: 6px 0;
+}
+
+.sidebar-section-label {
+  padding: 8px 20px 3px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--color-label-tertiary);
+}
+
+.sidebar-actions {
+  flex: 1;
+}
+
+.sidebar-action-item {
+  display: block;
+  width: 100%;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-label-secondary);
+  text-align: left;
+  transition: color 120ms, background 120ms;
+  cursor: pointer;
+}
+
+.sidebar-action-item:hover {
+  color: var(--color-label);
+  background: var(--color-fill-secondary);
+}
+
+.sidebar-action-item:disabled {
+  color: var(--color-label-tertiary);
+  cursor: not-allowed;
+}
+
+.sidebar-action-item.destructive {
+  color: var(--color-accent-red);
+}
+
+.sidebar-action-item.destructive:disabled {
+  opacity: 0.4;
+}
+
+.sidebar-footer {
+  border-top: 1px solid var(--color-separator);
+  padding-top: 4px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Navigation Bar  (mobile + tablet, hidden lg+)
+   ───────────────────────────────────────────────────────────── */
+
+.nav-bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: var(--bar-height-nav);
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  background: transparent;
+  transition: background 200ms ease, border-color 200ms ease;
+}
+
+.nav-bar.scrolled {
+  background: var(--bar-bg);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border-bottom: 1px solid var(--bar-border);
+}
+
+/* Hidden on desktop (sidebar takes over) */
+@media (min-width: 1024px) {
+  .nav-bar {
     display: none;
   }
 }
 
-/* react-grid-layout — disable text selection during drag */
+.nav-bar-btn {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--color-label-secondary);
+  transition: opacity 100ms;
+  flex-shrink: 0;
+}
+
+.nav-bar-btn:active {
+  opacity: 0.5;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Season Sub-Navigation — Editorial Tab Style
+   Bold Barlow Condensed tabs, amber underline indicator
+   ───────────────────────────────────────────────────────────── */
+
+.season-subnav {
+  position: sticky;
+  top: var(--bar-height-nav); /* below NavBar on mobile */
+  z-index: 40;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-separator);
+  padding: 12px 16px 0;
+}
+
+@media (min-width: 1024px) {
+  .season-subnav {
+    top: 0; /* NavBar hidden on desktop */
+    padding: 16px 32px 0;
+  }
+}
+
+.season-subnav-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+/* Tab row */
+.season-tabs {
+  display: flex;
+  gap: 0;
+  margin: 0 -16px; /* bleed to edges on mobile */
+  padding: 0 16px;
+}
+
+@media (min-width: 1024px) {
+  .season-tabs {
+    margin: 0 -32px;
+    padding: 0 32px;
+  }
+}
+
+/* Individual editorial tab */
+.season-tab {
+  padding: 10px 18px 9px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-label-tertiary);
+  position: relative;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 150ms;
+  /* First tab gets no left padding to align with content */
+}
+
+.season-tab:first-child {
+  padding-left: 0;
+}
+
+.season-tab::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--color-signature);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 220ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.season-tab:first-child::after {
+  left: 0;
+}
+
+.season-tab.active {
+  color: var(--color-label);
+}
+
+.season-tab.active::after {
+  transform: scaleX(1);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Bottom Tab Bar  (mobile + tablet, hidden lg+)
+   ───────────────────────────────────────────────────────────── */
+
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  height: calc(var(--bar-height-tab) + env(safe-area-inset-bottom));
+  background: var(--bar-bg);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border-top: 1px solid var(--bar-border);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Hidden on desktop */
+@media (min-width: 1024px) {
+  .tab-bar {
+    display: none;
+  }
+}
+
+.tab-bar-inner {
+  display: flex;
+  height: var(--bar-height-tab);
+  align-items: stretch;
+}
+
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: opacity 100ms;
+}
+
+.tab-item:active {
+  opacity: 0.55;
+}
+
+.tab-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  color: var(--color-label-tertiary);
+  transition: color 200ms;
+}
+
+.tab-item.active .tab-label {
+  color: var(--color-signature);
+  font-weight: 600;
+}
+
+.tab-icon {
+  color: var(--color-label-tertiary);
+  transition: color 200ms;
+}
+
+.tab-item.active .tab-icon {
+  color: var(--color-signature);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Action Sheet  (mobile menu)
+   ───────────────────────────────────────────────────────────── */
+
+@keyframes sheet-slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.action-sheet {
+  animation: sheet-slide-up 240ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Content area
+   ───────────────────────────────────────────────────────────── */
+
+.content-area {
+  flex: 1;
+  /* Tab bar + safe area on mobile */
+  padding-bottom: calc(var(--bar-height-tab) + env(safe-area-inset-bottom) + 20px);
+}
+
+@media (min-width: 1024px) {
+  .content-area {
+    padding-bottom: 48px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Preserved from v2.x — touch/tooltip helpers
+   ───────────────────────────────────────────────────────────── */
+
+@media (pointer: coarse) {
+  .touch-info-btn { display: flex !important; }
+}
+
+@media (pointer: fine) {
+  .tooltip-close-btn { display: none; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   react-grid-layout  (export infographic)
+   ───────────────────────────────────────────────────────────── */
+
 .react-grid-layout {
   user-select: none;
   -webkit-user-select: none;
 }
 
-/* react-grid-layout — grab cursor for draggable items */
-.react-grid-item {
-  cursor: grab;
-}
-.react-grid-item.react-draggable-dragging {
-  cursor: grabbing;
-}
+.react-grid-item { cursor: grab; }
+.react-grid-item.react-draggable-dragging { cursor: grabbing; }
 
-/* react-grid-layout resize handle — always-visible grip indicator */
 .react-grid-item > .react-resizable-handle {
   opacity: 1 !important;
   background: none !important;
 }
+
 .react-grid-item > .react-resizable-handle::after {
   content: '' !important;
   position: absolute !important;
@@ -57,6 +521,7 @@ html.dark {
   border-left: none !important;
   cursor: se-resize !important;
 }
+
 .react-grid-item > .react-resizable-handle:hover::after {
   border-color: rgba(96, 165, 250, 0.9) !important;
 }
