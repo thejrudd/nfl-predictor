@@ -5,18 +5,18 @@
 ### ~~v2.3 — Search / Filter~~
 ~~Quick-find a team or filter by division/conference directly from the main predictions view. A search icon in the existing controls row (alongside dark mode toggle, count badge, menu button) expands an inline search/filter bar that slides in below the header between the header and the first team card. Dismissed via X button or completing a search. Zero permanent screen space cost, no interaction with the scroll/collapse system.~~ **Shipped in v2.3.**
 
-### v3.1 — Historical Comparison
-Show how your predicted record for each team compares to their actual results from recent seasons. Highlight where you're more bullish or bearish than history.
+### ~~v3.1 — Favorite Team Theming~~
+~~Pick a favorite NFL team to theme the app around their official colors. The team's primary color (with dark-mode-aware variants) overrides the signature amber accent across tab underlines, sidebar nav indicator, progress bar, bottom tab bar, and conference filter toggles. Selection persists in localStorage. Accessible via "My Team" in the sidebar footer (desktop) and the mobile action sheet.~~ **Shipped in v3.1.**
 
-### v3.0 — Visual Overhaul
-A ground-up redesign of the app's visual language and UI consistency. Goals:
-- **Bottom tab bar navigation** — split the app into two distinct top-level domains: "Season" (Make Predictions, Standings, Playoff Seeding) and "Players" (Player Browser, Player Profiles, future Fantasy/Sleeper integration). Each tab has its own scroll context and sub-navigation. This is the standard pattern for mobile sports apps (ESPN, NFL app) and scales naturally as each domain grows.
-- Unified design system — consistent spacing, typography scale, and color tokens across all views
-- Redesigned prediction cards and team rows with richer visual hierarchy
-- Improved standings and playoff bracket presentation
-- Polished mobile experience with touch-optimized interactions
-- Smoother transitions and micro-animations throughout
-- **Team color theming** — when viewing a specific team's detail or profile, the UI adopts that team's colors: styled buttons, accent highlights, and iconography derived from the team identity. Requires separate light and dark palettes per team since some primaries contrast better on dark backgrounds and others on light. Highlight/accent colors should be derived from the team's secondary color where the primary is too saturated or low-contrast.
+### ~~v3.0 — Visual Overhaul~~
+~~A ground-up redesign of the app's visual language and UI consistency.~~ **Shipped in v3.0.**
+- ~~**Sidebar + bottom tab bar navigation** — fixed 240px sidebar on desktop; sticky top nav + bottom tab bar on mobile/tablet~~
+- ~~Unified design token system — CSS custom properties for color, spacing, and typography across all views~~
+- ~~Broadcast Editorial aesthetic — Barlow Condensed display type, signature amber accent~~
+- ~~Redesigned prediction cards, standings, and playoff bracket~~
+- ~~Polished mobile experience with touch-optimized interactions~~
+
+> **Note:** Per-team color theming inside the team detail modal (adopting that specific team's colors when you open their schedule) was part of the original v3.0 spec but was deferred. The v3.1 global favorite-team theming covers the app-wide accent; in-context detail theming remains a future enhancement.
 
 ### v4.0 — Fantasy Football / Sleeper League Integration
 Allow users to connect their Sleeper league and surface fantasy-relevant insights from player stat data. Should include:
@@ -46,6 +46,9 @@ The basic player browser and profiles are live. Future expansion should include:
 - Team history and historical records
 - Player rankings
 - Career length (starting year)
+
+### Historical Comparison
+Show how your predicted record for each team compares to their actual results from recent seasons. Highlight where you're more bullish or bearish than history. Originally scoped for v3.1 but replaced by the global team theming feature.
 
 ### Compare Mode
 Import a friend's exported JSON predictions and diff them against yours — highlight where you agree/disagree, show side-by-side records, and surface the biggest divergences.
