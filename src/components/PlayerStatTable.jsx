@@ -11,7 +11,7 @@ function statVal(statsJson, key, decimals = 0, suffix = '') {
   return `${Number(num).toFixed(decimals)}${suffix}`;
 }
 
-const PlayerStatTable = ({ year, statsJson, position, expanded, onToggle, loading, error, gameLog, gameLogLoading, honors = [] }) => {
+const PlayerStatTable = ({ year, statsJson, position, expanded, onToggle, loading, error, gameLog, gameLogLoading, honors = [], accentColor }) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const { standard, advanced } = (() => {
@@ -28,14 +28,22 @@ const PlayerStatTable = ({ year, statsJson, position, expanded, onToggle, loadin
   const hasAdvanced = advanced.length > 0;
 
   return (
-    <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+    <div
+      className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden transition-all"
+      style={expanded && accentColor ? { borderLeftColor: accentColor, borderLeftWidth: '3px' } : undefined}
+    >
       {/* Accordion header */}
       <button
         onClick={onToggle}
         className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
       >
         <div className="flex items-center gap-2 min-w-0">
-          <span className="font-semibold text-gray-800 dark:text-gray-200 shrink-0">{label}</span>
+          <span
+            className="font-semibold shrink-0"
+            style={expanded && accentColor ? { color: accentColor } : { color: undefined }}
+          >
+            {label}
+          </span>
           {honors.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {honors.map(honor => <HonorBadge key={honor} honor={honor} />)}
@@ -44,13 +52,18 @@ const PlayerStatTable = ({ year, statsJson, position, expanded, onToggle, loadin
         </div>
         <div className="flex items-center gap-2">
           {loading && (
-            <svg className="animate-spin w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24">
+            <svg
+              className="animate-spin w-4 h-4"
+              style={{ color: accentColor ?? '#3b82f6' }}
+              fill="none" viewBox="0 0 24 24"
+            >
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
           )}
           <svg
-            className={`w-4 h-4 text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
+            className={`w-4 h-4 transition-transform ${expanded ? 'rotate-180' : ''}`}
+            style={{ color: expanded && accentColor ? accentColor : undefined }}
             fill="none" viewBox="0 0 24 24" stroke="currentColor"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -71,7 +84,7 @@ const PlayerStatTable = ({ year, statsJson, position, expanded, onToggle, loadin
             <>
               {/* Season totals — grouped by category */}
               <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
-                <StatSections sections={displaySections} />
+                <StatSections sections={displaySections} accentColor={accentColor} />
 
                 {/* Advanced stats toggle */}
                 {hasAdvanced && (
@@ -83,11 +96,16 @@ const PlayerStatTable = ({ year, statsJson, position, expanded, onToggle, loadin
                       className="flex items-center gap-2 group"
                     >
                       {/* Pill track */}
-                      <span className={`relative inline-flex h-4 w-7 shrink-0 rounded-full border transition-colors duration-200 ${showAdvanced ? 'bg-blue-500 border-blue-500' : 'bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600'}`}>
-                        {/* Sliding knob */}
+                      <span
+                        className={`relative inline-flex h-4 w-7 shrink-0 rounded-full border transition-colors duration-200 ${!showAdvanced ? 'bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600' : ''}`}
+                        style={showAdvanced && accentColor ? { background: accentColor, borderColor: accentColor } : undefined}
+                      >
                         <span className={`absolute top-0.5 left-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform duration-200 ${showAdvanced ? 'translate-x-3' : 'translate-x-0'}`} />
                       </span>
-                      <span className={`text-xs font-semibold transition-colors ${showAdvanced ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-400'}`}>
+                      <span
+                        className={`text-xs font-semibold transition-colors ${!showAdvanced ? 'text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-400' : ''}`}
+                        style={showAdvanced && accentColor ? { color: accentColor } : undefined}
+                      >
                         Advanced stats
                       </span>
                     </button>
@@ -136,12 +154,18 @@ const HonorBadge = ({ honor }) => {
   );
 };
 
-const StatSections = ({ sections }) => (
+const StatSections = ({ sections, accentColor }) => (
   <div className="space-y-4">
     {sections.map(({ heading, rows }) => (
       <div key={heading}>
-        <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 pb-1 mb-2 border-b border-gray-100 dark:border-gray-800">
-          {heading}
+        <div
+          className="text-[10px] font-bold uppercase tracking-widest pb-1 mb-2 border-b"
+          style={accentColor
+            ? { color: accentColor, borderBottomColor: `${accentColor}40` }
+            : { color: undefined, borderBottomColor: undefined }
+          }
+        >
+          <span className={accentColor ? '' : 'text-gray-400 dark:text-gray-500'}>{heading}</span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-6 gap-y-2">
           {rows.map(({ label, value, rank }) => (

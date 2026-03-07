@@ -2,8 +2,25 @@ import { useState, useEffect } from 'react';
 import { fetchPlayerStats, fetchPlayerCareerStats, fetchGameLog, fetchPlayerBio, headshot, CURRENT_SEASON } from '../utils/playerApi';
 import { buildStatMap, getCareerHighlights } from '../utils/playerMetrics';
 import { usePredictions } from '../context/PredictionContext';
+import { useTheme } from '../context/ThemeContext';
 import PlayerStatTable from './PlayerStatTable';
 import honorsData from '../data/honors.json';
+import { TEAM_COLORS } from '../data/teamColors.js';
+
+function hexLuminance(hex) {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const lin = c => c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+
+function darkenHex(hex, amount = 0.28) {
+  const r = Math.max(0, Math.round(parseInt(hex.slice(1, 3), 16) * (1 - amount)));
+  const g = Math.max(0, Math.round(parseInt(hex.slice(3, 5), 16) * (1 - amount)));
+  const b = Math.max(0, Math.round(parseInt(hex.slice(5, 7), 16) * (1 - amount)));
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
 
 const YEARS_TO_SHOW = 10;
 
@@ -33,8 +50,15 @@ const PlayerProfile = ({ playerId, playerMeta, teamId, teams, onBack }) => {
   // Per-season honor badges: { '2024': ['NFL MVP', 'Pro Bowl', '1st Team All-Pro'], ... }
   const [honorsByYear, setHonorsByYear] = useState({});
 
+  const { darkMode } = useTheme();
   const team = teams?.find(t => t.id === teamId);
   const teamRecord = getTeamRecord(teamId);
+
+  const palette = TEAM_COLORS[teamId?.toLowerCase()];
+  const heroBg = palette ? (darkMode ? palette.darkPrimary : palette.primary) : null;
+  const heroAccent = palette ? (darkMode ? palette.darkSecondary : palette.secondary) : null;
+  const heroOnBg = heroBg && hexLuminance(heroBg) > 0.3 ? '#0C0F14' : '#FFFFFF';
+  const heroOnBgMuted = heroOnBg === '#FFFFFF' ? 'rgba(255,255,255,0.65)' : 'rgba(12,15,20,0.60)';
 
   // Build year list: current down to the player's rookie season (capped at YEARS_TO_SHOW), plus 'career'.
   // ESPN increments experience.years at end-of-season to count total seasons played (including the
@@ -151,93 +175,140 @@ const PlayerProfile = ({ playerId, playerMeta, teamId, teams, onBack }) => {
       {/* Back button */}
       <button
         onClick={onBack}
-        className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm font-semibold transition-colors"
+        style={{ color: 'var(--color-accent)' }}
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
-        Player Stats
+        Statistics
       </button>
 
       {/* Profile hero card */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
-          {/* Headshot */}
-          <div className="shrink-0">
-            {!headshotError ? (
-              <img
-                src={headshot(playerId)}
-                alt={playerMeta.displayName}
-                className="w-28 h-28 sm:w-36 sm:h-36 object-cover rounded-xl bg-gray-100 dark:bg-gray-700"
-                onError={() => setHeadshotError(true)}
-              />
-            ) : (
-              <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-xl bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                <span className="text-3xl font-bold text-gray-400 dark:text-gray-500">
-                  {(playerMeta.displayName ?? '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-                </span>
-              </div>
-            )}
+      <div
+        className="rounded-xl overflow-hidden shadow-lg relative"
+        style={{
+          background: heroBg
+            ? `linear-gradient(135deg, ${heroBg} 0%, ${darkenHex(heroBg, 0.32)} 100%)`
+            : 'var(--color-bg-secondary)',
+          borderLeft: heroAccent ? `4px solid ${heroAccent}` : undefined,
+        }}
+      >
+        {/* Team logo watermark */}
+        {heroBg && (
+          <div
+            className="absolute inset-y-0 right-0 hidden sm:flex items-center pointer-events-none"
+            aria-hidden="true"
+            style={{ paddingRight: '12px' }}
+          >
+            <img
+              src={`https://a.espncdn.com/i/teamlogos/nfl/500/${teamId.toLowerCase()}.png`}
+              alt=""
+              style={{ width: '152px', height: '152px', objectFit: 'contain', opacity: 0.13 }}
+              onError={e => { e.target.style.display = 'none'; }}
+            />
           </div>
+        )}
 
-          {/* Info */}
-          <div className="flex-1 text-center sm:text-left">
-            <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3">
-              <h1 className="text-3xl font-display tracking-wide text-gray-900 dark:text-white">
-                {playerMeta.displayName}
-              </h1>
-              {playerMeta.jersey && (
-                <span className="text-xl text-gray-400 dark:text-gray-500 font-semibold">
-                  #{playerMeta.jersey}
-                </span>
+        <div className="p-6 relative">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
+            {/* Headshot */}
+            <div className="shrink-0">
+              {!headshotError ? (
+                <img
+                  src={headshot(playerId)}
+                  alt={playerMeta.displayName}
+                  className="w-28 h-28 sm:w-36 sm:h-36 object-cover rounded-xl"
+                  style={{ background: heroBg ? darkenHex(heroBg, 0.45) : 'var(--color-fill)' }}
+                  onError={() => setHeadshotError(true)}
+                />
+              ) : (
+                <div
+                  className="w-28 h-28 sm:w-36 sm:h-36 rounded-xl flex items-center justify-center"
+                  style={{ background: heroBg ? darkenHex(heroBg, 0.45) : 'var(--color-fill)' }}
+                >
+                  <span className="text-3xl font-bold" style={{ color: heroOnBgMuted }}>
+                    {(playerMeta.displayName ?? '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                  </span>
+                </div>
               )}
             </div>
 
-            <div className="mt-1 flex flex-wrap justify-center sm:justify-start items-center gap-x-2 gap-y-0.5 text-sm text-gray-500 dark:text-gray-400">
-              <span className="font-semibold text-gray-700 dark:text-gray-300">
-                {playerMeta.positionName || playerMeta.position}
-              </span>
-              {team && (
-                <>
-                  <span>·</span>
-                  <span className="flex items-center gap-1">
-                    <img
-                      src={`https://a.espncdn.com/i/teamlogos/nfl/500/${teamId}.png`}
-                      alt={team.name}
-                      className="w-4 h-4 object-contain"
-                      onError={e => { e.target.style.display = 'none'; }}
-                    />
-                    {team.name}
-                  </span>
-                </>
-              )}
-              <span>·</span>
-              <span>{rookieLabel}</span>
-              {teamRecord && (
-                <>
-                  <span>·</span>
-                  <span className="text-blue-500 dark:text-blue-400 font-medium">
-                    Team: {teamRecord.wins}–{teamRecord.losses}
-                    {teamRecord.ties > 0 ? `–${teamRecord.ties}` : ''}
-                  </span>
-                </>
-              )}
-            </div>
-
-            {/* Career highlight pods */}
-            {careerHighlights.length > 0 && (
-              <div className="mt-3 flex flex-wrap justify-center sm:justify-start gap-2">
-                {careerHighlights.map(({ label, value, color }) => (
-                  <div
-                    key={label}
-                    className="flex flex-col items-center bg-gray-100 dark:bg-gray-700 rounded-lg px-3 py-1.5 min-w-[60px]"
+            {/* Info */}
+            <div className="flex-1 text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3">
+                <h1
+                  className="text-3xl font-display tracking-wide"
+                  style={{ color: heroBg ? heroOnBg : 'var(--color-label)' }}
+                >
+                  {playerMeta.displayName}
+                </h1>
+                {playerMeta.jersey && (
+                  <span
+                    className="text-xl font-semibold"
+                    style={{ color: heroBg ? heroOnBgMuted : 'var(--color-label-tertiary)' }}
                   >
-                    <span className={`text-lg font-bold leading-tight ${color}`}>{value}</span>
-                    <span className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-semibold">{label}</span>
-                  </div>
-                ))}
+                    #{playerMeta.jersey}
+                  </span>
+                )}
               </div>
-            )}
+
+              <div
+                className="mt-1 flex flex-wrap justify-center sm:justify-start items-center gap-x-2 gap-y-0.5 text-sm"
+                style={{ color: heroBg ? heroOnBgMuted : 'var(--color-label-secondary)' }}
+              >
+                <span className="font-semibold" style={{ color: heroBg ? heroOnBg : 'var(--color-label)' }}>
+                  {playerMeta.positionName || playerMeta.position}
+                </span>
+                {team && (
+                  <>
+                    <span>·</span>
+                    <span>{team.name}</span>
+                  </>
+                )}
+                <span>·</span>
+                <span>{rookieLabel}</span>
+                {teamRecord && (
+                  <>
+                    <span>·</span>
+                    <span>
+                      {teamRecord.wins}–{teamRecord.losses}
+                      {teamRecord.ties > 0 ? `–${teamRecord.ties}` : ''}
+                    </span>
+                  </>
+                )}
+              </div>
+
+              {/* Career highlight pods */}
+              {careerHighlights.length > 0 && (
+                <div className="mt-3 flex flex-wrap justify-center sm:justify-start gap-2">
+                  {careerHighlights.map(({ label, value, color }) => (
+                    <div
+                      key={label}
+                      className="flex flex-col items-center rounded-lg px-3 py-1.5 min-w-[60px]"
+                      style={{
+                        background: heroBg
+                          ? (heroOnBg === '#FFFFFF' ? 'rgba(255,255,255,0.12)' : 'rgba(12,15,20,0.10)')
+                          : 'var(--color-fill)',
+                      }}
+                    >
+                      <span
+                        className={`text-lg font-bold leading-tight ${heroBg ? '' : color}`}
+                        style={heroBg ? { color: heroOnBg } : undefined}
+                      >
+                        {value}
+                      </span>
+                      <span
+                        className="text-[10px] uppercase tracking-wider font-semibold"
+                        style={{ color: heroBg ? heroOnBgMuted : 'var(--color-label-tertiary)' }}
+                      >
+                        {label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -257,6 +328,7 @@ const PlayerProfile = ({ playerId, playerMeta, teamId, teams, onBack }) => {
             gameLog={gameLogByYear[year] ?? null}
             gameLogLoading={!!loadingGameLog[year]}
             honors={honorsByYear[String(year)] ?? []}
+            accentColor={heroAccent ?? heroBg}
           />
         ))}
         {/* Career row */}
@@ -269,6 +341,7 @@ const PlayerProfile = ({ playerId, playerMeta, teamId, teams, onBack }) => {
           onToggle={toggleCareer}
           loading={careerLoading}
           error={careerError}
+          accentColor={heroAccent ?? heroBg}
         />
       </div>
     </div>

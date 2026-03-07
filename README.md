@@ -102,9 +102,9 @@ PORT=8080 docker compose up -d --build
 
 ## Roadmap
 
-**v2.4** — Historical comparison (predicted records vs. each team's actual past results)
-**v3.0** — Fantasy football / Sleeper league integration (custom scoring, start/sit recommendations, projections)
-**v4.0** — Visual overhaul (unified design system, bottom tab bar, redesigned cards and bracket, polished mobile experience)
+**v3.0** — Visual overhaul (unified design system, bottom tab bar splitting Predictions/Stats & Fantasy, redesigned cards, polished mobile experience)
+**v3.1** — Historical comparison (predicted records vs. each team's actual past results, surfaced in the redesigned Predictions section)
+**v4.0** — Fantasy football / Sleeper league integration (custom scoring, start/sit recommendations, projections)
 **v4.5** — Week-by-week schedule view *(blocked on 2026 season schedule data)*
 
 ## Project Structure

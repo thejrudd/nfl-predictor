@@ -44,19 +44,22 @@ function normalizePlayer(athlete, teamId) {
  * Returns normalized player array: { id, displayName, jersey, position, experience, status, teamId }
  */
 export async function fetchRoster(teamId) {
-  return cachedFetch(`roster_${teamId}`, async () => {
+  return cachedFetch(`roster_v2_${teamId}`, async () => {
     const url = `${ESPN_BASE}/teams/${toEspnTeamId(teamId)}/roster`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`Roster fetch failed: ${res.status}`);
     const json = await res.json();
 
-    // ESPN roster response wraps athletes in groups by position category
+    // ESPN roster response wraps athletes in groups by position category.
+    // Items within each group are in ESPN's implicit depth-chart order —
+    // capture that index as rosterOrder so the UI can use it as a ranking signal.
     const athletes = [];
     const groups = json.athletes ?? [];
     for (const group of groups) {
-      for (const a of (group.items ?? [])) {
-        athletes.push(normalizePlayer(a, teamId));
-      }
+      const items = group.items ?? [];
+      items.forEach((a, i) => {
+        athletes.push({ ...normalizePlayer(a, teamId), rosterOrder: i });
+      });
     }
     return athletes;
   }, TTL.roster);
