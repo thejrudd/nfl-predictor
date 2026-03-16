@@ -636,8 +636,9 @@ export default function CompanionDefense() {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
+// Corner cell: sticky both top + left, highest z-index
 const stickyHeadStyle = {
-  position: 'sticky', left: 0, zIndex: 2,
+  position: 'sticky', left: 0, top: 0, zIndex: 4,
   background: 'var(--color-fill-secondary)',
   padding: '6px 10px',
   textAlign: 'left',
@@ -651,8 +652,10 @@ const stickyHeadStyle = {
   whiteSpace: 'nowrap',
 };
 
+// Regular header cells: sticky top only
 function headStyle(isAvg) {
   return {
+    position: 'sticky', top: 0, zIndex: 3,
     padding: '6px 8px',
     textAlign: 'center',
     color: 'var(--color-label-tertiary)',
@@ -668,8 +671,9 @@ function headStyle(isAvg) {
   };
 }
 
+// Body first-column cells: sticky left, fully opaque background set inline
 const stickyBodyStyle = {
-  position: 'sticky', left: 0, zIndex: 1,
+  position: 'sticky', left: 0, zIndex: 2,
   padding: '5px 10px',
   fontWeight: 700,
   fontSize: '11px',

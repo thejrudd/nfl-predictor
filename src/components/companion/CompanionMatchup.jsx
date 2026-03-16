@@ -251,7 +251,7 @@ export default function CompanionMatchup() {
   return (
     <div className="pb-6">
       {/* Week selector */}
-      <div className="px-4 pb-3 flex items-center gap-2 overflow-x-auto">
+      <div className="px-4 pb-3 flex items-center gap-2 overflow-x-auto" style={{ touchAction: 'pan-x', WebkitOverflowScrolling: 'touch' }}>
         {Array.from({ length: totalWeeks }, (_, i) => i + 1).map(w => {
           const isPlayoff = w >= playoffStart;
           const isSelected = week === w;

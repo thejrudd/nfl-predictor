@@ -35,6 +35,9 @@ export default defineConfig({
       workbox: {
         navigateFallback: '/index.html',
         globIgnores: ['**/*.map', 'icons/icon.svg'],
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
           // Google Fonts stylesheet
           {
