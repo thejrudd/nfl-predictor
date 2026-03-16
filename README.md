@@ -75,6 +75,12 @@ PORT=8080 docker compose up -d --build
 | PWA | vite-plugin-pwa + Workbox |
 | Production serving | nginx (Docker) |
 
+## What's New in v4.3.1
+
+- **Defense drilldown scroll lock** — Background page no longer scrolls while the drilldown panel is open
+- **Season progress bar** — "Season X/32" progress bar in the sidebar is now hidden when not on the Predictions tab
+- **PWA cache bust** — `package.json` version bumped to force service worker refresh so users receive the latest build automatically
+
 ## What's New in v4.3
 
 ### Defense Matrix — Enhancements

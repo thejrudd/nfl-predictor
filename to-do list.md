@@ -34,6 +34,11 @@
 - **Fantasy player comparison (Companion)**: New Companion tab — pick two players from the Sleeper player pool and compare them side-by-side: season pts, avg PPG, recent form, positional rank, projection range, and scoring breakdown.
 - **Stats player comparison (Statistics)**: Compare mode in `PlayerBrowser` — select two players and view their ESPN career/season stats side-by-side with per-stat deltas highlighted.
 
+### v4.3.1 — Polish & Bug Fixes *(shipped)*
+- ~~Defense drilldown scroll lock — background no longer scrolls while panel is open~~ ✓
+- ~~Season X/32 progress bar hidden outside Predictions tab~~ ✓
+- ~~PWA cache bust via package.json version bump~~ ✓
+
 ### v4.5 — Week-by-Week View
 Browse the full schedule by week — see all matchups for a given week, with current predictions reflected. Navigate between weeks via prev/next controls. **Blocked on 2026 season schedule data.** When the NFL releases the 2026 schedule, update the schedule data source and implement this view. Read-only in v4.5 (reflects existing team-level picks); interactive game picking from the week view is a future enhancement.
 
