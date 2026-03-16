@@ -62,8 +62,8 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="sidebar-progress">
+      {/* Progress bar — only visible on Predictions tab */}
+      <div className="sidebar-progress" style={{ visibility: activeTab === 'predictions' ? 'visible' : 'hidden' }}>
         <div className="flex items-center justify-between mb-1.5">
           <span
             className="text-xs font-semibold uppercase tracking-widest"
@@ -210,7 +210,7 @@ export default function Sidebar({
           className="px-5 py-3 text-xs"
           style={{ color: 'var(--color-label-tertiary)' }}
         >
-          v4.2
+          v4.3.1
         </div>
       </div>
     </aside>

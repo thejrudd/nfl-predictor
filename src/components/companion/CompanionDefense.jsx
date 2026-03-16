@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSleeper } from '../../context/SleeperContext';
 import { useTheme } from '../../context/ThemeContext';
 import { buildDefenseTable } from '../../utils/projectionEngine';
@@ -198,6 +198,14 @@ export default function CompanionDefense({ onViewPlayer }) {
   const [teamSort, setTeamSort] = useState('alpha');
   const [drilldown, setDrilldown] = useState(null); // { team, week }
   const [useTeamColors, setUseTeamColors] = useState(false);
+
+  // Lock body scroll while drilldown is open
+  useEffect(() => {
+    if (!drilldown) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [drilldown]);
 
   // ── Tables ─────────────────────────────────────────────────────────────────
 
