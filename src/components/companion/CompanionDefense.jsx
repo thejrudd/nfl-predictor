@@ -883,6 +883,7 @@ export default function CompanionDefense({ onViewPlayer }) {
                           onClick={clickable ? () => setDrilldown({ team, week: w }) : undefined}
                           style={{
                             ...cellStyle(false),
+                            ...(statMode === 'game_score' ? { minWidth: '50px' } : {}),
                             background: pts != null && !isFiltered ? cellBg(pts, team, w) : rowBg,
                             color: pts != null && !isFiltered ? '#000' : 'var(--color-label-secondary)',
                             cursor: clickable ? 'pointer' : 'default',
@@ -890,27 +891,35 @@ export default function CompanionDefense({ onViewPlayer }) {
                         >
                           {pts != null && !isFiltered ? (
                             <>
-                              <div>{isVegasOdds ? (() => {
-                                  const s = NFL_ODDS[ODDS_SEASON]?.[w]?.[team]?.spread;
-                                  if (s == null) return '—';
-                                  const n = s % 1 === 0 ? String(Math.round(s)) : s.toFixed(1);
-                                  return s > 0 ? `+${n}` : n;
-                                })()
-                                : statMode === 'game_score' ? (() => {
+                              {statMode === 'game_score' ? (() => {
                                   const opp = scheduleMap?.[w]?.[team]?.opp?.toUpperCase();
-                                  return opp ? (scheduleMap?.[w]?.[opp]?.ptsAgainst ?? (Number.isInteger(pts) ? pts : pts.toFixed(1))) : (Number.isInteger(pts) ? pts : pts.toFixed(1));
-                                })()
-                                : (viewMode === 'defense' && DEF_STAT_MODES.find(m => m.id === defStatMode)?.statKey)
-                                  ? (Number.isInteger(pts) ? pts : pts.toFixed(1))
-                                  : pts.toFixed(1)}</div>
-                              {statMode === 'game_score' ? (
-                                <div style={{ fontSize: '8px', opacity: 0.6, marginTop: '1px' }}>
-                                  {Number.isInteger(pts) ? pts : Math.round(pts)}
-                                </div>
-                              ) : scheduleMap?.[w]?.[team]?.opp && (
-                                <div style={{ fontSize: '8px', opacity: 0.6, marginTop: '1px' }}>
-                                  {scheduleMap[w][team].opp}
-                                </div>
+                                  const ownScore = opp ? (scheduleMap?.[w]?.[opp]?.ptsAgainst ?? null) : null;
+                                  const oppScore = Math.round(pts);
+                                  return ownScore != null ? (
+                                    <>
+                                      <div style={{ fontSize: '10px', lineHeight: 1.1 }}>{Math.round(ownScore)}-{oppScore}</div>
+                                      <div style={{ fontSize: '7px', opacity: 0.6, marginTop: '1px', letterSpacing: '0.02em' }}>{team} · {scheduleMap[w][team].opp}</div>
+                                    </>
+                                  ) : (
+                                    <div>{Number.isInteger(pts) ? pts : pts.toFixed(1)}</div>
+                                  );
+                                })() : (
+                                <>
+                                  <div>{isVegasOdds ? (() => {
+                                      const s = NFL_ODDS[ODDS_SEASON]?.[w]?.[team]?.spread;
+                                      if (s == null) return '—';
+                                      const n = s % 1 === 0 ? String(Math.round(s)) : s.toFixed(1);
+                                      return s > 0 ? `+${n}` : n;
+                                    })()
+                                    : (viewMode === 'defense' && DEF_STAT_MODES.find(m => m.id === defStatMode)?.statKey)
+                                      ? (Number.isInteger(pts) ? pts : pts.toFixed(1))
+                                      : pts.toFixed(1)}</div>
+                                  {scheduleMap?.[w]?.[team]?.opp && (
+                                    <div style={{ fontSize: '8px', opacity: 0.6, marginTop: '1px' }}>
+                                      {scheduleMap[w][team].opp}
+                                    </div>
+                                  )}
+                                </>
                               )}
                             </>
                           ) : isBye ? (

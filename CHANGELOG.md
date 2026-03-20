@@ -186,3 +186,36 @@ All notable changes, oldest first. Add new entries at the bottom.
 - **Home/Away location filter** — New Location filter (All / Home / Away) on the Heatmap. Filters both the cell values and the AVG column denominator to only include games matching the selection. Filtered-out weeks show a dimmed dash and are not drillable.
 - **Companion sub-nav overflow fix** — Tabs (Roster, Rankings, Matchup, etc.) now scroll horizontally within the nav strip on mobile instead of overflowing the page and causing erroneous horizontal scrolling.
 - **Scoring badge removed from Roster** — The league scoring summary badge has been removed from the Roster screen. Scoring details are available in the dedicated Scoring tab.
+
+---
+
+## v4.5.1 — Heatmap Mobile Fixes
+*2026-03-17*
+
+- **Sub-nav vertical scroll fix** — Companion sub-navigation tab strip no longer scrolls vertically in addition to horizontally on mobile.
+- **Heatmap bottom inset fix** — Heatmap grid on mobile PWA now scrolls fully to the bottom row. The bottom tab bar / safe-area inset was obscuring the last rows, requiring whole-page scrolling that broke navigation.
+
+---
+
+## v4.6 — Heatmap Continued
+*2026-03-19*
+
+- **Spread stat mode** — New "Spread" option in the Stat filter. Cells show each team's spread for that week (e.g. `-3.0`, `+7.5`), colored green (covered) or red (didn't cover). Requires the bundled `odds.js` data (generated from nflverse historical odds).
+- **Score stat mode drilldown** — Tapping a cell in Score mode opens a full box score for that game (final score, passing/rushing/receiving leaders for both teams) instead of the standard player drilldown.
+- **Spread mode drilldown** — Tapping a cell in Spread mode opens the same box score layout. The game header shows each team's spread and O/U line directly under the matchup; covered results are green, didn't cover is red; Over/Under result is shown without color.
+- **Color filter hidden in Spread mode** — The Color filter is hidden when Spread is selected (it has no meaning for cover/no-cover coloring), except the team colors toggle remains visible when a favorite team is set.
+- **"Covers" column header** — The AVG column header changes to "Covers" when viewing Spread mode, reflecting the win-loss cover record shown.
+- **Renamed filters** — "Vegas Odds" → "Spread", "Game Score" → "Score".
+- **Player data cache auto-clear on version bump** — The `nfl_pc_*` localStorage cache is now automatically cleared when the app version changes, preventing stale player data (wrong team attribution, missing ESPN IDs) from persisting across deploys.
+- **Phase filter hidden for offense-only modes** — The Phase (Offense/Defense) filter is no longer shown when Rec Yds, Rush Yds, Score, or Spread is selected — those modes are offense-only.
+- **Home/Away filter respected in week sort** — Filtered cells now correctly show a faded dash (instead of live color/value) when the week sort is active and the game doesn't match the location filter.
+- **Desktop heatmap height fix** — Grid now fills available vertical space on desktop. The tab bar height (49px) was incorrectly subtracted even though the tab bar is hidden at lg+.
+- **Heatmap → Statistics year range fix** — Player links from the heatmap now open the correct full career year range. `playerMeta.experience` was absent, causing the year list to default to current year only.
+- **Heatmap initial render fix** — Heatmap now renders immediately after Load Stats without needing to visit another Companion tab first. `loadPlayers()` is now called on mount.
+
+---
+
+## v4.6.1 — Score Mode Cell Fix
+*2026-03-19*
+
+- **Score mode inline display** — Heatmap cells in Score mode now show the final score as `X-X` (team score · opponent score) with both team abbreviations in small text underneath (e.g. `28-14` / `KC · DEN`), replacing the previous stacked single-number layout.
