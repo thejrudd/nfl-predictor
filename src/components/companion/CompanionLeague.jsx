@@ -9,7 +9,7 @@ const POSITION_ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF', 'DL', 'LB', 'DB', 'D
 const POSITION_COLORS = {
   QB: '#ef4444', RB: '#22c55e', WR: '#3b82f6', TE: '#f59e0b', K: '#8b5cf6', DEF: '#6b7280',
 };
-const MAX_ROUNDS = 5;
+const MAX_ROUNDS = 36; // generous cap — Sleeper dynasty startups can run 25+ rounds
 
 export default function CompanionLeague() {
   const [subView, setSubView] = useState('roster');
