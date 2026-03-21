@@ -12,7 +12,7 @@ const POSITION_COLORS = {
   QB: '#ef4444', RB: '#22c55e', WR: '#3b82f6', TE: '#f59e0b', K: '#8b5cf6',
 };
 
-export default function CompanionMatchup() {
+export default function CompanionMatchup({ onViewPlayer }) {
   const {
     sleeperUser, selectedLeagueId, league,
     rosters, players, loadPlayers,
@@ -403,6 +403,7 @@ export default function CompanionMatchup() {
           projection={selectedPlayer.projection}
           enrichedPlayer={selectedPlayer.enriched ?? null}
           onClose={() => setSelectedPlayer(null)}
+          onViewStats={onViewPlayer}
         />
       )}
 

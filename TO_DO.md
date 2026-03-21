@@ -7,10 +7,6 @@ New features requested or planned should be added here.
 
 ## Planned Versions
 
-### v4.6 — Heatmap Continued
-
-- **O/U filter** - Add a filter when viewing in "Spread" on the heatmap to see a heatmap of which matchups hit the over vs. the under.
-
 ### v5.0 — Draft Coach
 
 A new Companion tab to assist with fantasy football drafts, focused on rookies and newly-available players. Surfaces publicly available scouting and evaluation data to help users make informed draft decisions.

@@ -59,6 +59,36 @@ function AppInner() {
 
   const { isInstallable, isInstalled, triggerInstall } = usePWAInstall();
 
+  // ── Browser history ────────────────────────────────────────────────────────
+  const isFirstNavRender = useRef(true);
+  const historyRestoring = useRef(false);
+
+  useEffect(() => {
+    if (isFirstNavRender.current) {
+      isFirstNavRender.current = false;
+      history.replaceState({ activeTab, seasonView, companionView, _nav: 'app' }, '');
+      return;
+    }
+    if (historyRestoring.current) {
+      historyRestoring.current = false;
+      return;
+    }
+    history.pushState({ activeTab, seasonView, companionView, _nav: 'app' }, '');
+  }, [activeTab, seasonView, companionView]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const onPopState = (e) => {
+      if (e.state?._nav !== 'app') return;
+      historyRestoring.current = true;
+      setActiveTab(e.state.activeTab ?? 'predictions');
+      setSeasonView(e.state.seasonView ?? 'predictions');
+      setCompanionView(e.state.companionView ?? 'roster');
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+  // ──────────────────────────────────────────────────────────────────────────
+
   useEffect(() => {
     if (seasonView !== 'predictions') {
       setTeamSearch('');
@@ -325,7 +355,7 @@ function AppInner() {
               </div>
               {companionView === 'roster'    && <CompanionRoster />}
               {companionView === 'rankings'  && <CompanionRankings />}
-              {companionView === 'matchup'   && <CompanionMatchup />}
+              {companionView === 'matchup'   && <CompanionMatchup onViewPlayer={(id, meta) => { setStatsInitPlayer({ id, ...meta }); setStatsNavBack({ label: 'Matchup', onBack: () => { setActiveTab('companion'); setStatsNavBack(null); } }); setActiveTab('statistics'); }} />}
               {companionView === 'waiver'    && <CompanionWaiver />}
               {companionView === 'defense'   && <CompanionDefense onViewPlayer={(id, meta) => { setStatsInitPlayer({ id, ...meta }); setStatsNavBack({ label: 'Heatmap', onBack: () => { setActiveTab('companion'); setStatsNavBack(null); } }); setActiveTab('statistics'); }} />}
               {companionView === 'scoring'   && <CompanionScoring />}

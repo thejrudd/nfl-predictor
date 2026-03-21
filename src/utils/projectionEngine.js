@@ -67,7 +67,9 @@ function normalizePos(pos) {
  *
  * Call this once after weeklyStats + scheduleMap are loaded; then use getDefenseStrength() for lookups.
  */
-export function buildDefenseTable(weeklyStats, players, scheduleMap, scoringSettings, valueFn) {
+// keyBySelf=false (default): key by the opposing team — "points allowed by each defense"
+// keyBySelf=true: key by the player's own team — "points scored by each offense"
+export function buildDefenseTable(weeklyStats, players, scheduleMap, scoringSettings, valueFn, keyBySelf = false) {
   if (!weeklyStats || !players) return {};
 
   const getValue = valueFn ?? ((wEntry) => calcPoints(wEntry, scoringSettings));
@@ -83,10 +85,10 @@ export function buildDefenseTable(weeklyStats, players, scheduleMap, scoringSett
   }
 
   const table = {};
-  const addVal = (opp, normPos, week, val) => {
-    if (!table[opp]) table[opp] = {};
-    if (!table[opp][normPos]) table[opp][normPos] = {};
-    table[opp][normPos][week] = (table[opp][normPos][week] ?? 0) + val;
+  const addVal = (key, normPos, week, val) => {
+    if (!table[key]) table[key] = {};
+    if (!table[key][normPos]) table[key][normPos] = {};
+    table[key][normPos][week] = (table[key][normPos][week] ?? 0) + val;
   };
 
   for (const [playerId, playerWeeks] of Object.entries(weeklyStats)) {
@@ -103,22 +105,27 @@ export function buildDefenseTable(weeklyStats, players, scheduleMap, scoringSett
       const gameTeam = wEntry.team?.toUpperCase();
       if (gameTeam && scheduleMap?.[wEntry.week]?.[gameTeam]) {
         const opp = scheduleMap[wEntry.week][gameTeam].opp?.toUpperCase();
-        // Never attribute a player's stats to their own team's "allowed" column.
-        if (opp && opp !== gameTeam) { addVal(opp, normPos, wEntry.week, val); continue; }
+        if (opp && opp !== gameTeam) { addVal(keyBySelf ? gameTeam : opp, normPos, wEntry.week, val); continue; }
       }
 
       // Priority 2: opp field from per-player enhancement.
-      // Tied to the actual game record — does not change when a player is traded.
       const entryOpp = wEntry.opp?.toUpperCase();
-      if (entryOpp) { addVal(entryOpp, normPos, wEntry.week, val); continue; }
+      if (keyBySelf) {
+        const entryTeam = wEntry.team?.toUpperCase();
+        if (entryTeam) { addVal(entryTeam, normPos, wEntry.week, val); continue; }
+      } else {
+        if (entryOpp) { addVal(entryOpp, normPos, wEntry.week, val); continue; }
+      }
 
       // Priority 3: inferred season team fallback.
-      // Uses enhanced weeks' team if available (far more accurate for traded players
-      // than player.team, which reflects the current roster not the historical one).
       const fallbackTeam = inferredSeasonTeam[playerId];
       if (scheduleMap && fallbackTeam) {
-        const opp = scheduleMap[wEntry.week]?.[fallbackTeam]?.opp?.toUpperCase();
-        if (opp) addVal(opp, normPos, wEntry.week, val);
+        if (keyBySelf) {
+          addVal(fallbackTeam, normPos, wEntry.week, val);
+        } else {
+          const opp = scheduleMap[wEntry.week]?.[fallbackTeam]?.opp?.toUpperCase();
+          if (opp) addVal(opp, normPos, wEntry.week, val);
+        }
       }
     }
   }
@@ -282,21 +289,28 @@ export function getDefensePercentile(defenseTable, oppTeam, pos, beforeWeek = nu
 }
 
 /**
- * League-wide average PPG for a position group (for normalizing opponent factor).
+ * League-wide average total fantasy pts scored against any defense per game, for a position group.
+ * Aggregates by (opponent team, week) — the same scale as ptsAllowedPerGame in getDefenseStrength —
+ * so that oppFactor = ptsAllowedPerGame / leagueAvg is a true relative comparison.
  */
 function getLeagueAvgPPG(pos, allWeeklyStats, players, scoringSettings, beforeWeek = null) {
   const normPos = normalizePos(pos);
-  let total = 0, count = 0;
+  const teamWeekTotals = {}; // `${opp}_${week}` → total pts scored against that defense
   for (const [playerId, weeks] of Object.entries(allWeeklyStats ?? {})) {
     const player = players?.[playerId];
     if (!player || normalizePos(player.position) !== normPos) continue;
     for (const w of weeks) {
       if (beforeWeek != null && w.week >= beforeWeek) continue;
       const pts = calcPoints(w, scoringSettings);
-      if (pts > 0) { total += pts; count++; }
+      if (pts <= 0) continue;
+      const opp = w.opp?.toUpperCase();
+      if (!opp) continue;
+      const key = `${opp}_${w.week}`;
+      teamWeekTotals[key] = (teamWeekTotals[key] ?? 0) + pts;
     }
   }
-  return count ? total / count : 0;
+  const vals = Object.values(teamWeekTotals);
+  return vals.length ? vals.reduce((s, p) => s + p, 0) / vals.length : 0;
 }
 
 /**
@@ -362,8 +376,10 @@ export function projectPlayer({
 }) {
   if (!weeklyArr?.length) return null;
 
-  // Only use games already played before the projected week
-  const priorWeekly = week != null ? weeklyArr.filter(w => w.week < week) : weeklyArr;
+  // Only use games already played before the projected week, sorted chronologically
+  const priorWeekly = (week != null ? weeklyArr.filter(w => w.week < week) : weeklyArr)
+    .slice()
+    .sort((a, b) => a.week - b.week);
 
   const gamePts = priorWeekly
     .map(w => calcPoints(w, scoringSettings))
@@ -373,14 +389,28 @@ export function projectPlayer({
 
   const seasonAvg = gamePts.reduce((s, p) => s + p, 0) / gamePts.length;
 
+  // ── Recent form (last 4 scored games in chronological order) ─────────────
+  // Weighted 60% recent / 40% season so hot/cold streaks propagate quickly
+  // into the next projection without completely discarding the season baseline.
+  const recentPts = priorWeekly
+    .map(w => calcPoints(w, scoringSettings))
+    .filter(p => p > 0)
+    .slice(-4);
+  const recentAvg = recentPts.length >= 2
+    ? recentPts.reduce((s, p) => s + p, 0) / recentPts.length
+    : seasonAvg;
+  const blendedBase = recentPts.length >= 2
+    ? recentAvg * 0.6 + seasonAvg * 0.4
+    : seasonAvg;
+
   // ── Home/away factor ──────────────────────────────────────────────────────
   const homeGames = [], awayGames = [];
   for (const w of priorWeekly) {
     const pts = calcPoints(w, scoringSettings);
     if (pts > 0) (w.home ? homeGames : awayGames).push(pts);
   }
-  const homeAvg = homeGames.length >= 3 ? homeGames.reduce((s,p)=>s+p,0)/homeGames.length : seasonAvg;
-  const awayAvg = awayGames.length >= 3 ? awayGames.reduce((s,p)=>s+p,0)/awayGames.length : seasonAvg;
+  const homeAvg = homeGames.length >= 1 ? homeGames.reduce((s,p)=>s+p,0)/homeGames.length : seasonAvg;
+  const awayAvg = awayGames.length >= 1 ? awayGames.reduce((s,p)=>s+p,0)/awayGames.length : seasonAvg;
   const locationAvg = isHome !== null ? (isHome ? homeAvg : awayAvg) : seasonAvg;
   const locationFactor = seasonAvg > 0 ? locationAvg / seasonAvg : 1;
 
@@ -429,20 +459,40 @@ export function projectPlayer({
   const snapFactor = getSnapFactor(priorWeekly, pos);
 
   // ── Projected score ───────────────────────────────────────────────────────
-  const projected = seasonAvg * locationFactor * oppFactor * weatherFactor * snapFactor;
+  const projected = blendedBase * locationFactor * oppFactor * weatherFactor * snapFactor;
 
   // ── Floor / ceiling from historical distribution ──────────────────────────
-  // Average of the bottom 25% and top 25% of scoring games this season.
+  // Compute the player's variance profile (25th/75th percentile) as fractions
+  // of their season average, then apply those fractions to `projected`.
+  // This anchors the range to the current projection level regardless of how
+  // much blendedBase diverges from seasonAvg (e.g., after a breakout run),
+  // guaranteeing the projection always falls within [min, max].
   const sorted = [...gamePts].sort((a, b) => a - b);
-  const quarterLen = Math.max(1, Math.floor(sorted.length * 0.25));
-  const floorGames   = sorted.slice(0, quarterLen);
-  const ceilingGames = sorted.slice(-quarterLen);
-  const floor   = floorGames.reduce((s, p) => s + p, 0)   / floorGames.length;
-  const ceiling = ceilingGames.reduce((s, p) => s + p, 0) / ceilingGames.length;
+  function percentileVal(arr, p) {
+    if (arr.length === 1) return arr[0];
+    const idx = p * (arr.length - 1);
+    const lo = Math.floor(idx), hi = Math.ceil(idx);
+    return arr[lo] + (arr[hi] - arr[lo]) * (idx - lo);
+  }
+  const rawFloor = percentileVal(sorted, 0.25);
+  const rawCeil  = percentileVal(sorted, 0.75);
+
+  // Express as fractions of season avg — the player's inherent variance profile.
+  const floorFrac = seasonAvg > 0 ? rawFloor / seasonAvg : 0.65;
+  const ceilFrac  = seasonAvg > 0 ? rawCeil  / seasonAvg : 1.35;
+
+  // Clamp so projected is always strictly inside [min, max].
+  // (floor ≤ 90% of projected, ceiling ≥ 110% of projected)
+  const safeFloor = Math.min(floorFrac, 0.90);
+  const safeCeil  = Math.max(ceilFrac,  1.10);
+
+  // Scale from projected for min/max; from blendedBase for the Base-row display.
+  const min     = Math.max(0, Math.round(projected * safeFloor * 10) / 10);
+  const max     =             Math.round(projected * safeCeil  * 10) / 10;
+  const floor   = Math.round(blendedBase * safeFloor * 10) / 10;
+  const ceiling = Math.round(blendedBase * safeCeil  * 10) / 10;
 
   const ceilingWeatherFactor = isPassingPos ? weatherFactor : Math.max(0.95, weatherFactor);
-  const min = Math.max(0, Math.round(floor   * oppFactor * weatherFactor        * snapFactor * 10) / 10);
-  const max =            Math.round(ceiling  * oppFactor * ceilingWeatherFactor  * snapFactor * 10) / 10;
 
   return {
     projected: Math.round(projected * 10) / 10,
@@ -457,6 +507,8 @@ export function projectPlayer({
       oppGames:              oppData?.gamesAnalyzed ?? 0,
       floorBase:             Math.round(floor * 10) / 10,
       ceilingBase:           Math.round(ceiling * 10) / 10,
+      seasonBase:            Math.round(seasonAvg * 10) / 10,
+      recentBase:            Math.round(recentAvg * 10) / 10,
     },
   };
 }

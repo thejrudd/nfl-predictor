@@ -83,13 +83,20 @@ function ProjectionMath({ baseAvg, factors, projected, projMin, projMax, oppTeam
   }
   function fmt(f) { return `${f.toFixed(2)}×`; }
 
-  const opp   = factors.oppFactor ?? 1;
-  const loc   = factors.locationFactor ?? 1;
-  const wth   = factors.weatherFactor ?? 1;
-  const cWth  = factors.ceilingWeatherFactor ?? wth;
-  const snap  = factors.snapFactor ?? 1;
-  const floor = factors.floorBase ?? null;
-  const ceil  = factors.ceilingBase ?? null;
+  const opp    = factors.oppFactor ?? 1;
+  const loc    = factors.locationFactor ?? 1;
+  const wth    = factors.weatherFactor ?? 1;
+  const cWth   = factors.ceilingWeatherFactor ?? wth;
+  const snap   = factors.snapFactor ?? 1;
+  const floor  = factors.floorBase ?? null;
+  const ceil   = factors.ceilingBase ?? null;
+  const recent = factors.recentBase ?? null;
+  const season = factors.seasonBase ?? null;
+
+  // Detail line for the Base row: show recent vs season avg when they differ meaningfully
+  const baseDetail = recent != null && season != null && Math.abs(recent - season) >= 0.5
+    ? `${recent.toFixed(1)} recent · ${season.toFixed(1)} season`
+    : null;
 
   const snapDetail = (() => {
     if (snap > 1.05) return 'Usage ↑';
@@ -97,26 +104,28 @@ function ProjectionMath({ baseAvg, factors, projected, projMin, projMax, oppTeam
     return 'On trend';
   })();
 
+  const showLocation = Math.abs(loc - 1) >= 0.01;
+
   // Each row: label | detail | [floor val, proj val, ceil val]
   const rows = [
     {
       label: 'Base',
-      detail: null,
+      detail: baseDetail,
       values: [
         floor != null ? `${floor.toFixed(1)}` : '—',
         baseAvg != null ? `${baseAvg.toFixed(1)}` : '—',
         ceil  != null ? `${ceil.toFixed(1)}`  : '—',
       ],
       valueColors: ['var(--color-label-secondary)', 'var(--color-label-secondary)', 'var(--color-label-secondary)'],
-      note: ['low 25% avg', 'season avg', 'top 25% avg'],
+      note: ['floor', 'blend', 'ceiling'],
     },
-    {
+    ...(showLocation ? [{
       label: '× Home/Away',
       detail: locationStr ?? 'Neutral',
       // Floor/ceiling use raw historical percentiles — no location split, so neutral 1.00×
       values: ['1.00×', fmt(loc), '1.00×'],
       valueColors: ['var(--color-label-quaternary)', fc(loc), 'var(--color-label-quaternary)'],
-    },
+    }] : []),
     {
       label: '× Matchup',
       detail: oppTeam ? `vs ${oppTeam}${defLabel ? ` · ${defLabel}` : ''}` : 'No data',
@@ -210,7 +219,7 @@ function ProjectionMath({ baseAvg, factors, projected, projMin, projMax, oppTeam
       {/* Plain-English footnote */}
       <div className="px-4 py-3 space-y-2" style={{ borderTop: '1px solid var(--color-separator)' }}>
         <p className="text-[10px] leading-relaxed" style={{ color: 'var(--color-label-quaternary)' }}>
-          <strong style={{ color: 'var(--color-label-tertiary)' }}>Floor</strong> is the average of this player's bottom 25% of games this season — their realistic bad week. <strong style={{ color: 'var(--color-label-tertiary)' }}>Ceiling</strong> is the average of their top 25% — their realistic big week. Both are then adjusted for matchup difficulty, weather, and snap usage trends.
+          <strong style={{ color: 'var(--color-label-tertiary)' }}>Floor</strong> is the 25th percentile of this player's scored games this season. <strong style={{ color: 'var(--color-label-tertiary)' }}>Ceiling</strong> is the 75th percentile. Both are then shifted by matchup difficulty at half weight, giving a tighter, more realistic expected range.
         </p>
         <p className="text-[10px] leading-relaxed" style={{ color: 'var(--color-label-quaternary)' }}>
           <strong style={{ color: 'var(--color-label-tertiary)' }}>Matchup</strong> compares how many fantasy points the opposing defense allows to this position on average (prior weeks only) against all 32 teams. The result is a multiplier clamped between 0.65× and 1.45×. Requires at least 3 games of data against that defense.
@@ -247,8 +256,8 @@ function InfoRow({ label, children }) {
   );
 }
 
-export default function PlayerMatchupBreakdown({ playerId, week, projection, enrichedPlayer, onClose }) {
-  const { players, weeklyStats, scoringSettings } = useSleeper();
+export default function PlayerMatchupBreakdown({ playerId, week, projection, enrichedPlayer, onClose, onViewStats }) {
+  const { players, weeklyStats, scoringSettings, espnIdOverrides } = useSleeper();
 
   const player = players?.[playerId];
   const weekEntry = weeklyStats?.[playerId]?.find(w => w.week === week) ?? null;
@@ -363,6 +372,27 @@ export default function PlayerMatchupBreakdown({ playerId, week, projection, enr
                 {player?.position} · {player?.team ?? 'FA'} · Week {week}
               </div>
             </div>
+            {(() => {
+              const espnId = player?.espn_id ?? espnIdOverrides?.[playerId];
+              return onViewStats && espnId ? (
+                <button
+                  onClick={() => {
+                    onClose();
+                    const yearsExp = player?.years_exp;
+                    onViewStats(String(espnId), {
+                      displayName: player?.full_name,
+                      teamId: player?.team?.toUpperCase(),
+                      position: player?.position,
+                      experience: yearsExp != null ? yearsExp + 1 : undefined,
+                    });
+                  }}
+                  className="shrink-0 text-xs font-semibold"
+                  style={{ color: 'var(--color-accent)' }}
+                >
+                  Stats →
+                </button>
+              ) : null;
+            })()}
             <button onClick={onClose} className="shrink-0 p-1" style={{ color: 'var(--color-label-secondary)' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>

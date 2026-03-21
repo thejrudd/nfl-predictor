@@ -31,6 +31,8 @@ const PlayerProfile = ({ playerId, playerMeta, teamId, teams, onBack, backLabel 
   const [statsByYear, setStatsByYear] = useState({});
   const [loadingYears, setLoadingYears] = useState({});
   const [errorYears, setErrorYears] = useState({});
+  // Years confirmed to have no stats (silently hidden from the list)
+  const [unavailableYears, setUnavailableYears] = useState(new Set());
 
   // Career stats (separate endpoint)
   const [careerStats, setCareerStats] = useState(null);
@@ -79,11 +81,22 @@ const PlayerProfile = ({ playerId, playerMeta, teamId, teams, onBack, backLabel 
       const data = await fetchPlayerStats(playerId, year);
       setStatsByYear(prev => ({ ...prev, [year]: data }));
     } catch (e) {
-      setErrorYears(prev => ({ ...prev, [year]: 'Failed to load stats.' }));
+      if (year < CURRENT_SEASON) {
+        // Historical year with no data — hide it silently
+        setUnavailableYears(prev => new Set([...prev, year]));
+      } else {
+        setErrorYears(prev => ({ ...prev, [year]: 'Failed to load stats.' }));
+      }
     } finally {
       setLoadingYears(prev => ({ ...prev, [year]: false }));
     }
   };
+
+  // Eagerly probe all historical years in the background so unavailable ones
+  // are silently removed from the list before the user tries to expand them.
+  useEffect(() => {
+    years.filter(y => y < CURRENT_SEASON).forEach(y => loadYear(y));
+  }, [playerId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load current season stats + game log + career stats + honors on mount
   useEffect(() => {
@@ -317,7 +330,7 @@ const PlayerProfile = ({ playerId, playerMeta, teamId, teams, onBack, backLabel 
 
       {/* Stats accordion */}
       <div className="space-y-2">
-        {years.map(year => (
+        {years.filter(y => !unavailableYears.has(y)).map(year => (
           <PlayerStatTable
             key={year}
             year={year}

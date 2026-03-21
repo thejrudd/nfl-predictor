@@ -266,6 +266,8 @@ export default function CompanionDefense({ onViewPlayer }) {
   const [teamSort, setTeamSort] = useState('alpha');
   const [drilldown, setDrilldown] = useState(null); // { team, week }
   const [useTeamColors, setUseTeamColors] = useState(false);
+  const [vegasOddsView, setVegasOddsView] = useState('spread'); // 'spread' | 'ou'
+  const [vegasInfoOpen, setVegasInfoOpen] = useState(false);
   const [gridMaxHeight, setGridMaxHeight] = useState('60vh');
   const filterBarRef = useRef(null);
   const tableContainerRef = useRef(null);
@@ -319,7 +321,7 @@ export default function CompanionDefense({ onViewPlayer }) {
     let valueFn;
     if (statMode === 'rec_yd')  valueFn = (w) => w.rec_yd  ?? 0;
     if (statMode === 'rush_yd') valueFn = (w) => w.rush_yd ?? 0;
-    return buildDefenseTable(weeklyStats, players, scheduleMap, scoringSettings, valueFn);
+    return buildDefenseTable(weeklyStats, players, scheduleMap, scoringSettings, valueFn, true);
   }, [weeklyStats, players, scheduleMap, scoringSettings, statMode]);
 
   // Defense-scored table: keyed by the defensive player's own team
@@ -366,10 +368,12 @@ export default function CompanionDefense({ onViewPlayer }) {
   }, [locationFilter, scheduleMap]);
 
   const baseRows = useMemo(() => {
-    // Vegas Odds mode: cover margin = (teamScore - oppScore) + spread
-    // Positive = covered the spread, negative = didn't cover.
+    // Vegas Odds mode:
+    //   spread view — cover margin = (teamScore - oppScore) + spread; positive = covered
+    //   O/U view    — total margin = (teamScore + oppScore) - total;   positive = over hit
     if (viewMode === 'offense' && statMode === 'vegas_odds') {
       const seasonOdds = ODDS_SEASON ? NFL_ODDS[ODDS_SEASON] : null;
+      const isOU = vegasOddsView === 'ou';
       return ALL_TEAMS.map(team => {
         const weekPts = {};
         if (scheduleMap && seasonOdds) {
@@ -383,7 +387,9 @@ export default function CompanionDefense({ onViewPlayer }) {
             const teamScore = scheduleMap[w]?.[opp]?.ptsAgainst ?? null;
             const oppScore  = sched.ptsAgainst ?? null;
             if (teamScore == null || oppScore == null) continue;
-            weekPts[w] = (teamScore - oppScore) + oddsEntry.spread;
+            weekPts[w] = isOU
+              ? (teamScore + oppScore) - oddsEntry.total
+              : (teamScore - oppScore) + oddsEntry.spread;
           }
         }
         const vals = Object.values(weekPts);
@@ -431,7 +437,7 @@ export default function CompanionDefense({ onViewPlayer }) {
       const avg = weeksPlayed > 0 && Object.keys(weekData).length > 0 ? total / weeksPlayed : null;
       return { team, weekPts: weekData, avg };
     });
-  }, [activeTable, activePos, viewMode, statMode, scheduleMap, weekMatchesLocation]);
+  }, [activeTable, activePos, viewMode, statMode, scheduleMap, weekMatchesLocation, vegasOddsView]);
 
   const rows = useMemo(() => {
     if (sortKey === 'team') {
@@ -499,8 +505,9 @@ export default function CompanionDefense({ onViewPlayer }) {
   function cellBg(pts, team, week) {
     if (pts == null) return undefined;
 
-    // Vegas Odds: binary covered/missed — no gradient, just green or red.
-    if (viewMode === 'offense' && statMode === 'vegas_odds') {
+    // Spread: binary covered/missed — no gradient, just green or red.
+    // O/U falls through to the standard heatmap gradient below.
+    if (viewMode === 'offense' && statMode === 'vegas_odds' && vegasOddsView === 'spread') {
       if (pts === 0) return 'rgba(130, 130, 130, 0.55)'; // push
       if (pts > 0 && useTeamColors && favoriteTeam && TEAM_COLORS[favoriteTeam]) {
         const tc = TEAM_COLORS[favoriteTeam];
@@ -522,7 +529,7 @@ export default function CompanionDefense({ onViewPlayer }) {
     }
     if (min == null || max == null || max === min) return undefined;
     const raw = (pts - min) / (max - min);
-    const t = viewMode === 'defense' ? raw : 1 - raw;
+    const t = raw;
     if (useTeamColors && favoriteTeam && TEAM_COLORS[favoriteTeam]) {
       const tc = TEAM_COLORS[favoriteTeam];
       const hexLow  = darkMode ? (tc.darkSecondary ?? tc.secondary) : tc.secondary;
@@ -554,19 +561,9 @@ export default function CompanionDefense({ onViewPlayer }) {
         const wEntry = playerWeeks.find(w => w.week === week);
         if (!wEntry) continue;
 
-        // scheduleMap is the authoritative source for who played who each week.
-        // Only show players in team T's drilldown if their game-time team actually
-        // faced T in this specific week — verified via the schedule, not Sleeper fields
-        // that may be stale or updated after a trade.
-        const actualOpp = scheduleMap?.[week]?.[team]?.opp?.toUpperCase();
-        if (!actualOpp) continue; // T had no game this week
+        if (!scheduleMap?.[week]?.[team]) continue; // team had no game this week
 
-        // Determine this player's team for this game.
-        // wEntry.team (set by per-player ESPN enhancement) is game-stable and takes precedence.
-        // For un-enhanced weeks, infer from other enhanced weeks in the same season —
-        // a player traded after the season will have their real historical team on all
-        // ESPN-resolved entries, making that a far better signal than player.team (current roster).
-        // Only fall back to player.team if no enhanced weeks exist at all.
+        // Determine this player's game-time team.
         const gameTeam = wEntry.team?.toUpperCase();
         const currentTeam = player.team?.toUpperCase();
         let playerTeam = gameTeam;
@@ -576,14 +573,9 @@ export default function CompanionDefense({ onViewPlayer }) {
         }
         if (!playerTeam) continue;
 
-        // The player must have been on the actual opponent's team this week.
-        // Cross-check via scheduleMap — if playerTeam faced T this week, include them.
-        const scheduleVerified = scheduleMap?.[week]?.[playerTeam]?.opp?.toUpperCase() === team;
-        if (!scheduleVerified) continue;
+        // Only show players who were on team T's own roster this week.
+        if (playerTeam !== team) continue;
 
-        // Safety: if using fallback (not ESPN-confirmed) and the inferred team IS T,
-        // the player plays FOR T's offense — not against T's defense.
-        if (!gameTeam && playerTeam === team) continue;
         let val;
         if (statMode === 'rec_yd')       val = wEntry.rec_yd  ?? 0;
         else if (statMode === 'rush_yd') val = wEntry.rush_yd ?? 0;
@@ -591,9 +583,6 @@ export default function CompanionDefense({ onViewPlayer }) {
         if (val <= 0) continue;
         const breakdown = statMode === 'pts' ? getScoreBreakdown(wEntry, scoringSettings) : null;
         const name = player.full_name || `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim() || playerId;
-        // _teamSource: 'espn' = confirmed game-time attribution via ESPN eventlog.
-        // Absent = fell back to player.team (current roster), which may be wrong
-        // for players who were traded or signed after the season ended.
         const teamSource = wEntry._teamSource ?? 'fallback';
         results.push({ playerId, name, position: player.position, val, breakdown, teamSource });
       }
@@ -711,70 +700,106 @@ export default function CompanionDefense({ onViewPlayer }) {
 
   return (
     <div className="-mx-4 sm:-mx-6 lg:-mx-8">
-      {/* Unified filter bar — single row on wide screens, wraps on mobile */}
-      <div ref={filterBarRef} className="px-4 sm:px-6 lg:px-8 pb-3 flex flex-wrap items-center gap-x-5 gap-y-2">
-        <FilterGroup label="Stat">
-          {(viewMode === 'offense' ? STAT_MODES : DEF_STAT_MODES).map(m => (
-            <Btn
-              key={m.id}
-              active={viewMode === 'offense' ? statMode === m.id : defStatMode === m.id}
-              onClick={() => viewMode === 'offense' ? setStatMode(m.id) : setDefStatMode(m.id)}
-            >
-              {m.label}
-            </Btn>
-          ))}
-        </FilterGroup>
-
-        {!['rec_yd', 'rush_yd', 'game_score', 'vegas_odds'].includes(statMode) && (
-          <FilterGroup label="Phase">
-            {[{ id: 'offense', label: 'Offense' }, { id: 'defense', label: 'Defense' }].map(m => (
-              <Btn key={m.id} active={viewMode === m.id} onClick={() => { setViewMode(m.id); resetSort(); }}>
+      {/* Filter bar — scrollable strip + pinned info icon in the same row */}
+      <div ref={filterBarRef} className="px-4 sm:px-6 lg:px-8 pb-3 flex items-center gap-2">
+        {/* Horizontally scrollable filter strip — never wraps to a second line */}
+        <div className="flex-1 min-w-0 flex items-center gap-x-5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          <FilterGroup label="Stat">
+            {(viewMode === 'offense' ? STAT_MODES : DEF_STAT_MODES).map(m => (
+              <Btn
+                key={m.id}
+                active={viewMode === 'offense' ? statMode === m.id : defStatMode === m.id}
+                onClick={() => viewMode === 'offense' ? setStatMode(m.id) : setDefStatMode(m.id)}
+              >
                 {m.label}
               </Btn>
             ))}
           </FilterGroup>
-        )}
 
-        {!(viewMode === 'offense' && (statMode === 'game_score' || statMode === 'vegas_odds')) && (
-          <FilterGroup label="Position">
-            {activePositions.map(p => (
-              <Btn key={p} active={activePos === p} onClick={() => { setActivePos(p); resetSort(); }}>
-                {p}
+          {!['rec_yd', 'rush_yd', 'game_score', 'vegas_odds'].includes(statMode) && (
+            <FilterGroup label="Phase">
+              {[{ id: 'offense', label: 'Offense' }, { id: 'defense', label: 'Defense' }].map(m => (
+                <Btn key={m.id} active={viewMode === m.id} onClick={() => { setViewMode(m.id); resetSort(); }}>
+                  {m.label}
+                </Btn>
+              ))}
+            </FilterGroup>
+          )}
+
+          {!(viewMode === 'offense' && (statMode === 'game_score' || statMode === 'vegas_odds')) && (
+            <FilterGroup label="Position">
+              {activePositions.map(p => (
+                <Btn key={p} active={activePos === p} onClick={() => { setActivePos(p); resetSort(); }}>
+                  {p}
+                </Btn>
+              ))}
+            </FilterGroup>
+          )}
+
+          {!(viewMode === 'offense' && statMode === 'vegas_odds') && (
+            <FilterGroup label="Color">
+              {HEATMAP_SCOPES.map(s => (
+                <Btn key={s.id} active={heatmapScope === s.id} onClick={() => setHeatmapScope(s.id)}>
+                  {s.label}
+                </Btn>
+              ))}
+            </FilterGroup>
+          )}
+
+          <FilterGroup label="Location">
+            {[{ id: 'all', label: 'All' }, { id: 'home', label: 'Home' }, { id: 'away', label: 'Away' }].map(opt => (
+              <Btn key={opt.id} active={locationFilter === opt.id} onClick={() => setLocationFilter(opt.id)}>
+                {opt.label}
               </Btn>
             ))}
           </FilterGroup>
-        )}
 
-        {!(viewMode === 'offense' && statMode === 'vegas_odds') && (
-          <FilterGroup label="Color">
-            {HEATMAP_SCOPES.map(s => (
-              <Btn key={s.id} active={heatmapScope === s.id} onClick={() => setHeatmapScope(s.id)}>
-                {s.label}
-              </Btn>
-            ))}
-          </FilterGroup>
-        )}
+          {viewMode === 'offense' && statMode === 'vegas_odds' && (
+            <FilterGroup label="Result">
+              <Btn active={vegasOddsView === 'spread'} onClick={() => setVegasOddsView('spread')}>Spread</Btn>
+              <Btn active={vegasOddsView === 'ou'} onClick={() => setVegasOddsView('ou')}>O/U</Btn>
+            </FilterGroup>
+          )}
 
-        <FilterGroup label="Location">
-          {[{ id: 'all', label: 'All' }, { id: 'home', label: 'Home' }, { id: 'away', label: 'Away' }].map(opt => (
-            <Btn key={opt.id} active={locationFilter === opt.id} onClick={() => setLocationFilter(opt.id)}>
-              {opt.label}
+          {favoriteTeam && (
+            <Btn active={useTeamColors} onClick={() => setUseTeamColors(v => !v)}>
+              {favoriteTeam.toUpperCase()} Colors
             </Btn>
-          ))}
-        </FilterGroup>
+          )}
+        </div>
 
-        {favoriteTeam && (
-          <Btn active={useTeamColors} onClick={() => setUseTeamColors(v => !v)}>
-            {favoriteTeam.toUpperCase()} Colors
-          </Btn>
+        {/* Info icon — outside the overflow container so tooltip is never clipped */}
+        {viewMode === 'offense' && statMode === 'vegas_odds' && (
+          <div className="relative shrink-0">
+            <button
+              className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold"
+              style={{ background: 'var(--color-fill)', color: 'var(--color-label-tertiary)' }}
+              onMouseEnter={() => setVegasInfoOpen(true)}
+              onMouseLeave={() => setVegasInfoOpen(false)}
+              onClick={() => setVegasInfoOpen(v => !v)}
+              aria-label="Odds data info"
+            >
+              i
+            </button>
+            {vegasInfoOpen && (
+              <div
+                className="absolute bottom-full right-0 mb-2 z-20 rounded-lg p-2.5 text-xs leading-relaxed"
+                style={{
+                  background: 'var(--color-bg-secondary)',
+                  border: '1px solid var(--color-separator)',
+                  color: 'var(--color-label-secondary)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.18)',
+                  width: '280px',
+                }}
+              >
+                {vegasOddsView === 'ou'
+                  ? `Odds via nflverse · ${ODDS_SEASON} season · margin shown is actual total − O/U line (+ = over, − = under)`
+                  : `Odds via nflverse · ${ODDS_SEASON} season · spread shown is from each team's perspective (− = favored)`}
+              </div>
+            )}
+          </div>
         )}
       </div>
-
-      {viewMode === 'offense' && statMode === 'vegas_odds' && (
-        <p className="px-4 sm:px-6 lg:px-8 pb-2 text-xs" style={{ color: 'var(--color-label-tertiary)' }}>
-          Odds via nflverse · {ODDS_SEASON} season · spread shown is from each team's perspective (− = favored)
-        </p>
-      )}
 
       {!loaded ? (
         <div className="flex items-center justify-center py-16 px-4">
@@ -810,9 +835,11 @@ export default function CompanionDefense({ onViewPlayer }) {
                     </div>
                   </div>
                 </th>
-                <th style={{ ...headStyle(true), cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('avg')}>
-                  <div>{viewMode === 'offense' && statMode === 'vegas_odds' ? 'Covers' : 'AVG'}{sortIndicator('avg')}</div>
-                </th>
+                {!(viewMode === 'offense' && statMode === 'vegas_odds') && (
+                  <th style={{ ...headStyle(true), cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('avg')}>
+                    <div>AVG{sortIndicator('avg')}</div>
+                  </th>
+                )}
                 {WEEKS.map(w => (
                   <th key={w} style={{ ...headStyle(false), cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort(w)}>
                     <div>Wk {w}{sortIndicator(w)}</div>
@@ -859,13 +886,11 @@ export default function CompanionDefense({ onViewPlayer }) {
                         )}
                       </div>
                     </td>
-                    <td style={{ ...cellStyle(true), background: avg != null ? cellBg(avg, team, null) : rowBg, color: avg != null ? '#000' : 'var(--color-label)' }}>
-                      {(viewMode === 'offense' && statMode === 'vegas_odds') ? (() => {
-                        const wins   = Object.values(weekPts).filter(v => v > 0).length;
-                        const losses = Object.values(weekPts).filter(v => v < 0).length;
-                        return wins + losses > 0 ? `${wins}-${losses}` : '—';
-                      })() : avg != null ? avg.toFixed(1) : '—'}
-                    </td>
+                    {!(viewMode === 'offense' && statMode === 'vegas_odds') && (
+                      <td style={{ ...cellStyle(true), background: avg != null ? cellBg(avg, team, null) : rowBg, color: avg != null ? '#000' : 'var(--color-label)' }}>
+                        {avg != null ? avg.toFixed(1) : '—'}
+                      </td>
+                    )}
                     {WEEKS.map(w => {
                       const pts = weekPts[w];
                       const played = scheduleMap?.[w]?.[team] != null;
@@ -883,7 +908,6 @@ export default function CompanionDefense({ onViewPlayer }) {
                           onClick={clickable ? () => setDrilldown({ team, week: w }) : undefined}
                           style={{
                             ...cellStyle(false),
-                            ...(statMode === 'game_score' ? { minWidth: '50px' } : {}),
                             background: pts != null && !isFiltered ? cellBg(pts, team, w) : rowBg,
                             color: pts != null && !isFiltered ? '#000' : 'var(--color-label-secondary)',
                             cursor: clickable ? 'pointer' : 'default',
@@ -897,8 +921,8 @@ export default function CompanionDefense({ onViewPlayer }) {
                                   const oppScore = Math.round(pts);
                                   return ownScore != null ? (
                                     <>
-                                      <div style={{ fontSize: '10px', lineHeight: 1.1 }}>{Math.round(ownScore)}-{oppScore}</div>
-                                      <div style={{ fontSize: '7px', opacity: 0.6, marginTop: '1px', letterSpacing: '0.02em' }}>{team} · {scheduleMap[w][team].opp}</div>
+                                      <div>{Math.round(ownScore)}-{oppScore}</div>
+                                      <div style={{ fontSize: '8px', opacity: 0.6, marginTop: '1px' }}>{team}·{scheduleMap[w][team].opp}</div>
                                     </>
                                   ) : (
                                     <div>{Number.isInteger(pts) ? pts : pts.toFixed(1)}</div>
@@ -906,6 +930,11 @@ export default function CompanionDefense({ onViewPlayer }) {
                                 })() : (
                                 <>
                                   <div>{isVegasOdds ? (() => {
+                                      if (vegasOddsView === 'ou') {
+                                        // Show the signed margin from the O/U line (pts = totalScored - ouLine)
+                                        const n = Math.abs(pts) % 1 === 0 ? String(Math.round(Math.abs(pts))) : Math.abs(pts).toFixed(1);
+                                        return pts > 0 ? `+${n}` : pts < 0 ? `-${n}` : 'PU';
+                                      }
                                       const s = NFL_ODDS[ODDS_SEASON]?.[w]?.[team]?.spread;
                                       if (s == null) return '—';
                                       const n = s % 1 === 0 ? String(Math.round(s)) : s.toFixed(1);
@@ -914,7 +943,14 @@ export default function CompanionDefense({ onViewPlayer }) {
                                     : (viewMode === 'defense' && DEF_STAT_MODES.find(m => m.id === defStatMode)?.statKey)
                                       ? (Number.isInteger(pts) ? pts : pts.toFixed(1))
                                       : pts.toFixed(1)}</div>
-                                  {scheduleMap?.[w]?.[team]?.opp && (
+                                  {isVegasOdds && vegasOddsView === 'ou' ? (
+                                    (() => {
+                                      const t = NFL_ODDS[ODDS_SEASON]?.[w]?.[team]?.total;
+                                      return t != null ? (
+                                        <div style={{ fontSize: '8px', opacity: 0.6, marginTop: '1px' }}>O/U {t}</div>
+                                      ) : null;
+                                    })()
+                                  ) : scheduleMap?.[w]?.[team]?.opp && (
                                     <div style={{ fontSize: '8px', opacity: 0.6, marginTop: '1px' }}>
                                       {scheduleMap[w][team].opp}
                                     </div>
@@ -1150,7 +1186,7 @@ export default function CompanionDefense({ onViewPlayer }) {
                           }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                               <button
-                                onClick={canNav ? () => { setDrilldown(null); onViewPlayer(String(espnId), { displayName: name, teamId }); } : undefined}
+                                onClick={canNav ? () => { setDrilldown(null); const yearsExp = players?.[playerId]?.years_exp; onViewPlayer(String(espnId), { displayName: name, teamId, position, experience: yearsExp != null ? yearsExp + 1 : undefined }); } : undefined}
                                 style={{ fontSize: 12, fontWeight: 700, color: canNav ? 'var(--color-accent)' : 'var(--color-label)', background: 'none', border: 'none', padding: 0, cursor: canNav ? 'pointer' : 'default', textAlign: 'left' }}
                               >
                                 {name}
@@ -1196,7 +1232,7 @@ export default function CompanionDefense({ onViewPlayer }) {
                           const teamId = players?.[playerId]?.team?.toUpperCase();
                           return (
                             <button
-                              onClick={canNav ? () => { setDrilldown(null); onViewPlayer(String(espnId), { displayName: name, teamId }); } : undefined}
+                              onClick={canNav ? () => { setDrilldown(null); const yearsExp = players?.[playerId]?.years_exp; onViewPlayer(String(espnId), { displayName: name, teamId, position, experience: yearsExp != null ? yearsExp + 1 : undefined }); } : undefined}
                               style={{
                                 fontSize: 13, fontWeight: 700, color: canNav ? 'var(--color-accent)' : 'var(--color-label)',
                                 background: 'none', border: 'none', padding: 0, cursor: canNav ? 'pointer' : 'default',
@@ -1325,6 +1361,6 @@ function cellStyle(isAvg) {
     borderBottom: '1px solid var(--color-separator)',
     whiteSpace: 'nowrap',
     color: 'var(--color-label)',
-    minWidth: isAvg ? '44px' : '40px',
+    minWidth: isAvg ? '54px' : '50px',
   };
 }

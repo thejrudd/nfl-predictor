@@ -36,6 +36,26 @@ const PlayerBrowser = ({ teams, initialPlayer, onInitialPlayerConsumed, navBack 
     if (initialPlayer) {
       setSelectedPlayer(initialPlayer);
       onInitialPlayerConsumed?.();
+      // Enrich with full ESPN roster data (jersey, positionName, etc.) if missing.
+      // Rosters are cached in localStorage, so this completes near-instantly on repeat visits.
+      if (initialPlayer.teamId) {
+        fetchRoster(initialPlayer.teamId).then(roster => {
+          const match = roster.find(p => String(p.id) === String(initialPlayer.id));
+          if (match) {
+            setSelectedPlayer(prev =>
+              prev?.id === initialPlayer.id
+                ? {
+                    ...prev,
+                    jersey:       prev.jersey       || match.jersey,
+                    position:     prev.position     || match.position,
+                    positionName: prev.positionName || match.positionName,
+                    status:       prev.status       || match.status,
+                  }
+                : prev
+            );
+          }
+        }).catch(() => {});
+      }
     }
   }, [initialPlayer]);
 
@@ -47,6 +67,36 @@ const PlayerBrowser = ({ teams, initialPlayer, onInitialPlayerConsumed, navBack 
 
   const searchRef  = useRef(null);
   const debounceRef = useRef(null);
+
+  // ── Browser history ──────────────────────────────────────────────────────
+  const skipFirstTeam   = useRef(true);
+  const skipFirstPlayer = useRef(true);
+
+  useEffect(() => {
+    if (skipFirstTeam.current) { skipFirstTeam.current = false; return; }
+    if (selectedTeam) history.pushState({ _nav: 'browser', type: 'team' }, '');
+  }, [selectedTeam]);
+
+  useEffect(() => {
+    if (skipFirstPlayer.current) { skipFirstPlayer.current = false; return; }
+    if (selectedPlayer) history.pushState({ _nav: 'browser', type: 'player' }, '');
+  }, [selectedPlayer]);
+
+  useEffect(() => {
+    const onPopState = (e) => {
+      if (e.state?._nav === 'browser') {
+        if (selectedPlayer) setSelectedPlayer(null);
+        else if (selectedTeam) setSelectedTeam(null);
+      } else if (e.state?._nav === 'app') {
+        // Navigated above browser level — clear selections
+        setSelectedPlayer(null);
+        setSelectedTeam(null);
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [selectedPlayer, selectedTeam]);
+  // ────────────────────────────────────────────────────────────────────────
 
   // Debounced client-side search across all team rosters (rosters are cached in localStorage)
   const handleSearchInput = useCallback((e) => {
@@ -114,7 +164,7 @@ const PlayerBrowser = ({ teams, initialPlayer, onInitialPlayerConsumed, navBack 
         playerMeta={selectedPlayer}
         teamId={selectedPlayer.teamId}
         teams={teams}
-        onBack={navBack?.onBack ?? (() => setSelectedPlayer(null))}
+        onBack={navBack?.onBack ?? (() => history.back())}
         backLabel={navBack?.label}
       />
     );
@@ -124,7 +174,7 @@ const PlayerBrowser = ({ teams, initialPlayer, onInitialPlayerConsumed, navBack 
     return (
       <TeamPage
         team={selectedTeam}
-        onBack={() => setSelectedTeam(null)}
+        onBack={() => history.back()}
         onSelectPlayer={handleSelectPlayer}
       />
     );
