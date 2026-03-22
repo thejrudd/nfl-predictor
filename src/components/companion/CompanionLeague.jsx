@@ -296,12 +296,16 @@ function LeaguePicksView() {
     if (!tradedPicks || !rosters || !league) return { slots: [], years: [], rosterPicks: {} };
 
     const maxRounds = Math.min(league.settings?.draft_rounds ?? MAX_ROUNDS, MAX_ROUNDS);
-    const nextSeason = String(parseInt(season) + 1);
+    const baseYear = parseInt(season);
 
-    // Collect years: current, next, and any in traded picks data
-    const yearSet = new Set([nextSeason]);
+    // Always show up to 3 future draft years, plus any additional years found in traded picks
+    const yearSet = new Set([
+      String(baseYear + 1),
+      String(baseYear + 2),
+      String(baseYear + 3),
+    ]);
     for (const p of tradedPicks) yearSet.add(p.season);
-    // Include current season only if it appears in trades (avoid cluttering with past drafts)
+    // Include current season only if picks for it have been traded
     if (tradedPicks.some(p => p.season === season)) yearSet.add(season);
     const years = [...yearSet].sort();
 
