@@ -23,24 +23,37 @@ Side-by-side player comparison in both the Companion (fantasy) and Statistics (c
 - **Statistics comparison** — Compare mode in `PlayerBrowser`: search and select any two ESPN players to view their career/season stats side-by-side with per-stat delta highlighting. Integrated into the existing Statistics tab as a toggle mode rather than a separate top-level tab
 
 ---
+### v5.0.1 - Compare Mode fixes
 
-### v5.0 — Unified Compare Tab + Draft Coach & Trade Agent
+- **Fantasy Total** - Add each player's fantasy total points for the year to the top of the compare chart in the Fantasy filter.
+- **Point values** - Show the fantasy point value of each metric in the center under the label.
+- **Compare mode in "Statistics" view** - Add button to player card in statistics view that links to compare and automatically populates that player. 
+- **Compare search box fix** - Instead of aligning the search box on the bottom, have it pop out in the middle of the screen. That way, it doesn't move every time the list of search results changes. Additionally, ensure that the background doesn't scroll while the search window is active. 
+- **Floor & Ceiling** - Floor and Ceiling values in Fantasy comparison should be the highest and lowest point values earned in a single game for that season.
+- **Snap % and Game %** - Fantasy comparison should include how % of snaps and # of games played.
+- **Player status** - Statistics mode and compare mode should both include data about a player's current status, such as Injured Reserve, DNP, etc.
+
+### v5.1 — Compare Upgrades
 
 #### Unified Compare Tab ✓ Shipped in v5.0
 
-Replaces the separate Compare views in Statistics and Companion with a single 4th top-level tab.
+- **Player backgrounds** — Add team-colored hero backgrounds for players being compared, similar to the team banner in the Statistics player profile.
+- **Table label cleanup** — Audit and expand all abbreviated stat labels in Compare mode so they match the full names used in Statistics mode.
 
-- **ESPN player search** — Searches all 32 NFL rosters with full smart-search (names, nicknames, cities, positions, conference, division, natural language) via the shared `parseSearchQuery` utility
-- **Stats panel** — Year navigation (2018–current + Career totals), per-position stat table (GP, GS, Snap%, position-specific stats), per-year caching, inline loading spinners, win highlighting
-- **Fantasy panel** — Sleeper-connected season points, avg PPG, last 4 weeks, positional rank, projection range (floor/projected/ceiling), season stat breakdown. Automatically matches ESPN players to Sleeper IDs via `espn_id` field or name+position fallback
-- **Trade panel** — Stub placeholder for Trade Agent (v5.0 remainder)
-- **Search guide** — Tappable example chips shown when picker is empty, covering all search modes
+---
 
-#### Draft Coach
+### v5.5 — Trade Agent
 
-Surfaces publicly available scouting and evaluation data to help users make informed draft decisions.
+Assess trade value for any player and generate trade proposals in either direction.
 
-#### Draft Coach
+- **Trade value assessment** — For any player in the league, display their estimated trade value and generate trade proposals: what you could offer from your roster + draft capital to acquire them, or what you could expect to receive in return for trading them away
+- **Trade value data** — Primary: KeepTradeCut public API for live dynasty/redraft values. Fallback: in-app calculated value derived from projected pts, positional rank, roster scarcity, and draft capital position when KTC is unavailable or the player isn't found
+- **Roster context** — Trade recommendations account for current roster composition (positional depth, starter quality), available waiver alternatives at that position, and draft capital — leveraging the data infrastructure built in v4.8
+- **Two directions** — Evaluate trades involving your own players (what to give up) or target players on other rosters (what to offer), using the league roster browser from v4.8 and the comparison framework from v4.9
+
+---
+
+### v6.0 — Draft Coach
 
 Surfaces publicly available scouting and evaluation data to help users make informed draft decisions.
 
@@ -54,16 +67,6 @@ Surfaces publicly available scouting and evaluation data to help users make info
 - Prospect comparison against historical rookie comps (e.g. "similar combine profile to Justin Jefferson")
 - Live dynasty ADP via KeepTradeCut public API (if available)
 - Depth chart position within the drafting team (Day 1 starter vs. depth)
-
-#### Trade Agent
-
-Assess trade value for any player and generate trade proposals in either direction.
-
-- **Trade value assessment** — For any player in the league, display their estimated trade value and generate trade proposals: what you could offer from your roster + draft capital to acquire them, or what you could expect to receive in return for trading them away
-- **Trade value data** — Primary: KeepTradeCut public API for live dynasty/redraft values. Fallback: in-app calculated value derived from projected pts, positional rank, roster scarcity, and draft capital position when KTC is unavailable or the player isn't found
-- **Roster context** — Trade recommendations account for current roster composition (positional depth, starter quality), available waiver alternatives at that position, and draft capital — leveraging the data infrastructure built in v4.8
-- **Two directions** — Evaluate trades involving your own players (what to give up) or target players on other rosters (what to offer), using the league roster browser from v4.8 and the comparison framework from v4.9
-
 ---
 
 ## Backlog (Unversioned)

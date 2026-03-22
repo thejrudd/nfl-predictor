@@ -157,37 +157,33 @@ export default function ComparePickerSheet({ teams, excludeId, onSelect, onClose
     runSearch(text);
   }
 
-  return (
-    <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-50"
-        style={{ background: 'rgba(0,0,0,0.5)' }}
-        onClick={onClose}
-        aria-hidden="true"
-      />
+  // Lock body scroll while modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
 
-      {/* Sheet */}
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.5)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      aria-modal="true"
+      role="dialog"
+    >
+      {/* Modal panel — fixed dimensions so search box never shifts */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl overflow-hidden flex flex-col"
+        className="flex flex-col rounded-2xl overflow-hidden w-full"
         style={{
           background: 'var(--color-bg-secondary)',
-          maxWidth: '640px',
-          marginLeft: 'auto',
-          marginRight: 'auto',
-          maxHeight: '80vh',
-          paddingBottom: 'env(safe-area-inset-bottom)',
+          maxWidth: '520px',
+          height: '72vh',
+          maxHeight: '640px',
         }}
-        role="dialog"
-        aria-modal="true"
+        onClick={e => e.stopPropagation()}
       >
-        {/* Handle */}
-        <div className="flex justify-center pt-3 pb-2 shrink-0">
-          <div className="w-9 h-1 rounded-full" style={{ background: 'var(--color-fill)' }} />
-        </div>
-
-        {/* Header + search */}
-        <div className="px-4 pb-3 shrink-0" style={{ borderBottom: '1px solid var(--color-separator)' }}>
+        {/* Header + search — always fixed at top */}
+        <div className="px-4 pt-4 pb-3 shrink-0" style={{ borderBottom: '1px solid var(--color-separator)' }}>
           <div className="flex items-center justify-between mb-3">
             <span className="font-bold text-base" style={{ color: 'var(--color-label)' }}>
               Select Player
@@ -224,7 +220,7 @@ export default function ComparePickerSheet({ teams, excludeId, onSelect, onClose
           </div>
         </div>
 
-        {/* Results / guide */}
+        {/* Results / guide — scrollable, fills remaining height */}
         <div className="overflow-y-auto flex-1">
           {!query.trim() && <SearchGuide onExample={handleExample} />}
           {query.trim() && !loading && results.length === 0 && (
@@ -254,7 +250,7 @@ export default function ComparePickerSheet({ teams, excludeId, onSelect, onClose
           ))}
         </div>
       </div>
-    </>
+    </div>
   );
 }
 

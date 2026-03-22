@@ -66,6 +66,7 @@ export default function CompareStatsPanel({
   loadingA, loadingB,
   loadingYearsA, loadingYearsB,
   selectedYear, onYearChange,
+  visibleYears,
 }) {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -97,7 +98,7 @@ export default function CompareStatsPanel({
             className="flex gap-1.5 overflow-x-auto pb-0.5"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            {COMPARE_YEARS.map(year => {
+            {(visibleYears ?? COMPARE_YEARS).map(year => {
               const active = selectedYear === year;
               const inFlight = (playerA && loadingYearsA.has(year)) || (playerB && loadingYearsB.has(year));
               return (
@@ -196,9 +197,9 @@ export default function CompareStatsPanel({
                 </div>
 
                 {/* Stat rows */}
-                {rows.map(({ label, key, decimals = 0, suffix = '' }) => {
-                  const rawA = key != null ? safeMapA[key] : null;
-                  const rawB = key != null ? safeMapB[key] : null;
+                {rows.map(({ label, key, decimals = 0, suffix = '', computeForMap }) => {
+                  const rawA = key != null ? safeMapA[key] : (computeForMap ? computeForMap(safeMapA) : null);
+                  const rawB = key != null ? safeMapB[key] : (computeForMap ? computeForMap(safeMapB) : null);
                   const nA = rawA != null ? parseFloat(rawA) : NaN;
                   const nB = rawB != null ? parseFloat(rawB) : NaN;
                   const validA = !isNaN(nA) && nA !== 0;

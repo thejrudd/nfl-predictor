@@ -3,7 +3,7 @@
 // Player selection uses ESPN rosters (rich smart search).
 // Sleeper match is attempted automatically via espn_id / name+pos lookup.
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { fetchPlayerStats, fetchPlayerCareerStats, CURRENT_SEASON } from '../../utils/playerApi';
 import { buildStatMap, buildRankMap } from '../../utils/playerMetrics';
 import { matchEspnToSleeper } from '../../utils/espnSleeperMatch';
@@ -25,7 +25,7 @@ const PANELS = [
 
 // ── CompareTab ────────────────────────────────────────────────────────────────
 
-export default function CompareTab({ teams }) {
+export default function CompareTab({ teams, initialPlayerA, onConsumeInitialPlayerA }) {
   const { players: sleeperPlayers, hasLeague, loadPlayers } = useSleeper();
 
   // ESPN player selections
@@ -51,6 +51,26 @@ export default function CompareTab({ teams }) {
   const [pickingSlot, setPickingSlot] = useState(null); // 'A' | 'B' | null
   const [selectedYear, setSelectedYear] = useState(CURRENT_SEASON);
   const [panel, setPanel] = useState('stats');
+
+  // ── Pre-populate player A from Statistics view ──────────────────────────────
+
+  useEffect(() => {
+    if (!initialPlayerA) return;
+    onConsumeInitialPlayerA?.();
+    setPlayerA(initialPlayerA);
+    setCacheA({});
+    setRankCacheA({});
+    setLoadingYearsA(new Set());
+    loadYear('A', initialPlayerA, selectedYear);
+    setPanel('stats');
+    if (hasLeague) {
+      (async () => {
+        const playersData = sleeperPlayers ?? await loadPlayers();
+        const sid = playersData ? matchEspnToSleeper(initialPlayerA, playersData) : null;
+        setSleeperIdA(sid);
+      })();
+    }
+  }, [initialPlayerA]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Stat fetching ───────────────────────────────────────────────────────────
 
@@ -118,6 +138,17 @@ export default function CompareTab({ teams }) {
   const rankMapB = rankCacheB[selectedYear] ?? {};
   const isLoadingA = loadingYearsA.has(selectedYear);
   const isLoadingB = loadingYearsB.has(selectedYear);
+
+  // Compute which years to show: only years from each player's rookie season onwards.
+  // experience.years = seasons completed before this season (0 = rookie this year).
+  const firstYearA = playerA ? Math.max(2018, CURRENT_SEASON - (playerA.experience ?? 0)) : null;
+  const firstYearB = playerB ? Math.max(2018, CURRENT_SEASON - (playerB.experience ?? 0)) : null;
+  const minYear = firstYearA !== null && firstYearB !== null
+    ? Math.min(firstYearA, firstYearB)
+    : (firstYearA ?? firstYearB ?? 2018);
+  const visibleYears = (playerA || playerB)
+    ? Array.from({ length: CURRENT_SEASON - minYear + 1 }, (_, i) => CURRENT_SEASON - i)
+    : [];
 
   return (
     <div className="pb-8">
@@ -188,6 +219,7 @@ export default function CompareTab({ teams }) {
           loadingYearsB={loadingYearsB}
           selectedYear={selectedYear}
           onYearChange={handleYearChange}
+          visibleYears={visibleYears}
         />
       )}
 
@@ -294,6 +326,22 @@ function PlayerSlot({ label, player, onPick, onClear }) {
             </>
           )}
         </div>
+        {player.status && player.status !== 'Active' && (
+          <div className="flex justify-center mt-1">
+            <span
+              className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase"
+              style={{
+                background: player.status.includes('Reserve') ? '#ef4444'
+                  : player.status.includes('Physic') ? '#8b5cf6'
+                  : player.status.includes('Suspend') ? '#6b7280'
+                  : '#f59e0b',
+                color: '#fff',
+              }}
+            >
+              {player.status}
+            </span>
+          </div>
+        )}
       </div>
 
       <button

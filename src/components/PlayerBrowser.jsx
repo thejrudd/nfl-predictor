@@ -19,7 +19,7 @@ const CONFERENCES = [
   },
 ];
 
-const PlayerBrowser = ({ teams, initialPlayer, onInitialPlayerConsumed, navBack }) => {
+const PlayerBrowser = ({ teams, initialPlayer, onInitialPlayerConsumed, navBack, onComparePlayer }) => {
   const [selectedTeam, setSelectedTeam]     = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState(initialPlayer ?? null);
 
@@ -205,6 +205,7 @@ const PlayerBrowser = ({ teams, initialPlayer, onInitialPlayerConsumed, navBack 
         teams={teams}
         onBack={navBack?.onBack ?? (() => history.back())}
         backLabel={navBack?.label}
+        onCompare={onComparePlayer}
       />
     );
   }

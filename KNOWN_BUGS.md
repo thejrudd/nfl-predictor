@@ -8,11 +8,7 @@ Open bugs are listed first, fixed bugs below. Add new entries at the bottom of e
 
 | Bug |
 |-----|
-| Year selector for compare mode should only be for years that both players have recorded stats, not all years available in the system. |
 | Table labels in Compare mode are abbreviated in a way that doesn't make sense sometimes. |
-| Compare mode should have all available stats from the Statistics screen in the Stats filter. |
-| When comapring QBs in Compare mode, TD/INT has a null value. If this isn't available in ESPN, it should be calculated manually from the available TD and INT values. |
-| Fantasy view in Compare mode has null values for everything. Every category of fantasy stat that the compared players achieved value in needs to be represented in this view. |
 ---
 
 ## Fixed
@@ -68,3 +64,7 @@ Open bugs are listed first, fixed bugs below. Add new entries at the bottom of e
 | Compare mode showed "Select two players to compare side-by-side" twice — once in CompareStatsPanel, once in CompareTab | v5.0.1 |
 | Compare mode stat table sub-header showed "Jr.", "III", etc. instead of last name for players with name suffixes — `.split(' ').pop()` returned the suffix token | v5.0.1 |
 | Fantasy panel in Compare mode always showed empty state — Sleeper player DB (`players`) was null at match time; fixed by awaiting `loadPlayers()` before calling `matchEspnToSleeper` | v5.0.1 |
+| Compare mode should have all available stats from the Statistics screen in the Stats filter — replaced hand-coded COMPARE_STATS with `getStatRows()` from playerMetrics | v5.0 |
+| Fantasy view in Compare mode had null values for everything — `loadSeasonStats()` was never called; dynamic stat sections now cover all scored stat keys | v5.0 |
+| Year selector in Compare mode showed all years regardless of player career — filtered to rookie year onwards using `experience` field | v5.0.1 |
+| TD/INT ratio null in Compare mode for QBs — `pushVal` rows had `key: null` so per-player lookup failed; added `computeForMap` callback to derive value per player | v5.0.1 |

@@ -1,5 +1,5 @@
 // ── CompareTradePanel ─────────────────────────────────────────────────────────
-// v5.0 stub — Trade Agent coming soon.
+// v5.5 stub — Trade Agent coming soon.
 
 export default function CompareTradePanel() {
   return (
@@ -14,7 +14,7 @@ export default function CompareTradePanel() {
         </svg>
       </div>
       <span className="text-sm font-semibold text-center" style={{ color: 'var(--color-label)' }}>
-        Trade Agent — Coming in v5.0
+        Trade Agent — Coming in v5.5
       </span>
       <span className="text-xs text-center leading-relaxed" style={{ color: 'var(--color-label-tertiary)' }}>
         Assess trade value for any player, generate proposals in either direction,

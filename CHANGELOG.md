@@ -307,3 +307,22 @@ All notable changes, oldest first. Add new entries at the bottom.
 - **Fantasy panel** — Visible when a Sleeper league is connected. Shows season pts, avg PPG, last 4 weeks, positional rank, and projection range (floor/projected/ceiling). Automatically matches ESPN players to Sleeper IDs via `espn_id` field with name+position fallback.
 - **Trade panel** — Stub placeholder for the Trade Agent (coming later in v5.0).
 - **Shared utilities** — Extracted `parseSearchQuery`, `SEARCH_PATTERNS`, `matchesFilter` to `src/utils/parseSearchQuery.js`. Added `src/utils/espnSleeperMatch.js` for ESPN→Sleeper player ID matching.
+
+---
+
+## v5.0.1 — Compare Mode Fixes
+*2026-03-22*
+
+- **Stats panel — full position coverage** — Replaced hand-coded `COMPARE_STATS` table with `getStatRows()` from `playerMetrics.js`, the same source used by the Statistics tab. All positions now show the full section-grouped stat set with an Advanced toggle.
+- **Stats panel — rank badges** — Per-stat ESPN rank badges now display under each value using `buildRankMap()`.
+- **Stats panel — TD/INT ratio** — QB advanced stats TD/INT ratio now renders correctly per player. Previously always showed `—` because derived rows had `key: null`; fixed by adding a `computeForMap` callback that computes the ratio from each player's individual stat map.
+- **Stats panel — year selector** — Year pills are now filtered to years from each player's rookie season onwards (derived from `experience` field), hiding irrelevant historical years.
+- **Search modal** — Player picker converted from a bottom sheet to a centered fixed-size modal. The search box stays stationary as results load in. Background scroll is locked while the modal is open.
+- **Statistics → Compare** — Player profile hero cards in the Statistics tab now include a Compare button. Tapping it navigates to the Compare tab and pre-populates that player in slot A.
+- **Fantasy panel — season total header** — Each player's season fantasy total is now displayed prominently at the top of the Fantasy panel as a large number, above the stat table.
+- **Fantasy panel — scoring rate labels** — Each stat row in the breakdown now shows the scoring multiplier (e.g. "+4 pts", "0.04 pts") as a sub-label under the stat name in the center column.
+- **Fantasy panel — season high/low** — Added Season High and Season Low rows showing the player's actual best and worst single-game point totals for the season.
+- **Fantasy panel — snap % and games played** — Added Games and Snap % rows to the Season section, computed from Sleeper season stats (`gp`, `off_snp`, `tm_off_snp`).
+- **Player status** — Injury and roster status now displayed as colored badges in the Statistics player profile hero, the Compare tab player slots (ESPN status), and the Fantasy panel player header (Sleeper `injury_status`).
+- **Alpha badge** — Compare tab now shows an α badge in the sidebar nav and bottom tab bar.
+- **Guide** — Added Compare mode content to the Guide modal with 7 steps covering search, stats, year navigation, fantasy, rankings, ESPN→Sleeper matching, and the Trade panel stub.

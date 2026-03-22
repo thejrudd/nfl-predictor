@@ -4,7 +4,7 @@
 
 import { useMemo, useEffect } from 'react';
 import { useSleeper } from '../../context/SleeperContext';
-import { calcPointsFromTotals, getRecentAvg, DEFAULT_SCORING } from '../../utils/scoringEngine';
+import { calcPoints, calcPointsFromTotals, getRecentAvg, DEFAULT_SCORING } from '../../utils/scoringEngine';
 import {
   computePositionalRanks, getAvgPPG,
   buildDefenseTable, getDefenseStrength, getLeagueAvgPPG,
@@ -117,6 +117,31 @@ function fmtPts(rawVal, scoringVal) {
   return pts.toFixed(1);
 }
 
+// Format a scoring rate as a compact label, e.g. "+4 pts", "0.04/unit", "−2 pts"
+function fmtScoringRate(scoringVal) {
+  if (!scoringVal) return null;
+  const abs = Math.abs(scoringVal);
+  const sign = scoringVal < 0 ? '−' : '+';
+  if (Number.isInteger(scoringVal)) return `${sign}${abs} pts`;
+  if (abs >= 1) return `${sign}${abs} pts`;
+  // Fractional: show as "x.xx pts/unit"
+  return `${sign}${abs} pts`;
+}
+
+// Status badge color/label for injury statuses
+function injuryBadge(status) {
+  if (!status) return null;
+  const s = status.toLowerCase();
+  if (s === 'ir' || s === 'injured_reserve') return { label: 'IR', color: '#ef4444' };
+  if (s === 'out')        return { label: 'OUT', color: '#ef4444' };
+  if (s === 'dnp')        return { label: 'DNP', color: '#f59e0b' };
+  if (s === 'doubtful')   return { label: 'DBT', color: '#f97316' };
+  if (s === 'questionable') return { label: 'Q', color: '#eab308' };
+  if (s === 'pup' || s === 'pup_r') return { label: 'PUP', color: '#8b5cf6' };
+  if (s === 'sus')        return { label: 'SUS', color: '#6b7280' };
+  return { label: status.toUpperCase().slice(0, 4), color: '#6b7280' };
+}
+
 // ── Data helpers ──────────────────────────────────────────────────────────────
 
 function buildPlayerData(id, players, seasonStats, weeklyStats, scoringSettings, positionalRanks, defenseTable, leagueAvgByPos, week) {
@@ -130,6 +155,20 @@ function buildPlayerData(id, players, seasonStats, weeklyStats, scoringSettings,
   const avgPPG    = getAvgPPG(weekly, scoringSettings);
   const last4     = getRecentAvg(weekly, scoringSettings, 4);
   const rank      = positionalRanks[id] ?? null;
+
+  // Season high/low single-game scores (actual floor & ceiling)
+  const weekPts = weekly.map(w => calcPoints(w, scoringSettings)).filter(s => s > 0);
+  const seasonHigh = weekPts.length > 0 ? Math.max(...weekPts) : null;
+  const seasonLow  = weekPts.length > 0 ? Math.min(...weekPts) : null;
+
+  // Games played and snap %
+  const gamesPlayed = stats?.gp ?? (weekPts.length > 0 ? weekPts.length : null);
+  const snapPct = (stats?.tm_off_snp > 0 && stats?.off_snp != null)
+    ? (stats.off_snp / stats.tm_off_snp) * 100
+    : null;
+
+  // Current injury / roster status from Sleeper player data
+  const injuryStatus = p.injury_status ?? null;
 
   const defStr     = defenseTable ? getDefenseStrength(defenseTable, p.team, pos, week) : null;
   const projection = SKILL_POSITIONS.has(pos)
@@ -145,6 +184,7 @@ function buildPlayerData(id, players, seasonStats, weeklyStats, scoringSettings,
     id, name: p.full_name || `${p.first_name} ${p.last_name}`,
     position: pos, team: p.team || 'FA',
     seasonPts, avgPPG, last4, rank, projection, seasonStats: stats,
+    seasonHigh, seasonLow, gamesPlayed, snapPct, injuryStatus,
   };
 }
 
@@ -307,18 +347,56 @@ export default function CompareFantasyPanel({ sleeperIdA, sleeperIdB }) {
 
   // ── Main render ───────────────────────────────────────────────────────────
 
+  const badgeA = injuryBadge(dataA?.injuryStatus);
+  const badgeB = injuryBadge(dataB?.injuryStatus);
+
   return (
     <div className="pb-6">
+
+      {/* ── Season total hero ─────────────────────────────────────────── */}
+      <div
+        className="flex items-stretch"
+        style={{ borderBottom: '1px solid var(--color-separator)' }}
+      >
+        {/* Player A total */}
+        <div className="flex-1 flex flex-col items-center justify-center py-4 gap-0.5">
+          <span className="text-[28px] font-bold tabular-nums leading-none" style={{ color: dataA?.seasonPts != null ? 'var(--color-label)' : 'var(--color-label-quaternary)' }}>
+            {dataA?.seasonPts != null ? dataA.seasonPts.toFixed(1) : '—'}
+          </span>
+          <span className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: 'var(--color-label-quaternary)' }}>Season pts</span>
+          {badgeA && (
+            <span
+              className="mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase"
+              style={{ background: badgeA.color, color: '#fff' }}
+            >
+              {badgeA.label}
+            </span>
+          )}
+        </div>
+
+        {/* Center divider */}
+        <div className="flex items-center justify-center shrink-0 px-2" style={{ color: 'var(--color-label-quaternary)', fontSize: 11, fontWeight: 700 }}>vs</div>
+
+        {/* Player B total */}
+        <div className="flex-1 flex flex-col items-center justify-center py-4 gap-0.5">
+          <span className="text-[28px] font-bold tabular-nums leading-none" style={{ color: dataB?.seasonPts != null ? 'var(--color-label)' : 'var(--color-label-quaternary)' }}>
+            {dataB?.seasonPts != null ? dataB.seasonPts.toFixed(1) : '—'}
+          </span>
+          <span className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: 'var(--color-label-quaternary)' }}>Season pts</span>
+          {badgeB && (
+            <span
+              className="mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase"
+              style={{ background: badgeB.color, color: '#fff' }}
+            >
+              {badgeB.label}
+            </span>
+          )}
+        </div>
+      </div>
+
       {/* ── Season overview ───────────────────────────────────────────── */}
       <SectionHeader label="Season" />
 
-      <CompareRow
-        label="Season Pts"
-        valA={dataA?.seasonPts != null ? dataA.seasonPts.toFixed(1) : '—'}
-        valB={dataB?.seasonPts != null ? dataB.seasonPts.toFixed(1) : '—'}
-        numA={dataA?.seasonPts} numB={dataB?.seasonPts}
-        higher="better" highlight
-      />
       <CompareRow
         label="Avg/Game"
         valA={dataA?.avgPPG > 0 ? dataA.avgPPG.toFixed(1) : '—'}
@@ -333,6 +411,38 @@ export default function CompareFantasyPanel({ sleeperIdA, sleeperIdB }) {
         numA={dataA?.last4} numB={dataB?.last4}
         higher="better"
       />
+      <CompareRow
+        label="Season High"
+        valA={dataA?.seasonHigh != null ? dataA.seasonHigh.toFixed(1) : '—'}
+        valB={dataB?.seasonHigh != null ? dataB.seasonHigh.toFixed(1) : '—'}
+        numA={dataA?.seasonHigh} numB={dataB?.seasonHigh}
+        higher="better"
+      />
+      <CompareRow
+        label="Season Low"
+        valA={dataA?.seasonLow != null ? dataA.seasonLow.toFixed(1) : '—'}
+        valB={dataB?.seasonLow != null ? dataB.seasonLow.toFixed(1) : '—'}
+        numA={dataA?.seasonLow} numB={dataB?.seasonLow}
+        higher="better"
+      />
+      {(dataA?.gamesPlayed != null || dataB?.gamesPlayed != null) && (
+        <CompareRow
+          label="Games"
+          valA={dataA?.gamesPlayed != null ? String(dataA.gamesPlayed) : '—'}
+          valB={dataB?.gamesPlayed != null ? String(dataB.gamesPlayed) : '—'}
+          numA={dataA?.gamesPlayed} numB={dataB?.gamesPlayed}
+          higher="better"
+        />
+      )}
+      {(dataA?.snapPct != null || dataB?.snapPct != null) && (
+        <CompareRow
+          label="Snap %"
+          valA={dataA?.snapPct != null ? `${dataA.snapPct.toFixed(0)}%` : '—'}
+          valB={dataB?.snapPct != null ? `${dataB.snapPct.toFixed(0)}%` : '—'}
+          numA={dataA?.snapPct} numB={dataB?.snapPct}
+          higher="better"
+        />
+      )}
 
       {(dataA?.rank || dataB?.rank) && (
         <CompareRow
@@ -347,27 +457,13 @@ export default function CompareFantasyPanel({ sleeperIdA, sleeperIdB }) {
       {/* ── Projection ────────────────────────────────────────────────── */}
       {(dataA?.projection || dataB?.projection) && (
         <>
-          <SectionHeader label="Projection" />
+          <SectionHeader label="Projection (Next Game)" />
           <CompareRow
             label="Projected"
             valA={dataA?.projection?.projected != null ? dataA.projection.projected.toFixed(1) : '—'}
             valB={dataB?.projection?.projected != null ? dataB.projection.projected.toFixed(1) : '—'}
             numA={dataA?.projection?.projected} numB={dataB?.projection?.projected}
             higher="better" highlight
-          />
-          <CompareRow
-            label="Floor"
-            valA={dataA?.projection?.floor != null ? dataA.projection.floor.toFixed(1) : '—'}
-            valB={dataB?.projection?.floor != null ? dataB.projection.floor.toFixed(1) : '—'}
-            numA={dataA?.projection?.floor} numB={dataB?.projection?.floor}
-            higher="better"
-          />
-          <CompareRow
-            label="Ceiling"
-            valA={dataA?.projection?.ceiling != null ? dataA.projection.ceiling.toFixed(1) : '—'}
-            valB={dataB?.projection?.ceiling != null ? dataB.projection.ceiling.toFixed(1) : '—'}
-            numA={dataA?.projection?.ceiling} numB={dataB?.projection?.ceiling}
-            higher="better"
           />
         </>
       )}
@@ -387,6 +483,7 @@ export default function CompareFantasyPanel({ sleeperIdA, sleeperIdB }) {
               <CompareRow
                 key={statKey}
                 label={STAT_LABELS[statKey] ?? statKey}
+                scoringLabel={fmtScoringRate(scoringVal)}
                 valA={fmtPts(rawA, scoringVal)}
                 valB={fmtPts(rawB, scoringVal)}
                 numA={ptsA} numB={ptsB}
@@ -417,7 +514,7 @@ function SectionHeader({ label }) {
   );
 }
 
-function CompareRow({ label, valA, valB, numA, numB, higher, highlight, rankA, rankB }) {
+function CompareRow({ label, scoringLabel, valA, valB, numA, numB, higher, highlight, rankA, rankB }) {
   let winA = false, winB = false;
   if (numA != null && numB != null && numA !== numB) {
     if (higher === 'better') { winA = numA > numB; winB = numB > numA; }
@@ -448,7 +545,12 @@ function CompareRow({ label, valA, valB, numA, numB, higher, highlight, rankA, r
 
       {/* Label */}
       <div className="shrink-0 text-center" style={{ width: 88 }}>
-        <span className="text-xs" style={{ color: 'var(--color-label-tertiary)' }}>{label}</span>
+        <div className="text-xs" style={{ color: 'var(--color-label-tertiary)' }}>{label}</div>
+        {scoringLabel && (
+          <div className="text-[10px] tabular-nums" style={{ color: 'var(--color-label-quaternary)' }}>
+            {scoringLabel}
+          </div>
+        )}
       </div>
 
       {/* Player B */}

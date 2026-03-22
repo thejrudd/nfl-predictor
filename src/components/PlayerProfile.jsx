@@ -24,7 +24,7 @@ function darkenHex(hex, amount = 0.28) {
 
 const YEARS_TO_SHOW = 10;
 
-const PlayerProfile = ({ playerId, playerMeta, teamId, teams, onBack, backLabel }) => {
+const PlayerProfile = ({ playerId, playerMeta, teamId, teams, onBack, backLabel, onCompare }) => {
   const { getTeamRecord } = usePredictions();
 
   // statsJson for each year, fetched lazily
@@ -293,6 +293,49 @@ const PlayerProfile = ({ playerId, playerMeta, teamId, teams, onBack, backLabel 
                   </>
                 )}
               </div>
+
+              {/* Status badge — only shown when not Active */}
+              {playerMeta.status && playerMeta.status !== 'Active' && (
+                <div className="mt-2 flex justify-center sm:justify-start">
+                  <span
+                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold uppercase"
+                    style={{
+                      background: playerMeta.status.includes('Reserve') || playerMeta.status === 'Injured Reserve'
+                        ? '#ef4444'
+                        : playerMeta.status.includes('Physic') || playerMeta.status.includes('PUP')
+                          ? '#8b5cf6'
+                          : playerMeta.status.includes('Suspend')
+                            ? '#6b7280'
+                            : '#f59e0b',
+                      color: '#fff',
+                    }}
+                  >
+                    {playerMeta.status}
+                  </span>
+                </div>
+              )}
+
+              {/* Compare button */}
+              {onCompare && (
+                <div className="mt-3 flex justify-center sm:justify-start">
+                  <button
+                    onClick={() => onCompare(playerMeta)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity active:opacity-70"
+                    style={{
+                      background: heroBg
+                        ? (heroOnBg === '#FFFFFF' ? 'rgba(255,255,255,0.18)' : 'rgba(12,15,20,0.14)')
+                        : 'var(--color-fill)',
+                      color: heroBg ? heroOnBg : 'var(--color-label-secondary)',
+                    }}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+                      <rect x="3" y="5" width="8" height="16" rx="2" stroke="currentColor" strokeWidth="1.8" />
+                      <rect x="15" y="5" width="8" height="16" rx="2" stroke="currentColor" strokeWidth="1.8" />
+                    </svg>
+                    Compare
+                  </button>
+                </div>
+              )}
 
               {/* Career highlight pods */}
               {careerHighlights.length > 0 && (

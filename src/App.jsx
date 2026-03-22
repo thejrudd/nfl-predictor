@@ -44,6 +44,7 @@ function AppInner() {
   const [scoringSettingsOpen, setScoringSettingsOpen] = useState(false);
   const [statsInitPlayer, setStatsInitPlayer] = useState(null);
   const [statsNavBack, setStatsNavBack] = useState(null); // { label, onBack } | null — contextual back from external nav
+  const [compareInitPlayerA, setCompareInitPlayerA] = useState(null);
 
   const { hasLeague, season, changeSeason, league, disconnect, sleeperUser, statsLoading, loadSeasonStats, seasonStats } = useSleeper();
 
@@ -293,9 +294,9 @@ function AppInner() {
             </>
           )}
 
-          {activeTab === 'statistics' && <PlayerBrowser teams={scheduleData.teams} initialPlayer={statsInitPlayer} onInitialPlayerConsumed={() => setStatsInitPlayer(null)} navBack={statsNavBack} />}
+          {activeTab === 'statistics' && <PlayerBrowser teams={scheduleData.teams} initialPlayer={statsInitPlayer} onInitialPlayerConsumed={() => setStatsInitPlayer(null)} navBack={statsNavBack} onComparePlayer={(player) => { setCompareInitPlayerA(player); setActiveTab('compare'); }} />}
 
-          {activeTab === 'compare' && <CompareTab teams={scheduleData.teams} />}
+          {activeTab === 'compare' && <CompareTab teams={scheduleData.teams} initialPlayerA={compareInitPlayerA} onConsumeInitialPlayerA={() => setCompareInitPlayerA(null)} />}
 
           {activeTab === 'companion' && !hasLeague && (
             <CompanionConnect />
