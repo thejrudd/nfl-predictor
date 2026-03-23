@@ -1,25 +1,34 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSleeper } from '../../context/SleeperContext';
-import { calcPointsFromTotals, getRecentAvg } from '../../utils/scoringEngine';
+import { calcPoints, calcPointsFromTotals, getRecentAvg } from '../../utils/scoringEngine';
+import { projectPlayer, buildDefenseTable, getDefenseStrength, getLeagueAvgPPG } from '../../utils/projectionEngine';
+import { STADIUMS } from '../../data/stadiums';
 
 const POSITIONS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'K'];
+const SKILL_POSITIONS = new Set(['QB', 'RB', 'WR', 'TE', 'K']);
 const POSITION_COLORS = {
   QB: '#ef4444', RB: '#22c55e', WR: '#3b82f6', TE: '#f59e0b', K: '#8b5cf6',
 };
 
-export default function CompanionWaiver() {
+export default function CompanionWaiver({ onViewPlayer }) {
   const {
     players, loadPlayers,
     rosters,
+    league,
     seasonStats, loadSeasonStats,
     weeklyStats,
+    scheduleMap,
+    espnIdOverrides,
     statsLoading, statsProgress,
     scoringSettings,
     myRoster,
   } = useSleeper();
 
   const [posFilter, setPosFilter] = useState('ALL');
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('recent'); // 'projected' | 'recent' | 'season'
+  const debounceRef = useRef(null);
 
   useEffect(() => { loadPlayers(); }, [loadPlayers]);
   useEffect(() => {
@@ -36,31 +45,102 @@ export default function CompanionWaiver() {
     return ids;
   }, [rosters]);
 
-  // My roster IDs (for "add" context)
-  const myRosterData = myRoster();
+  // My roster IDs (memoized — myRoster() is a function, not a value)
+  const myRosterData = useMemo(() => myRoster(), [myRoster]);
   const myPlayerIds = useMemo(() => {
     if (!myRosterData) return new Set();
     return new Set([...(myRosterData.players || []), ...(myRosterData.reserve || [])]);
   }, [myRosterData]);
+  void myPlayerIds; // used for "add" context in future
 
-  const available = useMemo(() => {
+  // Projection week: last scored leg + 1, or last regular-season week
+  const week = useMemo(() => {
+    const playoffStart = league?.settings?.playoff_week_start ?? 18;
+    const lastScored = league?.settings?.last_scored_leg;
+    if (lastScored) return Math.min(lastScored + 1, playoffStart - 1);
+    return Math.max(1, playoffStart - 1);
+  }, [league]);
+
+  // ── Pre-compute defense table once (replaces per-player getOpponentStrength calls) ──
+  const defenseTable = useMemo(() => {
+    if (!weeklyStats || !players) return null;
+    return buildDefenseTable(weeklyStats, players, scheduleMap, scoringSettings);
+  }, [weeklyStats, players, scheduleMap, scoringSettings]);
+
+  // ── Pre-compute league avg PPG per position (replaces per-player getLeagueAvgPPG calls) ──
+  const leagueAvgByPos = useMemo(() => {
+    if (!weeklyStats || !players) return {};
+    const result = {};
+    for (const pos of SKILL_POSITIONS) {
+      result[pos] = getLeagueAvgPPG(pos, weeklyStats, players, scoringSettings, week);
+    }
+    return result;
+  }, [weeklyStats, players, scoringSettings, week]);
+
+  // ── Enrich all available players with projections (no filter/sort deps) ──────
+  // This is the expensive memo. It only recomputes when the underlying data changes,
+  // not when the user changes position filter, search, or sort column.
+  const enrichedPlayers = useMemo(() => {
     if (!players || !seasonStats) return [];
 
     return Object.entries(seasonStats)
       .map(([id, stats]) => {
-        if (rosteredIds.has(id)) return null; // already on a team
+        if (rosteredIds.has(id)) return null;
         const p = players[id];
         if (!p) return null;
         const pos = p.position;
-        if (!['QB', 'RB', 'WR', 'TE', 'K'].includes(pos)) return null;
-        if (posFilter !== 'ALL' && pos !== posFilter) return null;
-
-        const q = search.trim().toLowerCase();
-        if (q && !p.full_name?.toLowerCase().includes(q) && !p.team?.toLowerCase().includes(q)) return null;
+        if (!SKILL_POSITIONS.has(pos)) return null;
 
         const pts = calcPointsFromTotals(stats, scoringSettings);
         if (pts <= 0) return null;
-        const recentAvg = getRecentAvg(weeklyStats?.[id] ?? [], scoringSettings, 4);
+
+        const weekly = weeklyStats?.[id] ?? [];
+        const recentAvg = getRecentAvg(weekly, scoringSettings, 4);
+
+        // Season average from weekly game scores
+        const gamePts = weekly.map(w => calcPoints(w, scoringSettings)).filter(p => p > 0);
+        const seasonAvg = gamePts.length > 0 ? gamePts.reduce((s, v) => s + v, 0) / gamePts.length : 0;
+
+        // Trending: recent avg ≥ 25% above season avg and at least 2 pts higher
+        const isTrending = recentAvg > 0 && seasonAvg > 0
+          && recentAvg >= seasonAvg * 1.25
+          && (recentAvg - seasonAvg) >= 2;
+
+        // Upcoming matchup from scheduleMap
+        const team = p.team?.toUpperCase();
+        const matchup = scheduleMap?.[week]?.[team];
+        const oppTeam = matchup?.opp ?? null;
+        const isHome = matchup?.home ?? null;
+
+        // Indoor: game is played at the home team's venue
+        const venueTeam = isHome === true ? team : isHome === false ? oppTeam : null;
+        const isIndoor = venueTeam ? (STADIUMS[venueTeam]?.indoor ?? false) : false;
+
+        // Projection using pre-computed defense table (O(1) lookup, no full scan)
+        let proj = null;
+        if (weekly.length >= 2 && defenseTable) {
+          const defStrength = oppTeam
+            ? getDefenseStrength(defenseTable, oppTeam, pos, week)
+            : null;
+          proj = projectPlayer({
+            weeklyArr: weekly,
+            pos,
+            oppTeam,
+            isHome,
+            isIndoor,
+            weather: null,
+            allWeeklyStats: null,  // not needed — skipOpponentLookup prevents fallback
+            players: null,
+            scoringSettings,
+            scheduleMap,
+            week,
+            defStrength,
+            leagueAvg: leagueAvgByPos[pos] ?? 0,
+            skipOpponentLookup: true,
+          });
+        }
+
+        const espnId = p.espn_id ?? espnIdOverrides?.[id] ?? null;
 
         return {
           id,
@@ -68,14 +148,38 @@ export default function CompanionWaiver() {
           position: pos,
           team: p.team || 'FA',
           pts,
+          seasonAvg,
           recentAvg,
+          projected: proj?.projected ?? null,
+          oppTeam,
+          isTrending,
           injuryStatus: p.injury_status,
+          espnId,
+          yearsExp: p.years_exp,
         };
       })
-      .filter(Boolean)
-      .sort((a, b) => b.recentAvg - a.recentAvg || b.pts - a.pts)
+      .filter(Boolean);
+  }, [players, seasonStats, weeklyStats, scheduleMap, scoringSettings, rosteredIds, week, espnIdOverrides, defenseTable, leagueAvgByPos]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Filter, sort, and slice (cheap — no projection math) ─────────────────────
+  const available = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return enrichedPlayers
+      .filter(p => posFilter === 'ALL' || p.position === posFilter)
+      .filter(p => !q || p.name.toLowerCase().includes(q) || p.team.toLowerCase().includes(q))
+      .sort((a, b) => {
+        if (sortBy === 'projected') {
+          const ap = a.projected ?? -1;
+          const bp = b.projected ?? -1;
+          return bp - ap || b.recentAvg - a.recentAvg;
+        }
+        if (sortBy === 'season') return b.pts - a.pts || b.recentAvg - a.recentAvg;
+        return b.recentAvg - a.recentAvg || b.pts - a.pts;
+      })
       .slice(0, 100);
-  }, [players, seasonStats, weeklyStats, scoringSettings, posFilter, search, rosteredIds]);
+  }, [enrichedPlayers, posFilter, search, sortBy]);
+
+  const sortLabel = sortBy === 'projected' ? 'projected pts' : sortBy === 'season' ? 'season total' : 'recent avg (last 4 weeks)';
 
   return (
     <div className="pb-6">
@@ -102,8 +206,12 @@ export default function CompanionWaiver() {
           </svg>
           <input
             type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={e => {
+              setSearchInput(e.target.value);
+              clearTimeout(debounceRef.current);
+              debounceRef.current = setTimeout(() => setSearch(e.target.value), 200);
+            }}
             placeholder="Search players…"
             className="w-full pl-9 pr-3 py-2 rounded-xl font-medium focus:outline-none"
             style={{ fontSize: '16px', background: 'var(--color-fill-secondary)', color: 'var(--color-label)' }}
@@ -123,16 +231,17 @@ export default function CompanionWaiver() {
       {/* Sorting note */}
       <div className="px-4 pb-2">
         <span className="text-xs" style={{ color: 'var(--color-label-tertiary)' }}>
-          Sorted by recent avg (last 4 weeks)
+          Sorted by {sortLabel}
         </span>
       </div>
 
-      {/* Column headers — match: avatar(w-9) + gap(3) + name(flex-1) + Season(w-16) + Avg(w-16) */}
+      {/* Column headers */}
       <div className="flex items-center gap-3 px-4 pb-2 mb-1" style={{ borderBottom: '1px solid var(--color-separator)' }}>
         <div className="w-9 shrink-0" />
         <span className="flex-1 text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--color-label-tertiary)' }}>Player</span>
-        <span className="w-16 text-right text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--color-label-tertiary)' }}>Season</span>
-        <span className="w-16 text-right text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--color-label-tertiary)' }}>4-Wk Avg</span>
+        <ColHeader label="Proj" active={sortBy === 'projected'} onClick={() => setSortBy(s => s === 'projected' ? 'recent' : 'projected')} />
+        <ColHeader label="Season" active={sortBy === 'season'} onClick={() => setSortBy(s => s === 'season' ? 'recent' : 'season')} />
+        <ColHeader label="4-Wk Avg" active={sortBy === 'recent'} onClick={() => setSortBy('recent')} />
       </div>
 
       {!seasonStats && !statsLoading && (
@@ -142,7 +251,12 @@ export default function CompanionWaiver() {
       )}
 
       {available.map(player => (
-        <WaiverRow key={player.id} player={player} />
+        <WaiverRow
+          key={player.id}
+          player={player}
+          onViewPlayer={onViewPlayer}
+          sortBy={sortBy}
+        />
       ))}
 
       {available.length === 0 && seasonStats && (
@@ -158,9 +272,23 @@ export default function CompanionWaiver() {
   );
 }
 
-function WaiverRow({ player }) {
+function ColHeader({ label, active, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-14 text-right shrink-0 flex items-center justify-end gap-0.5"
+      style={{ color: active ? 'var(--color-label)' : 'var(--color-label-tertiary)' }}
+    >
+      <span className="text-xs font-semibold uppercase tracking-widest">{label}</span>
+      {active && <span style={{ fontSize: '9px' }}>↓</span>}
+    </button>
+  );
+}
+
+function WaiverRow({ player, onViewPlayer, sortBy }) {
   const isInjured = player.injuryStatus && !['Questionable', 'Probable'].includes(player.injuryStatus);
   const posColor = POSITION_COLORS[player.position] ?? 'var(--color-label-tertiary)';
+  const canNav = !!(onViewPlayer && player.espnId);
 
   return (
     <div className="flex items-center px-4 py-2.5 gap-3" style={{ borderBottom: '1px solid var(--color-separator)' }}>
@@ -173,7 +301,26 @@ function WaiverRow({ player }) {
       />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
-          <span className="font-semibold text-sm truncate" style={{ color: 'var(--color-label)' }}>{player.name}</span>
+          <button
+            onClick={canNav ? () => onViewPlayer(String(player.espnId), {
+              displayName: player.name,
+              teamId: player.team,
+              position: player.position,
+              experience: player.yearsExp != null ? player.yearsExp + 1 : undefined,
+            }) : undefined}
+            className="font-semibold text-sm truncate text-left"
+            style={{ color: canNav ? 'var(--color-accent)' : 'var(--color-label)', background: 'none', border: 'none', padding: 0, cursor: canNav ? 'pointer' : 'default' }}
+          >
+            {player.name}
+          </button>
+          {player.isTrending && (
+            <span
+              className="shrink-0 text-xs font-bold px-1 py-0.5 rounded"
+              style={{ fontSize: '9px', background: 'rgba(30,155,55,0.12)', color: 'var(--color-accent-green)' }}
+            >
+              ↑ HOT
+            </span>
+          )}
           {player.injuryStatus && (
             <span
               className="text-xs font-bold px-1 py-0.5 rounded shrink-0"
@@ -190,15 +337,36 @@ function WaiverRow({ player }) {
         <div className="text-xs mt-0.5 flex items-center gap-1.5">
           <span style={{ color: posColor, fontWeight: 600 }}>{player.position}</span>
           <span style={{ color: 'var(--color-label-tertiary)' }}>{player.team}</span>
+          {player.oppTeam && (
+            <span style={{ color: 'var(--color-label-quaternary)', fontSize: '10px' }}>
+              vs {player.oppTeam}
+            </span>
+          )}
         </div>
       </div>
-      <div className="w-16 text-right">
-        <span className="font-bold tabular-nums text-sm" style={{ color: 'var(--color-label)' }}>
+
+      {/* Projected */}
+      <div className="w-14 text-right shrink-0">
+        <span
+          className="font-bold tabular-nums text-sm"
+          style={{ color: player.projected != null
+            ? (sortBy === 'projected' ? 'var(--color-label)' : 'var(--color-label-secondary)')
+            : 'var(--color-label-quaternary)' }}
+        >
+          {player.projected != null ? player.projected.toFixed(1) : '—'}
+        </span>
+      </div>
+
+      {/* Season total */}
+      <div className="w-14 text-right shrink-0">
+        <span className="tabular-nums text-sm" style={{ color: sortBy === 'season' ? 'var(--color-label)' : 'var(--color-label-secondary)' }}>
           {player.pts.toFixed(1)}
         </span>
       </div>
-      <div className="w-16 text-right">
-        <span className="tabular-nums text-sm" style={{ color: player.recentAvg >= 15 ? 'var(--color-accent-green)' : 'var(--color-label-secondary)' }}>
+
+      {/* 4-week avg */}
+      <div className="w-14 text-right shrink-0">
+        <span className="tabular-nums text-sm" style={{ color: sortBy === 'recent' ? 'var(--color-label)' : 'var(--color-label-secondary)' }}>
           {player.recentAvg > 0 ? player.recentAvg.toFixed(1) : '—'}
         </span>
       </div>

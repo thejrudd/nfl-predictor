@@ -39,6 +39,7 @@ export const DEFAULT_SCORING = {
   rec_td: 6.0,
   rec_2pt: 2.0,
   rec_fd: 0.0,         // first down (receiving)
+  bonus_rec_te: 0.0,   // TE premium (extra pts per TE reception)
 
   // Misc / Fumbles
   fum: 0.0,            // fumble (any)
@@ -120,6 +121,8 @@ const STAT_TO_SCORING_KEY = {
   rec_td: 'rec_td',
   rec_2pt: 'rec_2pt',
   rec_fd: 'rec_fd',
+  // NOTE: bonus_rec_te is a scoring setting, not a stat key — handled separately in calcPoints
+  // It is listed in DEFAULT_SCORING so importLeagueScoring can detect it via passthrough
   // Misc / Fumbles
   fum: 'fum',
   fum_lost: 'fum_lost',
@@ -186,7 +189,7 @@ const STAT_TO_SCORING_KEY = {
  * @param {Object} scoring - Scoring settings (merged with DEFAULT_SCORING)
  * @returns {number} Fantasy points (rounded to 2 decimal places)
  */
-export function calcPoints(stats, scoring) {
+export function calcPoints(stats, scoring, position = null) {
   if (!stats) return 0;
   const settings = { ...DEFAULT_SCORING, ...scoring };
   let pts = 0;
@@ -196,6 +199,11 @@ export function calcPoints(stats, scoring) {
     if (statVal && settings[scoringKey]) {
       pts += statVal * settings[scoringKey];
     }
+  }
+
+  // TE premium — extra pts per reception for TEs only (requires position context)
+  if (position === 'TE' && settings.bonus_rec_te && stats.rec) {
+    pts += stats.rec * settings.bonus_rec_te;
   }
 
   // Fallback: if raw stat keys produced nothing, use Sleeper's pre-computed points.
@@ -228,8 +236,8 @@ export function calcSeasonPoints(weeks, scoring) {
  * @param {Object} scoring - Scoring settings
  * @returns {number} Season total fantasy points
  */
-export function calcPointsFromTotals(seasonStats, scoring) {
-  return calcPoints(seasonStats, scoring);
+export function calcPointsFromTotals(seasonStats, scoring, position = null) {
+  return calcPoints(seasonStats, scoring, position);
 }
 
 // ── Preset helpers ────────────────────────────────────────────────────────────
@@ -269,7 +277,9 @@ export function importLeagueScoring(leagueScoringSettings) {
   const result = {};
   for (const [key, val] of Object.entries(leagueScoringSettings)) {
     const internalKey = SCORING_SETTINGS_ALIASES[key] ?? key;
-    if (internalKey in STAT_TO_SCORING_KEY) {
+    // Accept keys that are stat-scoring keys OR any key in DEFAULT_SCORING
+    // (covers position-specific bonuses like bonus_rec_te that aren't stat keys)
+    if (internalKey in STAT_TO_SCORING_KEY || internalKey in DEFAULT_SCORING) {
       result[internalKey] = val;
     }
   }

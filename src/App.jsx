@@ -27,6 +27,9 @@ import CompanionMatchup from './components/companion/CompanionMatchup';
 import CompanionWaiver from './components/companion/CompanionWaiver';
 import CompanionScoring from './components/companion/CompanionScoring';
 import CompanionDefense from './components/companion/CompanionDefense';
+import CompanionLeague from './components/companion/CompanionLeague';
+import CompanionTrade from './components/companion/CompanionTrade';
+import CompareTab from './components/compare/CompareTab';
 import ScoringSettings from './components/companion/ScoringSettings';
 
 function AppInner() {
@@ -36,12 +39,14 @@ function AppInner() {
   const [selectedTeam, setSelectedTeam] = useState(null);
 
   // Two-level navigation
-  const [activeTab, setActiveTab] = useState('predictions');
-  const [seasonView, setSeasonView] = useState('predictions');
+  const [activeTab, setActiveTab]     = useState('predictions');
+  const [seasonView, setSeasonView]   = useState('predictions');
   const [companionView, setCompanionView] = useState('roster');
   const [scoringSettingsOpen, setScoringSettingsOpen] = useState(false);
   const [statsInitPlayer, setStatsInitPlayer] = useState(null);
   const [statsNavBack, setStatsNavBack] = useState(null); // { label, onBack } | null — contextual back from external nav
+  const [compareInitPlayerA, setCompareInitPlayerA] = useState(null);
+  const [tradeInitPlayer, setTradeInitPlayer] = useState(null); // { sleeperId, side: 'give'|'get', partnerRosterId? }
 
   const { hasLeague, season, changeSeason, league, disconnect, sleeperUser, statsLoading, loadSeasonStats, seasonStats } = useSleeper();
 
@@ -291,9 +296,11 @@ function AppInner() {
             </>
           )}
 
-          {activeTab === 'statistics' && <PlayerBrowser teams={scheduleData.teams} initialPlayer={statsInitPlayer} onInitialPlayerConsumed={() => setStatsInitPlayer(null)} navBack={statsNavBack} />}
+          {activeTab === 'statistics' && <PlayerBrowser teams={scheduleData.teams} initialPlayer={statsInitPlayer} onInitialPlayerConsumed={() => setStatsInitPlayer(null)} navBack={statsNavBack} onComparePlayer={(player) => { setCompareInitPlayerA(player); setActiveTab('compare'); }} />}
 
-{activeTab === 'companion' && !hasLeague && (
+          {activeTab === 'compare' && <CompareTab teams={scheduleData.teams} initialPlayerA={compareInitPlayerA} onConsumeInitialPlayerA={() => setCompareInitPlayerA(null)} onBuildTrade={(sleeperIdA, sleeperIdB) => { setTradeInitPlayer({ sleeperId: sleeperIdA, side: 'give', otherSleeperId: sleeperIdB }); setActiveTab('companion'); setCompanionView('trade'); }} />}
+
+          {activeTab === 'companion' && !hasLeague && (
             <CompanionConnect />
           )}
 
@@ -353,11 +360,13 @@ function AppInner() {
                   ✕
                 </button>
               </div>
-              {companionView === 'roster'    && <CompanionRoster />}
+              {companionView === 'roster'    && <CompanionRoster onTradePlayer={(sleeperId) => { setTradeInitPlayer({ sleeperId, side: 'give' }); setCompanionView('trade'); }} />}
               {companionView === 'rankings'  && <CompanionRankings />}
               {companionView === 'matchup'   && <CompanionMatchup onViewPlayer={(id, meta) => { setStatsInitPlayer({ id, ...meta }); setStatsNavBack({ label: 'Matchup', onBack: () => { setActiveTab('companion'); setStatsNavBack(null); } }); setActiveTab('statistics'); }} />}
-              {companionView === 'waiver'    && <CompanionWaiver />}
+              {companionView === 'waiver'    && <CompanionWaiver onViewPlayer={(id, meta) => { setStatsInitPlayer({ id, ...meta }); setStatsNavBack({ label: 'Waiver', onBack: () => { setActiveTab('companion'); setStatsNavBack(null); } }); setActiveTab('statistics'); }} />}
+              {companionView === 'league'   && <CompanionLeague onTradePlayer={(sleeperId, partnerRosterId) => { setTradeInitPlayer({ sleeperId, side: 'get', partnerRosterId }); setCompanionView('trade'); }} />}
               {companionView === 'defense'   && <CompanionDefense onViewPlayer={(id, meta) => { setStatsInitPlayer({ id, ...meta }); setStatsNavBack({ label: 'Heatmap', onBack: () => { setActiveTab('companion'); setStatsNavBack(null); } }); setActiveTab('statistics'); }} />}
+              {companionView === 'trade'     && <CompanionTrade initialPlayer={tradeInitPlayer} onConsumeInitialPlayer={() => setTradeInitPlayer(null)} />}
               {companionView === 'scoring'   && <CompanionScoring />}
             </>
           )}

@@ -248,3 +248,150 @@ All notable changes, oldest first. Add new entries at the bottom.
 - **Browser back button** — The browser back button now navigates within the app. Tab changes, sub-navigation, and Statistics team/player drill-downs are each tracked as browser history entries. Pressing back walks through navigation in reverse instead of exiting the app.
 - **Statistics external navigation fix** — The Statistics page now renders identically whether accessed via manual browse or an external link (Heatmap player link, Matchup Stats → link). External navigation now passes the player's position at all call sites, and `PlayerBrowser` enriches the player object from the cached ESPN roster to fill in jersey number, full position name, and status — making the hero card and stat columns complete.
 - **Heatmap offense color scheme fix** — High points allowed (easy matchup) now correctly shows green and low points (tough matchup) shows red in Offense phase. The gradient was previously inverted.
+
+---
+
+## v4.7 — Waiver Wire Enhancements
+*2026-03-21*
+
+- **Player links** — Player names in the Waiver list now link to the player's Statistics page, with a contextual "← Waiver" back button matching the pattern used in the Heatmap and Matchup drilldown
+- **Projected points column** — A new Proj column shows each player's projected fantasy points for the upcoming week using `projectPlayer()`, factoring in opponent strength, home/away, and recent form
+- **Sortable columns** — All three data columns (Proj, Season, 4-Wk Avg) are now clickable column headers that sort the list; the active sort column is highlighted and shows a ↓ indicator
+- **Trending indicator** — Players whose recent 4-week average is ≥ 25% above their season average (and at least 2 pts higher) show a green ↑ HOT badge next to their name
+- **Upcoming opponent** — Each player row now shows their next opponent abbreviation in small text below their position/team line
+
+---
+
+## v4.7.1 — Waiver Performance Patch
+*2026-03-21*
+
+- **Defense table pre-computation** — `buildDefenseTable()` now runs once when stats load instead of `getOpponentStrength()` being called per player. Defense strength lookups are now O(1) table reads instead of a full weekly-stats scan per player.
+- **League average pre-computation** — `getLeagueAvgPPG()` is pre-computed once per position (5 total) and passed into `projectPlayer()` instead of recomputing it for every waiver player. `getLeagueAvgPPG` is now exported from `projectionEngine.js`; `projectPlayer` accepts optional `leagueAvg` and `skipOpponentLookup` params to allow callers to bypass the internal scan entirely.
+- **Projection/filter memo split** — Projection enrichment is now a separate memo from filtering and sorting. Changing position filter, sort column, or search term no longer triggers projection recomputation — only underlying data changes do.
+- **Debounced search** — The search input is debounced at 200ms, preventing per-keystroke re-renders of the player list.
+- **`myRoster()` memoized** — The `myRoster()` context function is now called inside a `useMemo` in the waiver component instead of on every render.
+
+---
+
+## v4.8 — League Browser
+*2026-03-21*
+
+- **League tab** — New "League" sub-tab added to the Companion section, positioned between Waiver and Heatmap.
+- **Opponent roster view** — Browse any league member's full roster via a scrollable owner selector that defaults to your own team. Each roster shows the same depth as the Roster tab: players grouped by position with season pts, avg PPG, positional rank, and a tappable weekly breakdown sheet.
+- **Draft capital grid** — League-wide horizontally scrollable grid showing every team's currently owned draft picks organized by year and round (capped at 5 rounds). Own picks show as filled amber dots; acquired picks show the originating team's abbreviation as a blue badge; traded-away picks show as an empty dim circle. Teams are sorted by total picks held so pick-rich teams surface to the top. Year columns are grouped with round sub-headers (R1, R2…).
+- **Picks data** — Fetches `/league/{leagueId}/traded_picks` from the Sleeper API on demand. Constructs the full pick ownership matrix: each team implicitly owns all their own picks; traded picks are resolved to their current owner. Handles edge cases including picks traded back to the original team.
+
+---
+
+## v4.8.1 — Draft Picks Round Cap Fix
+*2026-03-21*
+
+- **Raised round limit** — Draft capital grid now shows all rounds from the league's `draft_rounds` setting instead of truncating at 5. Raises the internal cap to 36 to accommodate dynasty startup drafts (25+ rounds) and deep redraft leagues.
+
+---
+
+## v4.9 — Player Comparison
+*2026-03-21*
+
+- **Companion Compare tab** — New "Compare" sub-tab in the Companion view. Search any two players from your Sleeper player pool (rostered or free agents) and compare them side-by-side: season pts, avg PPG, last 4-week form, positional rank, projected points, floor/ceiling range, and season stat totals. The winner of each stat is highlighted in amber. Supports all skill positions (QB/RB/WR/TE/K).
+- **Statistics Compare mode** — "Compare" toggle button in the Statistics player browser launches a side-by-side mode. Search any two ESPN-rostered players and view their current-season and career stats head-to-head with per-stat delta highlighting. Compare mode is position-aware — stat rows shown depend on the position group of the selected players.
+
+---
+
+## v5.0 — Unified Compare Tab
+*2026-03-22*
+
+- **New top-level Compare tab** — Replaces the separate compare experiences in Statistics and Companion with a single unified 4th top-level tab ("Compare"), accessible from the sidebar (desktop) and bottom tab bar (mobile). Removed the "Compare" sub-tab from Companion and the "Compare" toggle from Statistics.
+- **Single picker, all 32 rosters** — Player search uses the shared ESPN roster search with full smart-search: player names, team nicknames/cities/abbreviations, position full names and plurals, conference, division, and natural language ("RBs in Detroit", "QBs playing for the Bears"). Tappable search guide chips shown when the picker is empty.
+- **Stats panel** — Year navigation (2018–current + Career totals) with on-demand fetching and per-year caching. Shows GP, GS, Snap%, and full position-specific stats. Inline loading spinners per slot. Win highlighting in amber.
+- **Fantasy panel** — Visible when a Sleeper league is connected. Shows season pts, avg PPG, last 4 weeks, positional rank, and projection range (floor/projected/ceiling). Automatically matches ESPN players to Sleeper IDs via `espn_id` field with name+position fallback.
+- **Trade panel** — Stub placeholder for the Trade Agent (coming later in v5.0).
+- **Shared utilities** — Extracted `parseSearchQuery`, `SEARCH_PATTERNS`, `matchesFilter` to `src/utils/parseSearchQuery.js`. Added `src/utils/espnSleeperMatch.js` for ESPN→Sleeper player ID matching.
+
+---
+
+## v5.1 — Compare Upgrades
+*2026-03-22*
+
+- **Team-colored player slot backgrounds** — Each filled player slot in the Compare tab now renders a team-colored hero gradient (matching the Statistics player profile style), complete with a city map watermark at low opacity and a vertically centered team logo watermark on the right edge. Text and button colors adapt to light/dark based on background luminance.
+- **Cross-position stat coverage** — Compare mode now calls `getStatRows()` for each player's position independently and merges the resulting sections. A RB vs QB comparison shows both Rushing and Passing stat sections, with `—` where a player has no data for the opposing position's stats.
+
+---
+
+## v5.0.1 — Compare Mode Fixes
+*2026-03-22*
+
+- **Stats panel — full position coverage** — Replaced hand-coded `COMPARE_STATS` table with `getStatRows()` from `playerMetrics.js`, the same source used by the Statistics tab. All positions now show the full section-grouped stat set with an Advanced toggle.
+- **Stats panel — rank badges** — Per-stat ESPN rank badges now display under each value using `buildRankMap()`.
+- **Stats panel — TD/INT ratio** — QB advanced stats TD/INT ratio now renders correctly per player. Previously always showed `—` because derived rows had `key: null`; fixed by adding a `computeForMap` callback that computes the ratio from each player's individual stat map.
+- **Stats panel — year selector** — Year pills are now filtered to years from each player's rookie season onwards (derived from `experience` field), hiding irrelevant historical years.
+- **Search modal** — Player picker converted from a bottom sheet to a centered fixed-size modal. The search box stays stationary as results load in. Background scroll is locked while the modal is open.
+- **Statistics → Compare** — Player profile hero cards in the Statistics tab now include a Compare button. Tapping it navigates to the Compare tab and pre-populates that player in slot A.
+- **Fantasy panel — season total header** — Each player's season fantasy total is now displayed prominently at the top of the Fantasy panel as a large number, above the stat table.
+- **Fantasy panel — scoring rate labels** — Each stat row in the breakdown now shows the scoring multiplier (e.g. "+4 pts", "0.04 pts") as a sub-label under the stat name in the center column.
+- **Fantasy panel — season high/low** — Added Season High and Season Low rows showing the player's actual best and worst single-game point totals for the season.
+- **Fantasy panel — snap % and games played** — Added Games and Snap % rows to the Season section, computed from Sleeper season stats (`gp`, `off_snp`, `tm_off_snp`).
+- **Player status** — Injury and roster status now displayed as colored badges in the Statistics player profile hero, the Compare tab player slots (ESPN status), and the Fantasy panel player header (Sleeper `injury_status`).
+- **Alpha badge** — Compare tab now shows an α badge in the sidebar nav and bottom tab bar.
+- **Guide** — Added Compare mode content to the Guide modal with 7 steps covering search, stats, year navigation, fantasy, rankings, ESPN→Sleeper matching, and the Trade panel stub.
+
+---
+
+## v5.5 — Trade Agent
+*2026-03-22*
+
+- **Trade tab** — New "Trade" sub-tab in the Companion section. Build full multi-player, multi-pick trade proposals with live KTC-powered valuations.
+- **Two-column trade builder** — Your side and their side displayed side-by-side (stacked on mobile). Add players and draft picks to either side; each asset shows its individual KTC value and the projected new side total after adding it.
+- **Owner carousel** — Select a trade partner from the league's owner list. The partner's roster automatically populates the "Their Side" picker. "Search All Players" remains available at all times to add players from any roster.
+- **Live KTC values** — Trade values fetched from KeepTradeCut via the existing proxy. Format (Dynasty/Redraft) and league type (1QB/Superflex) are auto-detected from your Sleeper league settings — no manual toggles.
+- **Draft pick valuation** — Draft picks are valued using KTC's RDP (dynasty pick) entries. Pick quality (Early/Mid/Late) is determined from current standings. Dynasty data is always fetched alongside redraft data so picks have values regardless of league type.
+- **League-adjusted values** — KTC baseline values are tuned to your league's specific scoring settings. Adjustments cover: reception scoring (PPR/HPPR), passing TD points, TE premium, interception penalty, fumble penalty, big-play yardage bonuses (300/400 pass, 100/200 rush, 100/200 receiving), first-down bonuses, and positional scarcity from starter slot counts. Multipliers are clamped to ±40% to prevent distortion. Recalculate automatically from live Sleeper settings.
+- **Trade verdict** — Value gap bar and verdict label (Fair / Favors You / Favors Them) update live as assets are added or removed.
+- **Suggest Package** — Auto-suggests 1–3 asset combinations from the deficit side's available roster to close the value gap.
+- **Valuation info modal** — "How values are calculated" modal explains KTC methodology, baseline assumptions, and all league-specific adjustments applied to your league with a position multiplier table.
+- **Entry points** — "Trade" button on your own Roster player rows pre-populates that player on your side. "Trade" button on opponent players in the League tab pre-populates the player on their side and auto-sets the trade partner. "Build Full Trade" button in the Compare tab's Trade panel navigates to the Trade tab with both compared players pre-loaded.
+
+---
+
+## v5.5.1 — Trade Agent Polish
+*2026-03-22*
+
+- **TE premium bug fix** — `bonus_rec_te` was silently dropped by `importLeagueScoring` because it isn't a raw stat key. Fixed by extending the import filter to accept any key in `DEFAULT_SCORING`. `calcPoints` and `calcPointsFromTotals` now accept an optional `position` parameter and apply the TE reception bonus when `position === 'TE'`. The Trade picker's season pts display and KTC multiplier for TE position now correctly reflect the league's TE premium.
+- **Filter pill theming** — Selected state of pill filter buttons (Compare tab panel selector, Trade action buttons) now uses `var(--color-signature)` instead of `var(--color-accent)`, so they follow the optional team color theme.
+- **Search All Players** — Moved from a small inline button to a full-width prominent button below the roster carousel in Trade Agent view. Always visible when KTC data is loaded.
+- **"Trade Agent" label** — Section header renamed from "Trade Partner" to "Trade Agent".
+- **"Refine Trade" button** — "Suggest Package" renamed to "Refine Trade" throughout the Trade Agent UI.
+
+---
+
+## v5.5.2 — Trade Picker Player Cards
+*2026-03-22*
+
+- **Team-colored player rows** — Each player row in the Trade picker is tinted with the player's team primary color (light/dark mode aware via `TEAM_COLORS`). A 3px left border uses the full team color as an accent; the background is a subtle `~13%` opacity tint so text remains legible against `var(--color-label)`.
+- **Team logo watermark** — Each row renders the team logo at 10% opacity as a watermark behind the player info, via ESPN's logo CDN.
+- **Positional rank** — Shows `#N POS` (e.g., `#3 WR`) next to position/team using `computePositionalRanks` across all rostered players. Rank label inherits the team accent color.
+- **Avg PPG** — Displays the player's season average points-per-game (`season pts ÷ gp`) as `X.X avg` on the subtitle line.
+- **Sleeper → TEAM_COLORS key normalization** — Added `SLEEPER_TEAM_MAP` to handle abbreviation differences (LAR → la, WAS → wsh, JAC → jax, LVR → lv) so Rams, Commanders, Jaguars, and Raiders rows render correctly.
+
+---
+
+## v5.5.3 — Trade Builder Team Theming
+*2026-03-22*
+
+- **Team colors in trade builder** — Player cards in the main Trade Agent view (both sides of the trade and the partner roster preview) now use the same team color theming introduced in v5.5.2: a 3px left border in the team primary color, a subtle tint background (~13% opacity), and a team logo watermark at 10% opacity. Light/dark mode aware via `TEAM_COLORS`.
+
+---
+
+## v5.5.4 — Trade Theming Refinements
+*2026-03-22*
+
+- **Their Side unthemed** — Team color theming (tint bg, left border, logo watermark) now only applies to "Your Side" player cards. "Their Side" cards use the flat neutral fill background.
+- **ValueBar simplified** — The value comparison bar now uses `var(--color-accent)` (blue) for your share and `var(--color-label-quaternary)` (dim) for their share, consistently, regardless of who is leading. Removed the signature/team color from the bar.
+
+---
+
+## v5.5.5 — Trade Agent Stats & Logo Fix
+*2026-03-22*
+
+- **Positional rank + avg PPG in Trade Agent** — Player cards in the main Trade Agent builder now show positional rank (e.g. `#3 RB`) and average fantasy PPG for the season, matching the detail level of the picker modal.
+- **Logo overlap fix** — Team logo watermark in the trade picker modal is now scoped inside the player text area, preventing it from overlapping the KTC value column when browsing opponent rosters.

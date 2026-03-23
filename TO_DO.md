@@ -7,40 +7,7 @@ New features requested or planned should be added here.
 
 ## Planned Versions
 
-### v4.7 — Waiver Wire Enhancements
-
-Improve the Waiver tab with player navigation and actionable projections.
-
-- **Player links** — Player names in the Waiver list link to their Statistics page, consistent with the Heatmap and Matchup drilldown navigation pattern
-- **Projected points** — Add a projected pts column to the waiver list using `projectPlayer()` for the upcoming week's matchup
-- **Projection sort** — Allow sorting the waiver list by projected points in addition to existing sort options
-- **Trending indicator** — Surface a "trending" badge on players whose recent average (last 4 weeks) is notably above their season average
-
----
-
-### v4.8 — League Browser
-
-Give users full visibility into the league: opponent rosters and the draft pick landscape across all teams.
-
-- **Opponent roster view** — Browse any league member's full roster with the same depth as the existing Roster view: season stats, avg PPG, positional rank, and weekly breakdown. Accessible via a team selector on the Roster view or a new League sub-tab in Companion
-- **Draft capital overview** — A league-wide picks grid showing every team's currently owned draft picks (round, originating team, year) pulled from Sleeper's picks/transactions data. Shows at a glance who is pick-rich and who has traded away future capital
-
----
-
-### v4.9 — Player Comparison
-
-Side-by-side player comparison in both the Companion (fantasy) and Statistics (career) contexts.
-
-- **Companion comparison** — Pick any two players from the Sleeper player pool (rostered or on waivers in the league) and compare side-by-side: season pts, avg PPG, recent form (last 4 weeks), positional rank, projection range for the upcoming week, and scoring breakdown. Accessible via a Compare button on player cards or a dedicated Compare sub-tab
-- **Statistics comparison** — Compare mode in `PlayerBrowser`: search and select any two ESPN players to view their career/season stats side-by-side with per-stat delta highlighting. Integrated into the existing Statistics tab as a toggle mode rather than a separate top-level tab
-
----
-
-### v5.0 — Draft Coach & Trade Agent
-
-Two new Companion tools: a rookie scouting hub for draft season, and an AI-assisted trade evaluator.
-
-#### Draft Coach
+### v6.0 — Draft Coach
 
 Surfaces publicly available scouting and evaluation data to help users make informed draft decisions.
 
@@ -55,15 +22,6 @@ Surfaces publicly available scouting and evaluation data to help users make info
 - Live dynasty ADP via KeepTradeCut public API (if available)
 - Depth chart position within the drafting team (Day 1 starter vs. depth)
 
-#### Trade Agent
-
-Assess trade value for any player and generate trade proposals in either direction.
-
-- **Trade value assessment** — For any player in the league, display their estimated trade value and generate trade proposals: what you could offer from your roster + draft capital to acquire them, or what you could expect to receive in return for trading them away
-- **Trade value data** — Primary: KeepTradeCut public API for live dynasty/redraft values. Fallback: in-app calculated value derived from projected pts, positional rank, roster scarcity, and draft capital position when KTC is unavailable or the player isn't found
-- **Roster context** — Trade recommendations account for current roster composition (positional depth, starter quality), available waiver alternatives at that position, and draft capital — leveraging the data infrastructure built in v4.8
-- **Two directions** — Evaluate trades involving your own players (what to give up) or target players on other rosters (what to offer), using the league roster browser from v4.8 and the comparison framework from v4.9
-
 ---
 
 ## Backlog (Unversioned)
@@ -74,6 +32,7 @@ Assess trade value for any player and generate trade proposals in either directi
 
 ### Fantasy Companion
 
+- **IDP trade valuation** — KTC has no IDP player data. Build an in-app IDP value engine: compute each IDP player's fantasy points from `seasonStats` + league IDP scoring settings, rank by position (DL/LB/DB), and scale to a 0–10,000 KTC-equivalent value so defensive players can be included in trade proposals on the Trade tab.
 - **Roster player drilldown — stat category filter** — Allow filtering weekly stats by category (Pass, Rush, Rec, Defense, All) with a position-appropriate default.
 - **Start/sit recommendations** — Companion view that runs `projectPlayer()` across all rostered players and ranks them by projected output within each position group. Surfaces a clear start recommendation for each roster slot.
 

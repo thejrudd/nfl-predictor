@@ -3,7 +3,9 @@ const VIEWS = [
   { id: 'rankings',  label: 'Rankings' },
   { id: 'matchup',   label: 'Matchup' },
   { id: 'waiver',    label: 'Waiver' },
+  { id: 'league',    label: 'League' },
   { id: 'defense',   label: 'Heatmap' },
+  { id: 'trade',     label: 'Trade' },
   { id: 'scoring',   label: 'Scoring' },
 ];
 

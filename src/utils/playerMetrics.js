@@ -270,12 +270,12 @@ export function getStatRows(statsMap, position, rankMap = {}) {
       const val = n(statsMap[key]);
       if (val !== null) {
         const rank = showRank ? (rankMap[key] ?? null) : null;
-        rows.push({ label, value: `${fmt(val, decimals)}${suffix}`, rank });
+        rows.push({ label, key, value: `${fmt(val, decimals)}${suffix}`, rank, decimals, suffix });
       }
     };
-    const pushVal = (label, val, decimals = 0, suffix = '') => {
+    const pushVal = (label, val, decimals = 0, suffix = '', computeForMap = null) => {
       if (val !== null && val !== undefined) {
-        rows.push({ label, value: `${fmt(val, decimals)}${suffix}` });
+        rows.push({ label, key: null, value: `${fmt(val, decimals)}${suffix}`, decimals, suffix, computeForMap });
       }
     };
     return { push, pushVal, done: () => rows.length > 0 ? { heading, rows } : null };
@@ -320,7 +320,11 @@ export function getStatRows(statsMap, position, rankMap = {}) {
         const ints = n(statsMap.interceptions);
         return tds !== null && ints !== null && ints > 0 ? tds / ints : null;
       })();
-      advPassing.pushVal('TD/INT', tdIntRatio, 2);
+      advPassing.pushVal('TD/INT', tdIntRatio, 2, '', (map) => {
+        const tds  = n(map.passingTouchdowns);
+        const ints = n(map.interceptions);
+        return tds !== null && ints !== null && ints > 0 ? tds / ints : null;
+      });
 
       const advRushing = makeSection('Advanced Rushing');
       advRushing.push('Rush 1D',  'rushingFirstDowns');
