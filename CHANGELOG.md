@@ -372,3 +372,10 @@ All notable changes, oldest first. Add new entries at the bottom.
 - **Positional rank** — Shows `#N POS` (e.g., `#3 WR`) next to position/team using `computePositionalRanks` across all rostered players. Rank label inherits the team accent color.
 - **Avg PPG** — Displays the player's season average points-per-game (`season pts ÷ gp`) as `X.X avg` on the subtitle line.
 - **Sleeper → TEAM_COLORS key normalization** — Added `SLEEPER_TEAM_MAP` to handle abbreviation differences (LAR → la, WAS → wsh, JAC → jax, LVR → lv) so Rams, Commanders, Jaguars, and Raiders rows render correctly.
+
+---
+
+## v5.5.3 — Trade Builder Team Theming
+*2026-03-22*
+
+- **Team colors in trade builder** — Player cards in the main Trade Agent view (both sides of the trade and the partner roster preview) now use the same team color theming introduced in v5.5.2: a 3px left border in the team primary color, a subtle tint background (~13% opacity), and a team logo watermark at 10% opacity. Light/dark mode aware via `TEAM_COLORS`.

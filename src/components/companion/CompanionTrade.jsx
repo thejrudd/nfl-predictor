@@ -4,14 +4,49 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSleeper } from '../../context/SleeperContext';
+import { useTheme } from '../../context/ThemeContext';
 import { fetchKtcPlayers, getKtcValue, fmtKtcValue, findKtcPlayerFromSleeper, computeKtcMultipliers, applyKtcMultipliers } from '../../utils/ktcApi';
 import { getTradedPicks, getLeagueDrafts } from '../../api/sleeperApi';
 import {
   buildRosterPicks, getPicksForRoster, getPickQuality,
   valueSide, evaluateTrade, suggestPackage, buildCandidatePool,
 } from '../../utils/tradeEngine';
+import { TEAM_COLORS } from '../../data/teamColors';
 import TradeRosterPicker from './TradeRosterPicker';
 import TradePickPicker from './TradePickPicker';
+
+// ── Team color helpers ────────────────────────────────────────────────────────
+
+const SLEEPER_TEAM_MAP = {
+  lar: 'la',
+  was: 'wsh',
+  jac: 'jax',
+  lvr: 'lv',
+};
+
+function toTeamKey(sleeperTeam) {
+  if (!sleeperTeam) return '';
+  const lower = sleeperTeam.toLowerCase();
+  return SLEEPER_TEAM_MAP[lower] ?? lower;
+}
+
+function hexLuminance(hex) {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const lin = c => c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+
+function teamPalette(sleeperTeam, darkMode) {
+  const key = toTeamKey(sleeperTeam);
+  const palette = TEAM_COLORS[key] ?? null;
+  if (!palette) return { color: null, tint: null, isLight: false, logoKey: key };
+  const color = darkMode ? palette.darkPrimary : palette.primary;
+  const isLight = hexLuminance(color) > 0.35;
+  const alpha = isLight ? '18' : '22';
+  return { color, tint: `${color}${alpha}`, isLight, logoKey: key };
+}
 
 // Derive league format and type from Sleeper league settings
 function detectLeagueFormat(league) {
@@ -632,6 +667,7 @@ export default function CompanionTrade({ initialPlayer, onConsumeInitialPlayer }
 
 function PartnerPreview({ preview, partnerName, rosters, getUserDisplayName, leagueType, ktcPlayers, onSelectPlayer }) {
   const [showPicks, setShowPicks] = useState(false);
+  const { darkMode } = useTheme();
   const topPlayers = preview.players.slice(0, 10);
   const ORDINALS = { 1: '1st', 2: '2nd', 3: '3rd', 4: '4th', 5: '5th' };
 
@@ -644,27 +680,44 @@ function PartnerPreview({ preview, partnerName, rosters, getUserDisplayName, lea
           {partnerName}'s Roster
         </div>
         <div className="flex flex-col gap-1">
-          {topPlayers.map(p => (
-            <button key={p.id} onClick={() => onSelectPlayer(p.id)}
-              className="rounded-lg px-2.5 py-2 flex items-center gap-2 transition-colors"
-              style={{ background: 'var(--color-fill)' }}>
-              <img src={`https://sleepercdn.com/content/nfl/players/thumb/${p.id}.jpg`}
-                alt="" className="w-7 h-7 rounded-full shrink-0 object-cover bg-gray-700"
-                onError={e => { e.target.style.display = 'none'; }} />
-              <div className="flex-1 min-w-0 text-left">
-                <div className="text-xs font-medium truncate" style={{ color: 'var(--color-label)' }}>
-                  {p.name}
+          {topPlayers.map(p => {
+            const tp = teamPalette(p.team, darkMode);
+            return (
+              <button key={p.id} onClick={() => onSelectPlayer(p.id)}
+                className="rounded-lg px-2.5 py-2 flex items-center gap-2 relative overflow-hidden transition-colors"
+                style={{
+                  background: tp.tint ?? 'var(--color-fill)',
+                  borderLeft: tp.color ? `3px solid ${tp.color}` : '3px solid transparent',
+                }}>
+                {/* Team logo watermark */}
+                {tp.logoKey && (
+                  <img
+                    src={`https://a.espncdn.com/i/teamlogos/nfl/500/${tp.logoKey}.png`}
+                    aria-hidden="true"
+                    className="absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none select-none"
+                    style={{ width: 32, height: 32, objectFit: 'contain', opacity: 0.10 }}
+                    onError={e => { e.target.style.display = 'none'; }}
+                  />
+                )}
+                <img src={`https://sleepercdn.com/content/nfl/players/thumb/${p.id}.jpg`}
+                  alt="" className="w-7 h-7 rounded-full shrink-0 object-cover"
+                  style={{ background: 'var(--color-fill-secondary)' }}
+                  onError={e => { e.target.style.display = 'none'; }} />
+                <div className="flex-1 min-w-0 text-left">
+                  <div className="text-xs font-semibold truncate" style={{ color: 'var(--color-label)' }}>
+                    {p.name}
+                  </div>
+                  <div className="text-xs" style={{ color: 'var(--color-label-tertiary)' }}>
+                    {p.position} · {p.team}
+                  </div>
                 </div>
-                <div className="text-xs" style={{ color: 'var(--color-label-quaternary)' }}>
-                  {p.position} · {p.team}
+                <div className="text-xs font-semibold tabular-nums shrink-0"
+                  style={{ color: p.val != null ? 'var(--color-label-secondary)' : 'var(--color-label-quaternary)' }}>
+                  {fmtKtcValue(p.val)}
                 </div>
-              </div>
-              <div className="text-xs font-semibold tabular-nums shrink-0"
-                style={{ color: p.val != null ? 'var(--color-label-secondary)' : 'var(--color-label-quaternary)' }}>
-                {fmtKtcValue(p.val)}
-              </div>
-            </button>
-          ))}
+              </button>
+            );
+          })}
           {preview.players.length > 10 && (
             <div className="text-xs text-center py-1" style={{ color: 'var(--color-label-quaternary)' }}>
               +{preview.players.length - 10} more
@@ -710,6 +763,8 @@ function PartnerPreview({ preview, partnerName, rosters, getUserDisplayName, lea
 }
 
 function TradeSide({ label, items, total, onRemovePlayer, onRemovePick, onAddPlayer, onAddPick, isLeader }) {
+  const { darkMode } = useTheme();
+
   return (
     <div className="flex-1 min-w-0 flex flex-col gap-1.5">
 
@@ -726,42 +781,61 @@ function TradeSide({ label, items, total, onRemovePlayer, onRemovePick, onAddPla
         <span className="text-sm font-bold tabular-nums">{fmtKtcValue(total)}</span>
       </div>
 
-      {items.map(it => (
-        <div key={it.id}
-          className="rounded-lg px-2.5 py-2 flex items-center gap-2"
-          style={{ background: 'var(--color-fill)' }}>
-          {it.type === 'player' && (
-            <img src={`https://sleepercdn.com/content/nfl/players/thumb/${it.id}.jpg`}
-              alt="" className="w-7 h-7 rounded-full shrink-0 object-cover bg-gray-700"
-              onError={e => { e.target.style.display = 'none'; }} />
-          )}
-          {it.type === 'pick' && (
-            <div className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center"
-              style={{ background: 'var(--color-fill-secondary)', fontSize: '8px', fontWeight: 700, color: 'var(--color-label-tertiary)' }}>
-              PICK
-            </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <div className="text-xs font-medium truncate" style={{ color: 'var(--color-label)' }}>
-              {it.label}
-            </div>
-            {it.position && (
-              <div className="text-xs" style={{ color: 'var(--color-label-quaternary)' }}>
-                {it.position}{it.team ? ` · ${it.team}` : ''}
+      {items.map(it => {
+        const tp = it.type === 'player' ? teamPalette(it.team, darkMode) : { color: null, tint: null, logoKey: '' };
+        return (
+          <div key={it.id}
+            className="rounded-lg px-2.5 py-2 flex items-center gap-2 relative overflow-hidden"
+            style={{
+              background: tp.tint ?? 'var(--color-fill)',
+              borderLeft: tp.color ? `3px solid ${tp.color}` : '3px solid transparent',
+            }}>
+
+            {/* Team logo watermark */}
+            {it.type === 'player' && tp.logoKey && (
+              <img
+                src={`https://a.espncdn.com/i/teamlogos/nfl/500/${tp.logoKey}.png`}
+                aria-hidden="true"
+                className="absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none select-none"
+                style={{ width: 36, height: 36, objectFit: 'contain', opacity: 0.10 }}
+                onError={e => { e.target.style.display = 'none'; }}
+              />
+            )}
+
+            {it.type === 'player' && (
+              <img src={`https://sleepercdn.com/content/nfl/players/thumb/${it.id}.jpg`}
+                alt="" className="w-7 h-7 rounded-full shrink-0 object-cover"
+                style={{ background: 'var(--color-fill-secondary)' }}
+                onError={e => { e.target.style.display = 'none'; }} />
+            )}
+            {it.type === 'pick' && (
+              <div className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center"
+                style={{ background: 'var(--color-fill-secondary)', fontSize: '8px', fontWeight: 700, color: 'var(--color-label-tertiary)' }}>
+                PICK
               </div>
             )}
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-semibold truncate" style={{ color: 'var(--color-label)' }}>
+                {it.label}
+              </div>
+              {it.position && (
+                <div className="text-xs" style={{ color: 'var(--color-label-tertiary)' }}>
+                  {it.position}{it.team ? ` · ${it.team}` : ''}
+                </div>
+              )}
+            </div>
+            <div className="text-sm font-bold tabular-nums shrink-0"
+              style={{ color: it.val != null ? 'var(--color-label)' : 'var(--color-label-quaternary)' }}>
+              {fmtKtcValue(it.val)}
+            </div>
+            <button onClick={() => it.type === 'player' ? onRemovePlayer(it.id) : onRemovePick(it.id)}
+              className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center"
+              style={{ background: 'var(--color-fill-secondary)', color: 'var(--color-label-tertiary)', fontSize: '10px' }}>
+              ×
+            </button>
           </div>
-          <div className="text-sm font-bold tabular-nums shrink-0"
-            style={{ color: it.val != null ? 'var(--color-label)' : 'var(--color-label-quaternary)' }}>
-            {fmtKtcValue(it.val)}
-          </div>
-          <button onClick={() => it.type === 'player' ? onRemovePlayer(it.id) : onRemovePick(it.id)}
-            className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center"
-            style={{ background: 'var(--color-fill-secondary)', color: 'var(--color-label-tertiary)', fontSize: '10px' }}>
-            ×
-          </button>
-        </div>
-      ))}
+        );
+      })}
 
       {/* Add buttons */}
       <div className="flex gap-1.5">
