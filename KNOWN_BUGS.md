@@ -9,6 +9,8 @@ Open bugs are listed first, fixed bugs below. Add new entries at the bottom of e
 | Bug |
 |-----|
 | Table labels in Compare mode are abbreviated in a way that doesn't make sense sometimes. |
+| In light mode, the team color has extremely low contrast with background text if the backgorund text is a dark color. |
+| Opponent's players in Trade Agent view are not themed for their team, nor is there emphasis on some of the text as there is for the players on my team. |
 ---
 
 ## Fixed
@@ -69,3 +71,12 @@ Open bugs are listed first, fixed bugs below. Add new entries at the bottom of e
 | Year selector in Compare mode showed all years regardless of player career — filtered to rookie year onwards using `experience` field | v5.0.1 |
 | TD/INT ratio null in Compare mode for QBs — `pushVal` rows had `key: null` so per-player lookup failed; added `computeForMap` callback to derive value per player | v5.0.1 |
 | TE premium (`bonus_rec_te`) not imported from Sleeper league settings — `importLeagueScoring` filtered it out because it wasn't in `STAT_TO_SCORING_KEY`; TE season pts in Trade picker and KTC multiplier for TE were both unaffected by the league's TE bonus | v5.5.1 |
+| Compare → Trade year pill active state used fixed blue accent instead of `var(--color-signature)` | v5.5.7 |
+| Trade Agent owner carousel showed native browser scrollbar on desktop | v5.5.7 |
+| Companion Roster Season/Avg/G column headers misaligned — Trade button's width was not accounted for in the header row | v5.5.7 |
+| Compare → Trade had manual Dynasty/Redraft and 1QB/Superflex toggles — now auto-detected from Sleeper league settings | v5.5.7 |
+| Compare Trade analysis said "additional assets" — changed to "additional asset value" | v5.5.7 |
+| Build Full Trade button used fixed blue accent instead of `var(--color-signature)` | v5.5.7 |
+| Compare → Trade player hero cards used plain fill style instead of Trade Agent card style (avatar, tint, left border, logo) | v5.5.7 |
+| Build Full Trade button always enabled even when neither or both compared players were on own roster | v5.5.7 |
+| Roster → Trade entry point — player not visible in Trade Agent until KTC data finished loading (~1-2s) | v5.5.7 |

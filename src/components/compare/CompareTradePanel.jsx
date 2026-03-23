@@ -1,29 +1,48 @@
 // ── CompareTradePanel ─────────────────────────────────────────────────────────
 // v5.5 — Trade Agent: live KeepTradeCut values for the two compared players.
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { fetchKtcPlayers, findKtcPlayer, getKtcValue, fmtKtcValue } from '../../utils/ktcApi';
+import { useSleeper } from '../../context/SleeperContext';
+import { useTheme } from '../../context/ThemeContext';
+import { TEAM_COLORS } from '../../data/teamColors';
 
-const FORMAT_OPTS = [
-  { id: 'dynasty', label: 'Dynasty' },
-  { id: 'redraft', label: 'Redraft' },
-];
+// Derive league format and type from Sleeper league settings (mirrors CompanionTrade)
+function detectLeagueFormat(league) {
+  return league?.settings?.type === 2 ? 'dynasty' : 'redraft';
+}
 
-const LEAGUE_TYPE_OPTS = [
-  { id: '1qb',  label: '1QB' },
-  { id: 'sf',   label: 'Superflex' },
-];
+function detectLeagueType(league) {
+  return (league?.roster_positions ?? []).includes('SUPER_FLEX') ? 'sf' : '1qb';
+}
+
+function hexLuminance(hex) {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const toLinear = c => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+}
+
+const ESPN_TEAM_MAP = { lar: 'la', was: 'wsh' };
+function toTeamKey(espnTeamId) {
+  if (!espnTeamId) return '';
+  const lower = espnTeamId.toLowerCase();
+  return ESPN_TEAM_MAP[lower] ?? lower;
+}
 
 // ── CompareTradePanel ─────────────────────────────────────────────────────────
 
 export default function CompareTradePanel({ playerA, playerB, sleeperPlayerA, sleeperPlayerB, onBuildTrade }) {
-  const [format, setFormat]       = useState('dynasty');
-  const [leagueType, setLeagueType] = useState('1qb');
+  const { league, hasLeague } = useSleeper();
+  const { darkMode } = useTheme();
   const [ktcPlayers, setKtcPlayers] = useState(null);
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState(null);
+  const [loading, setLoading]       = useState(false);
+  const [error, setError]           = useState(null);
 
-  const hasAny = playerA || playerB;
+  const format     = detectLeagueFormat(league);
+  const leagueType = detectLeagueType(league);
+  const hasAny     = playerA || playerB;
 
   useEffect(() => {
     if (!hasAny) return;
@@ -71,12 +90,6 @@ export default function CompareTradePanel({ playerA, playerB, sleeperPlayerA, sl
   return (
     <div className="px-4 py-4 flex flex-col gap-5">
 
-      {/* ── Format toggles ─────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between gap-3">
-        <PillToggle options={FORMAT_OPTS}      value={format}      onChange={setFormat} />
-        <PillToggle options={LEAGUE_TYPE_OPTS} value={leagueType}  onChange={setLeagueType} />
-      </div>
-
       {/* ── Loading / error ────────────────────────────────────────────── */}
       {loading && (
         <div className="flex items-center justify-center py-8 gap-3"
@@ -112,10 +125,10 @@ export default function CompareTradePanel({ playerA, playerB, sleeperPlayerA, sl
               player={playerA}
               ktcEntry={ktcA}
               val={valA}
-              leagueType={leagueType}
               maxVal={maxVal}
               isLeader={leader === 'A'}
               side="A"
+              darkMode={darkMode}
             />
 
             <div
@@ -129,10 +142,10 @@ export default function CompareTradePanel({ playerA, playerB, sleeperPlayerA, sl
               player={playerB}
               ktcEntry={ktcB}
               val={valB}
-              leagueType={leagueType}
               maxVal={maxVal}
               isLeader={leader === 'B'}
               side="B"
+              darkMode={darkMode}
             />
           </div>
 
@@ -168,7 +181,7 @@ export default function CompareTradePanel({ playerA, playerB, sleeperPlayerA, sl
                     <span className="font-medium" style={{ color: 'var(--color-label)' }}>{leaderName}</span>,
                     the {trailerName?.split(' ').pop()} side needs to add roughly{' '}
                     <span className="font-semibold" style={{ color: 'var(--color-label)' }}>{fmtKtcValue(gap)}</span> in
-                    additional assets to balance the trade.
+                    additional asset value to balance the trade.
                   </p>
                 </>
               )}
@@ -187,12 +200,17 @@ export default function CompareTradePanel({ playerA, playerB, sleeperPlayerA, sl
             </div>
           )}
 
-          {/* Build Full Trade button */}
-          {onBuildTrade && (
+          {/* Build Full Trade button — only enabled when exactly one player is on own roster */}
+          {hasLeague && (playerA || playerB) && (
             <button
-              onClick={onBuildTrade}
-              className="w-full py-2.5 rounded-xl text-sm font-semibold transition-colors active:opacity-60"
-              style={{ background: 'var(--color-accent)', color: '#fff' }}
+              onClick={onBuildTrade ?? undefined}
+              disabled={!onBuildTrade}
+              className="w-full py-2.5 rounded-xl text-sm font-semibold transition-colors"
+              style={{
+                background: onBuildTrade ? 'var(--color-signature)' : 'var(--color-fill)',
+                color: onBuildTrade ? 'var(--color-signature-fg)' : 'var(--color-label-quaternary)',
+                cursor: onBuildTrade ? 'pointer' : 'default',
+              }}
             >
               Build Full Trade
             </button>
@@ -214,29 +232,60 @@ export default function CompareTradePanel({ playerA, playerB, sleeperPlayerA, sl
 
 // ── ValueCard ─────────────────────────────────────────────────────────────────
 
-function ValueCard({ player, ktcEntry, val, maxVal, isLeader, side }) {
+function ValueCard({ player, ktcEntry, val, maxVal, isLeader, side, darkMode }) {
   const barWidth = maxVal > 0 && val != null ? Math.round((val / maxVal) * 100) : 0;
+
+  const teamKey   = player ? toTeamKey(player.teamId) : '';
+  const palette   = teamKey ? (TEAM_COLORS[teamKey] ?? null) : null;
+  const teamColor = palette ? (darkMode ? palette.darkPrimary : palette.primary) : null;
+  const isLight   = teamColor ? hexLuminance(teamColor) > 0.35 : false;
+  const tintBg    = teamColor ? `${teamColor}${isLight ? '18' : '22'}` : 'var(--color-fill)';
 
   return (
     <div
-      className="flex-1 rounded-xl px-3 py-3 flex flex-col gap-2 min-w-0"
+      className="flex-1 rounded-xl px-3 py-3 flex flex-col gap-2 min-w-0 relative overflow-hidden"
       style={{
-        background: 'var(--color-fill)',
+        background: tintBg,
+        borderLeft: teamColor ? `3px solid ${teamColor}` : '3px solid var(--color-separator)',
         outline: isLeader ? '1.5px solid var(--color-signature)' : 'none',
       }}
     >
-      {/* Player name */}
-      <div className="truncate text-xs font-semibold" style={{ color: 'var(--color-label)' }}>
-        {player ? player.displayName : <span style={{ color: 'var(--color-label-quaternary)' }}>Player {side}</span>}
-      </div>
-
-      {/* Position / team */}
-      {player && (
-        <div className="text-xs" style={{ color: 'var(--color-label-tertiary)' }}>
-          {player.position}
-          {player.teamId && ` · ${player.teamId.toUpperCase()}`}
-        </div>
+      {/* Logo watermark */}
+      {teamKey && (
+        <img
+          src={`https://a.espncdn.com/i/teamlogos/nfl/500/${teamKey}.png`}
+          className="absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none select-none"
+          style={{ width: 56, height: 56, objectFit: 'contain', opacity: 0.10 }}
+          onError={e => { e.target.style.display = 'none'; }}
+          alt=""
+        />
       )}
+
+      {/* Avatar + name */}
+      <div className="flex items-center gap-2">
+        {player && (
+          <img
+            src={`https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/${player.id}.png&w=80&h=58&scale=crop&location=origin&transparent=true`}
+            className="w-9 h-9 rounded-full shrink-0 object-cover"
+            style={{ background: 'var(--color-fill-secondary)' }}
+            onError={e => { e.target.style.display = 'none'; }}
+            alt={player.displayName}
+          />
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="truncate text-xs font-semibold" style={{ color: 'var(--color-label)' }}>
+            {player
+              ? player.displayName
+              : <span style={{ color: 'var(--color-label-quaternary)' }}>Player {side}</span>
+            }
+          </div>
+          {player && (
+            <div className="text-xs truncate" style={{ color: 'var(--color-label-tertiary)' }}>
+              {player.position}{player.teamId ? ` · ${player.teamId.toUpperCase()}` : ''}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Value */}
       <div
@@ -265,34 +314,6 @@ function ValueCard({ player, ktcEntry, val, maxVal, isLeader, side }) {
           />
         </div>
       )}
-    </div>
-  );
-}
-
-// ── PillToggle ────────────────────────────────────────────────────────────────
-
-function PillToggle({ options, value, onChange }) {
-  return (
-    <div
-      className="flex rounded-full p-0.5 gap-0.5"
-      style={{ background: 'var(--color-fill)' }}
-    >
-      {options.map(opt => {
-        const active = opt.id === value;
-        return (
-          <button
-            key={opt.id}
-            onClick={() => onChange(opt.id)}
-            className="px-3 py-1 rounded-full text-xs font-semibold transition-colors"
-            style={{
-              background: active ? 'var(--color-accent)' : 'transparent',
-              color: active ? '#fff' : 'var(--color-label-secondary)',
-            }}
-          >
-            {opt.label}
-          </button>
-        );
-      })}
     </div>
   );
 }

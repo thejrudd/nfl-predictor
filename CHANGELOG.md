@@ -404,3 +404,18 @@ All notable changes, oldest first. Add new entries at the bottom.
 - **Stats / Fantasy / Trade tab bar** — Replaced the pill-style panel selector in the Compare tab with a proper horizontal tab bar using the `season-tabs` / `season-tab` pattern, consistent with the Companion sub-navigation. Active tab has the signature underline indicator.
 - **Team color theming in Compare player slots** — Filled player slots now use the same treatment as Trade Agent cards: team primary color 3px left border, subtle ~13% opacity tint background, and a team logo watermark scoped inside the text area. Light/dark mode aware. Replaces the previous gradient + city map hero style.
 - **Team color theming in Compare picker** — Player rows in the search modal now show team color tint background, left border, and logo watermark — matching `TradeRosterPicker`. Headshot size unified to 36px.
+
+---
+
+## v5.5.7 — Compare Trade & Roster Bug Fixes
+*2026-03-22*
+
+- **Compare year pill theming** — Active year pill in the Compare Stats panel now uses `var(--color-signature)` (amber/team color) instead of the fixed blue accent, consistent with the rest of the app's active states.
+- **Trade Agent carousel scrollbar** — Hidden the browser scrollbar on the owner carousel in the Trade Agent (desktop). Scroll remains functional but the track is no longer visible.
+- **Companion Roster column alignment** — Season and Avg/G column headers are now correctly aligned above their respective data columns. The Trade button's reserved width is now accounted for in the header row spacer.
+- **Compare → Trade format auto-detection** — Removed the Dynasty/Redraft and 1QB/Superflex manual toggles from the Compare Trade panel. Format and league type are now auto-detected from Sleeper league settings, matching the Trade Agent behavior.
+- **Trade analysis copy** — Changed "additional assets" to "additional asset value" in the Compare Trade analysis text for clarity.
+- **Build Full Trade button theming** — Button now uses `var(--color-signature)` (amber/team color) instead of the fixed blue accent.
+- **Compare Trade hero cards** — Player cards in Compare → Trade now use the full Trade Agent card style: team color 3px left border, tint background, headshot avatar, and team logo watermark. Light/dark mode aware.
+- **Build Full Trade roster guard** — Button is now disabled and greyed out unless exactly one of the two compared players is on your own roster. The player on your roster is always routed to the "Your Side" of the trade. If neither or both players are on your roster, the button is non-clickable.
+- **Roster → Trade entry point** — Clicking Trade on a player in Companion Roster now immediately shows the player card in the Trade Agent even before KTC data finishes loading. Player name and avatar appear instantly; the KTC value populates once the data resolves.

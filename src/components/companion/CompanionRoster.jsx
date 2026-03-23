@@ -136,6 +136,7 @@ export default function CompanionRoster({ onTradePlayer }) {
           Avg/G
         </span>
         <div className="w-3 shrink-0" />
+        <div className="w-14 shrink-0 mr-4" />
       </div>
 
       {POSITION_ORDER.filter(pos => grouped[pos]?.length).map(pos => (
@@ -237,7 +238,7 @@ function PlayerRow({ player, onSelect, onTrade }) {
       {onTrade && (
         <button
           onClick={onTrade}
-          className="shrink-0 px-3 py-1.5 mr-3 rounded-lg text-xs font-semibold transition-colors active:opacity-60"
+          className="shrink-0 w-14 ml-3 mr-4 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors active:opacity-60"
           style={{ background: 'var(--color-fill)', color: 'var(--color-accent)' }}
         >
           Trade

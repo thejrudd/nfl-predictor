@@ -245,18 +245,19 @@ export default function CompanionTrade({ initialPlayer, onConsumeInitialPlayer }
     return { ...side, items: enriched };
   }
 
-  // Value calculations
+  // Value calculations — show player cards immediately once sleeperPlayers is loaded,
+  // even if KTC hasn't resolved yet (values show "—" until KTC finishes).
   const yourSide = useMemo(() => {
-    const side = adjustedKtcPlayers
-      ? valueSide(yourPlayers, yourPicks, sleeperPlayers, adjustedKtcPlayers, leagueType, rosters)
+    const side = sleeperPlayers
+      ? valueSide(yourPlayers, yourPicks, sleeperPlayers, adjustedKtcPlayers ?? [], leagueType, rosters)
       : { total: 0, items: [] };
     return enrichItems(side);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [yourPlayers, yourPicks, sleeperPlayers, adjustedKtcPlayers, leagueType, rosters, seasonStats, scoringSettings, rankMap]);
 
   const theirSide = useMemo(() => {
-    const side = adjustedKtcPlayers
-      ? valueSide(theirPlayers, theirPicks, sleeperPlayers, adjustedKtcPlayers, leagueType, rosters)
+    const side = sleeperPlayers
+      ? valueSide(theirPlayers, theirPicks, sleeperPlayers, adjustedKtcPlayers ?? [], leagueType, rosters)
       : { total: 0, items: [] };
     return enrichItems(side);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -271,7 +272,7 @@ export default function CompanionTrade({ initialPlayer, onConsumeInitialPlayer }
 
   // Partner roster preview — top players + owned picks
   const partnerPreview = useMemo(() => {
-    if (!partnerRosterId || !sleeperPlayers || !adjustedKtcPlayers) return null;
+    if (!partnerRosterId || !sleeperPlayers) return null;
     const roster = rosters.find(r => r.roster_id === partnerRosterId);
     if (!roster) return null;
 
@@ -279,7 +280,7 @@ export default function CompanionTrade({ initialPlayer, onConsumeInitialPlayer }
     const players = ids.map(id => {
       const sp = sleeperPlayers[id];
       if (!sp) return null;
-      const ktc = findKtcPlayerFromSleeper(id, sleeperPlayers, adjustedKtcPlayers);
+      const ktc = findKtcPlayerFromSleeper(id, sleeperPlayers, adjustedKtcPlayers ?? []);
       const val = getKtcValue(ktc, leagueType);
       return {
         id,
@@ -397,7 +398,7 @@ export default function CompanionTrade({ initialPlayer, onConsumeInitialPlayer }
             Trade Agent
           </span>
         </div>
-        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           <div className="flex gap-2" style={{ width: 'max-content' }}>
             {partnerRosters.map(roster => {
               const isSelected = roster.roster_id === partnerRosterId;

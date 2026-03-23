@@ -40,7 +40,7 @@ const PANELS = [
 // ── CompareTab ────────────────────────────────────────────────────────────────
 
 export default function CompareTab({ teams, initialPlayerA, onConsumeInitialPlayerA, onBuildTrade }) {
-  const { players: sleeperPlayers, hasLeague, loadPlayers } = useSleeper();
+  const { players: sleeperPlayers, hasLeague, loadPlayers, myRoster } = useSleeper();
 
   // ESPN player selections
   const [playerA, setPlayerA] = useState(null);
@@ -243,7 +243,16 @@ export default function CompareTab({ teams, initialPlayerA, onConsumeInitialPlay
           playerB={playerB}
           sleeperPlayerA={sleeperIdA && sleeperPlayers ? sleeperPlayers[sleeperIdA] : null}
           sleeperPlayerB={sleeperIdB && sleeperPlayers ? sleeperPlayers[sleeperIdB] : null}
-          onBuildTrade={onBuildTrade && sleeperIdA ? () => onBuildTrade(sleeperIdA, sleeperIdB) : null}
+          onBuildTrade={(() => {
+            if (!onBuildTrade || !hasLeague) return null;
+            const rosterPlayers = myRoster()?.players ?? [];
+            const aOnRoster = sleeperIdA ? rosterPlayers.includes(sleeperIdA) : false;
+            const bOnRoster = sleeperIdB ? rosterPlayers.includes(sleeperIdB) : false;
+            // Exactly one player must be on own roster
+            if (aOnRoster && !bOnRoster) return () => onBuildTrade(sleeperIdA, sleeperIdB);
+            if (bOnRoster && !aOnRoster) return () => onBuildTrade(sleeperIdB, sleeperIdA);
+            return null;
+          })()}
         />
       )}
 
