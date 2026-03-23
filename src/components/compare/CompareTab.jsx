@@ -210,8 +210,8 @@ export default function CompareTab({ teams, initialPlayerA, onConsumeInitialPlay
                 onClick={() => setPanel(id)}
                 className="shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold transition-colors"
                 style={{
-                  background: active ? 'var(--color-accent)' : 'var(--color-fill)',
-                  color: active ? '#fff' : 'var(--color-label-secondary)',
+                  background: active ? 'var(--color-signature)' : 'var(--color-fill)',
+                  color: active ? 'var(--color-signature-fg)' : 'var(--color-label-secondary)',
                 }}
               >
                 {label}

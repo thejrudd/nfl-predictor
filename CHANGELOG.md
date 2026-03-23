@@ -350,3 +350,14 @@ All notable changes, oldest first. Add new entries at the bottom.
 - **Suggest Package** — Auto-suggests 1–3 asset combinations from the deficit side's available roster to close the value gap.
 - **Valuation info modal** — "How values are calculated" modal explains KTC methodology, baseline assumptions, and all league-specific adjustments applied to your league with a position multiplier table.
 - **Entry points** — "Trade" button on your own Roster player rows pre-populates that player on your side. "Trade" button on opponent players in the League tab pre-populates the player on their side and auto-sets the trade partner. "Build Full Trade" button in the Compare tab's Trade panel navigates to the Trade tab with both compared players pre-loaded.
+
+---
+
+## v5.5.1 — Trade Agent Polish
+*2026-03-22*
+
+- **TE premium bug fix** — `bonus_rec_te` was silently dropped by `importLeagueScoring` because it isn't a raw stat key. Fixed by extending the import filter to accept any key in `DEFAULT_SCORING`. `calcPoints` and `calcPointsFromTotals` now accept an optional `position` parameter and apply the TE reception bonus when `position === 'TE'`. The Trade picker's season pts display and KTC multiplier for TE position now correctly reflect the league's TE premium.
+- **Filter pill theming** — Selected state of pill filter buttons (Compare tab panel selector, Trade action buttons) now uses `var(--color-signature)` instead of `var(--color-accent)`, so they follow the optional team color theme.
+- **Search All Players** — Moved from a small inline button to a full-width prominent button below the roster carousel in Trade Agent view. Always visible when KTC data is loaded.
+- **"Trade Agent" label** — Section header renamed from "Trade Partner" to "Trade Agent".
+- **"Refine Trade" button** — "Suggest Package" renamed to "Refine Trade" throughout the Trade Agent UI.

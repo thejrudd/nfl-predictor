@@ -322,20 +322,8 @@ export default function CompanionTrade({ initialPlayer, onConsumeInitialPlayer }
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-semibold uppercase tracking-widest"
             style={{ color: 'var(--color-label-tertiary)', letterSpacing: '0.08em' }}>
-            Trade Partner
+            Trade Agent
           </span>
-          {!ktcLoading && !ktcError && (
-            <button
-              onClick={() => setPickerOpen({ side: 'theirs', type: 'player', allRosters: true })}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors"
-              style={{ background: 'var(--color-fill)', color: 'var(--color-accent)' }}
-            >
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-              </svg>
-              Search All Players
-            </button>
-          )}
         </div>
         <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
           <div className="flex gap-2" style={{ width: 'max-content' }}>
@@ -371,11 +359,25 @@ export default function CompanionTrade({ initialPlayer, onConsumeInitialPlayer }
             })}
           </div>
         </div>
+
+        {/* Search All Players — always visible when KTC is ready */}
+        {!ktcLoading && !ktcError && (
+          <button
+            onClick={() => setPickerOpen({ side: 'theirs', type: 'player', allRosters: true })}
+            className="w-full flex items-center justify-center gap-2 mt-2.5 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+            style={{ background: 'var(--color-signature)', color: 'var(--color-signature-fg)' }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            Search All Players
+          </button>
+        )}
       </div>
 
       {/* ── Empty state: no partner selected ─────────────────────────────── */}
       {!partnerRosterId && (
-        <div className="flex flex-col items-center justify-center py-12 px-8 gap-2">
+        <div className="flex flex-col items-center justify-center py-10 px-8 gap-2">
           <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
             style={{ background: 'var(--color-fill)' }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -389,7 +391,7 @@ export default function CompanionTrade({ initialPlayer, onConsumeInitialPlayer }
             Select a trade partner or search for a player
           </span>
           <span className="text-xs text-center" style={{ color: 'var(--color-label-tertiary)' }}>
-            Choose a league member above, or use Search All Players to find a specific player.
+            Choose a league member above, or tap Search All Players to find any player.
           </span>
         </div>
       )}
@@ -470,13 +472,13 @@ export default function CompanionTrade({ initialPlayer, onConsumeInitialPlayer }
             </div>
           )}
 
-          {/* ── Suggest package ─────────────────────────────────────────── */}
+          {/* ── Refine Trade ─────────────────────────────────────────────── */}
           {hasItems && verdict.verdict !== 'fair' && verdict.gap > 0 && (
             <div className="px-4 pt-3">
               <button onClick={handleSuggest}
                 className="w-full py-2.5 rounded-xl text-xs font-semibold transition-colors"
-                style={{ background: 'var(--color-accent)', color: '#fff' }}>
-                Suggest Package
+                style={{ background: 'var(--color-signature)', color: 'var(--color-signature-fg)' }}>
+                Refine Trade
               </button>
             </div>
           )}
@@ -501,7 +503,7 @@ export default function CompanionTrade({ initialPlayer, onConsumeInitialPlayer }
                   </div>
                   <button onClick={() => applySuggestion(opt)}
                     className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold"
-                    style={{ background: 'var(--color-accent)', color: '#fff' }}>
+                    style={{ background: 'var(--color-signature)', color: 'var(--color-signature-fg)' }}>
                     Apply
                   </button>
                 </div>

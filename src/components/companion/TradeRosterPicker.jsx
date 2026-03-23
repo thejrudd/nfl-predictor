@@ -71,7 +71,7 @@ export default function TradeRosterPicker({
         const ktc = findKtcPlayerFromSleeper(id, sleeperPlayers, ktcPlayers);
         const val = getKtcValue(ktc, leagueType);
         const stats = seasonStats?.[id];
-        const pts = stats ? calcPointsFromTotals(stats, scoringSettings) : null;
+        const pts = stats ? calcPointsFromTotals(stats, scoringSettings, sp.position) : null;
         const ownerRosterId = playerRosterMap[id];
         const ownerName = isAllMode && ownerRosterId
           ? getUserDisplayName(rosters.find(r => r.roster_id === ownerRosterId)?.owner_id ?? '')

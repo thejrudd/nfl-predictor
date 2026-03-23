@@ -68,3 +68,4 @@ Open bugs are listed first, fixed bugs below. Add new entries at the bottom of e
 | Fantasy view in Compare mode had null values for everything — `loadSeasonStats()` was never called; dynamic stat sections now cover all scored stat keys | v5.0 |
 | Year selector in Compare mode showed all years regardless of player career — filtered to rookie year onwards using `experience` field | v5.0.1 |
 | TD/INT ratio null in Compare mode for QBs — `pushVal` rows had `key: null` so per-player lookup failed; added `computeForMap` callback to derive value per player | v5.0.1 |
+| TE premium (`bonus_rec_te`) not imported from Sleeper league settings — `importLeagueScoring` filtered it out because it wasn't in `STAT_TO_SCORING_KEY`; TE season pts in Trade picker and KTC multiplier for TE were both unaffected by the league's TE bonus | v5.5.1 |
