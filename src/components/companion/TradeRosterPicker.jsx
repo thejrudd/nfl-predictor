@@ -7,14 +7,33 @@
 // so CompanionTrade can auto-set the trade partner.
 
 import { useState, useEffect, useMemo } from 'react';
-import { findKtcPlayerFromSleeper, getKtcValue, fmtKtcValue } from '../../utils/ktcApi';
+import { findKtcPlayerFromSleeper, getKtcValue, fmtKtcValue, productionAdjustedValue } from '../../utils/ktcApi';
+import { DYNASTY_FALLBACK_MULT } from '../../utils/tradeEngine';
 import { calcPointsFromTotals } from '../../utils/scoringEngine';
-import { computePositionalRanks } from '../../utils/projectionEngine';
+import { computePositionalRanks, computePositionalAvgPPG, computePositionalValuePerPPG } from '../../utils/projectionEngine';
 import { parseSearchQuery, matchesFilter } from '../../utils/parseSearchQuery';
 import { TEAM_COLORS } from '../../data/teamColors';
 import { useTheme } from '../../context/ThemeContext';
 
 const POSITION_ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DL', 'LB', 'DB'];
+const POSITION_FILTER_CHIPS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'K', 'DL'];
+const POSITION_FILTER_GROUPS = {
+  DL: new Set(['DL', 'DE', 'DT']),
+  LB: new Set(['LB', 'ILB', 'OLB']),
+  DB: new Set(['DB', 'CB', 'S', 'SS', 'FS']),
+};
+
+// Team city + nickname map for partial name matching (e.g. "New" → Saints)
+const TEAM_CITY_NAMES = {
+  buf: 'buffalo bills', mia: 'miami dolphins', ne: 'new england patriots', nyj: 'new york jets',
+  bal: 'baltimore ravens', cin: 'cincinnati bengals', cle: 'cleveland browns', pit: 'pittsburgh steelers',
+  hou: 'houston texans', ind: 'indianapolis colts', jax: 'jacksonville jaguars', ten: 'tennessee titans',
+  den: 'denver broncos', kc: 'kansas city chiefs', lv: 'las vegas raiders', lac: 'los angeles chargers',
+  dal: 'dallas cowboys', nyg: 'new york giants', phi: 'philadelphia eagles', wsh: 'washington commanders',
+  chi: 'chicago bears', det: 'detroit lions', gb: 'green bay packers', min: 'minnesota vikings',
+  atl: 'atlanta falcons', car: 'carolina panthers', no: 'new orleans saints', tb: 'tampa bay buccaneers',
+  ari: 'arizona cardinals', la: 'los angeles rams', sf: 'san francisco 49ers', sea: 'seattle seahawks',
+};
 
 // ── Sleeper → TEAM_COLORS key normalization ───────────────────────────────────
 // Sleeper uses a few abbreviations that differ from TEAM_COLORS keys.
@@ -108,6 +127,7 @@ export default function TradeRosterPicker({
   rosters,
   sleeperPlayers,
   ktcPlayers,
+  dynastyKtcPlayers,     // fallback for players absent from the primary (redraft) list
   leagueType,
   excludeIds,
   seasonStats,
@@ -120,6 +140,7 @@ export default function TradeRosterPicker({
   onClose,
 }) {
   const [search, setSearch] = useState('');
+  const [posFilter, setPosFilter] = useState('ALL');
   const { darkMode } = useTheme();
   const isAllMode = rosterId == null;
 
@@ -132,6 +153,21 @@ export default function TradeRosterPicker({
   const rankMap = useMemo(
     () => computePositionalRanks(seasonStats, sleeperPlayers, scoringSettings),
     [seasonStats, sleeperPlayers, scoringSettings],
+  );
+
+  // Average PPG per position — used to calibrate per-player production multipliers
+  const positionalAvgPPG = useMemo(
+    () => computePositionalAvgPPG(rosters, seasonStats, sleeperPlayers, scoringSettings),
+    [rosters, seasonStats, sleeperPlayers, scoringSettings],
+  );
+
+  // KTC value per PPG for each position — used to estimate dynasty-fallback player values
+  const positionalValuePerPPG = useMemo(
+    () => computePositionalValuePerPPG(
+      rosters, sleeperPlayers, ktcPlayers, leagueType,
+      seasonStats, scoringSettings, findKtcPlayerFromSleeper, getKtcValue, productionAdjustedValue,
+    ),
+    [rosters, sleeperPlayers, ktcPlayers, leagueType, seasonStats, scoringSettings],
   );
 
   // Build a map: playerId → rosterId (which roster owns this player)
@@ -167,19 +203,44 @@ export default function TradeRosterPicker({
         const sp = sleeperPlayers?.[id];
         if (!sp) return null;
         const ktc = findKtcPlayerFromSleeper(id, sleeperPlayers, ktcPlayers);
-        const val = getKtcValue(ktc, leagueType);
+        let rawVal = getKtcValue(ktc, leagueType);
+        let dynastyFallback = false;
+        if (rawVal == null && dynastyKtcPlayers?.length) {
+          const dKtc = findKtcPlayerFromSleeper(id, sleeperPlayers, dynastyKtcPlayers);
+          const dVal = getKtcValue(dKtc, leagueType);
+          if (dVal != null) { rawVal = Math.round(dVal * DYNASTY_FALLBACK_MULT); dynastyFallback = true; }
+        }
+        rawVal = rawVal ?? (ktcPlayers?.length > 0 ? 0 : null);
         const stats = seasonStats?.[id];
         const pts = stats ? calcPointsFromTotals(stats, scoringSettings, sp.position) : null;
-        const gp = stats?.gp ?? null;
+        const gp = stats?.gp ?? 0;
         const avgPPG = pts != null && gp ? Math.round((pts / gp) * 10) / 10 : null;
+        const rankInfo = rankMap[id] ?? null;
+
+        let val;
+        if (dynastyFallback && gp >= 3 && avgPPG != null && positionalValuePerPPG[sp.position] != null) {
+          // PPG-calibrated estimation: anchor dynasty-fallback players to the same
+          // value-per-PPG ratio as direct-KTC-ranked players at this position.
+          val = Math.round(avgPPG * positionalValuePerPPG[sp.position]);
+        } else {
+          // 50% PPG blend weight for trade agent (higher than default 35%)
+          val = productionAdjustedValue(rawVal, avgPPG, positionalAvgPPG[sp.position], 0.50);
+        }
+
+        // Layer 2 — rank-percentile nudge (±12%)
+        if (rankInfo?.rank != null && rankInfo?.posCount > 1) {
+          const percentile = 1 - (rankInfo.rank - 1) / (rankInfo.posCount - 1);
+          val = Math.round(val * (0.88 + 0.24 * percentile));
+        }
+
         const ownerRosterId = playerRosterMap[id];
         const isOwnPlayer = ownerRosterId === myRosterId;
         const ownerName = isAllMode && ownerRosterId
           ? (isOwnPlayer ? 'Your Roster' : getUserDisplayName(rosters.find(r => r.roster_id === ownerRosterId)?.owner_id ?? ''))
           : null;
         const teamKey = toTeamKey(sp.team);
+        const cityName = TEAM_CITY_NAMES[teamKey] ?? '';
         const palette = TEAM_COLORS[teamKey] ?? null;
-        const rankInfo = rankMap[id] ?? null;
         return {
           id,
           name: sp.full_name ?? `${sp.first_name ?? ''} ${sp.last_name ?? ''}`.trim(),
@@ -189,27 +250,37 @@ export default function TradeRosterPicker({
           palette,
           injuryStatus: sp.injury_status,
           val,
+          dynastyFallback,
           pts,
           avgPPG,
           rankInfo,
           ownerRosterId,
           ownerName,
           isOwnPlayer,
+          cityName,
         };
       })
       .filter(Boolean);
   }, [isAllMode, includeOwnRoster, rosters, rosterId, myRosterId, excludeSet, sleeperPlayers,
-      ktcPlayers, leagueType, seasonStats, scoringSettings, playerRosterMap,
-      getUserDisplayName, rankMap]);
+      ktcPlayers, dynastyKtcPlayers, leagueType, seasonStats, scoringSettings, playerRosterMap,
+      getUserDisplayName, rankMap, positionalAvgPPG, positionalValuePerPPG]);
+
+  // Position chip filter applied first (independent of text search)
+  const posFiltered = useMemo(() => {
+    if (posFilter === 'ALL') return players;
+    const group = POSITION_FILTER_GROUPS[posFilter];
+    return players.filter(p => group ? group.has(p.position) : p.position === posFilter);
+  }, [players, posFilter]);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return players;
+    if (!search.trim()) return posFiltered;
     const filters = parseSearchQuery(search);
     const hasFilters = filters.pos.size || filters.team.size || filters.div.size || filters.conf.size || filters.name.length;
-    if (!hasFilters) return players;
-    return players.filter(p => {
+    if (!hasFilters) return posFiltered;
+    return posFiltered.filter(p => {
       if (filters.name.length > 0) {
-        const hay = (p.name + (p.ownerName ? ' ' + p.ownerName : '')).toLowerCase();
+        // Include city name so partial matches like "New" hit "new orleans saints"
+        const hay = [p.name, p.ownerName ?? '', p.team, p.cityName].join(' ').toLowerCase();
         if (!filters.name.every(t => hay.includes(t))) return false;
       }
       if (filters.pos.size > 0) {
@@ -221,7 +292,7 @@ export default function TradeRosterPicker({
       if (filters.conf.size > 0 && (!teamInfo || !filters.conf.has(teamInfo.conference))) return false;
       return true;
     });
-  }, [players, search]);
+  }, [posFiltered, search]);
 
   const grouped = useMemo(() => {
     const groups = {};
@@ -252,11 +323,11 @@ export default function TradeRosterPicker({
         style={{ background: 'var(--color-bg)', maxWidth: 520, height: '72vh', maxHeight: 640 }}
         onClick={e => e.stopPropagation()}>
 
-        {/* Header + search */}
+        {/* Header + search + position chips */}
         <div className="px-4 pt-4 pb-3 shrink-0" style={{ borderBottom: '1px solid var(--color-separator)' }}>
           <div className="flex items-center justify-between mb-3">
             <span className="font-bold text-base" style={{ color: 'var(--color-label)' }}>
-              {isAllMode ? 'Search All Players' : 'Add Player'}
+              {isAllMode ? 'Search All Rostered Players' : 'Add Player'}
             </span>
             <button onClick={onClose} className="p-1" style={{ color: 'var(--color-label-secondary)' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -273,22 +344,36 @@ export default function TradeRosterPicker({
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Name, team, position, or natural language…"
+              placeholder="Name, team, city, or position…"
               autoFocus
               className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm outline-none"
               style={{ background: 'var(--color-fill)', color: 'var(--color-label)', fontSize: '16px' }}
             />
           </div>
+          {/* Position chips — only in all-rosters mode */}
+          {isAllMode && (
+            <div className="flex gap-1.5 mt-2.5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+              {POSITION_FILTER_CHIPS.map(pos => (
+                <button
+                  key={pos}
+                  onClick={() => setPosFilter(pos)}
+                  className="px-3 py-1 rounded-lg text-xs font-semibold shrink-0 transition-colors"
+                  style={{
+                    background: posFilter === pos ? 'var(--color-signature)' : 'var(--color-fill)',
+                    color: posFilter === pos ? 'var(--color-signature-fg)' : 'var(--color-label-secondary)',
+                  }}
+                >
+                  {pos}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Results / guide — scrollable */}
+        {/* Results — scrollable */}
         <div className="flex-1 overflow-y-auto">
-          {/* Search guide shown in all-mode when no query typed */}
-          {isAllMode && !search.trim() && (
-            <SearchGuide onExample={q => setSearch(q)} />
-          )}
-          {/* Player list — always shown in locked mode; shown when query exists in all-mode */}
-          {(!isAllMode || search.trim()) && POSITION_ORDER.map(pos => {
+          {/* Player list — always shown */}
+          {POSITION_ORDER.map(pos => {
             const list = grouped[pos];
             if (!list?.length) return null;
             return (
@@ -373,9 +458,14 @@ export default function TradeRosterPicker({
                       <div className="flex flex-col items-end shrink-0 gap-0.5">
                         <span className="text-sm font-bold tabular-nums"
                           style={{ color: p.val != null ? 'var(--color-label)' : 'var(--color-label-quaternary)' }}>
-                          {fmtKtcValue(p.val)}
+                          {p.dynastyFallback ? '~' : ''}{fmtKtcValue(p.val)}
                         </span>
-                        {p.val != null && currentTotal != null && (
+                        {p.dynastyFallback && (
+                          <span style={{ color: 'var(--color-label-quaternary)', fontSize: '9px', fontWeight: 600 }}>
+                            DYN est.
+                          </span>
+                        )}
+                        {p.val != null && !p.dynastyFallback && currentTotal != null && (
                           <span className="text-xs tabular-nums" style={{ color: 'var(--color-accent)' }}>
                             → {fmtKtcValue(currentTotal + p.val)}
                           </span>
@@ -387,7 +477,7 @@ export default function TradeRosterPicker({
               </div>
             );
           })}
-          {(!isAllMode || search.trim()) && filtered.length === 0 && (
+          {filtered.length === 0 && (
             <div className="py-12 text-sm text-center" style={{ color: 'var(--color-label-tertiary)' }}>
               {search.trim() ? `No players found for "${search}"` : 'No players found'}
             </div>

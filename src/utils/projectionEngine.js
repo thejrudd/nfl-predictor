@@ -1,5 +1,5 @@
 // ── Fantasy Projection Engine ─────────────────────────────────────────────────
-import { calcPoints } from './scoringEngine';
+import { calcPoints, calcPointsFromTotals } from './scoringEngine';
 
 const IDP_POSITIONS = new Set(['DL', 'LB', 'DB', 'DE', 'DT', 'CB', 'S', 'ILB', 'OLB', 'SS', 'FS']);
 const PASSING_POSITIONS = new Set(['QB', 'WR', 'TE']);
@@ -55,6 +55,171 @@ function normalizePos(pos) {
   if (['LB', 'ILB', 'OLB'].includes(pos)) return 'LB';
   if (['DB', 'CB', 'S', 'SS', 'FS'].includes(pos)) return 'DB';
   return null;
+}
+
+/**
+ * Compute average PPG per skill position across all rostered players with ≥1 game played.
+ * Used to calibrate per-player production multipliers so values stay balanced.
+ * Returns { QB, RB, WR, TE } — positions with no data return null.
+ *
+ * @param {Array}  rosters         - Sleeper rosters array
+ * @param {object} seasonStats     - { [playerId]: { gp, ...totals } }
+ * @param {object} sleeperPlayers  - { [playerId]: { position, ... } }
+ * @param {object} scoringSettings - League scoring settings
+ * @returns {{ QB: number|null, RB: number|null, WR: number|null, TE: number|null }}
+ */
+export function computePositionalAvgPPG(rosters, seasonStats, sleeperPlayers, scoringSettings) {
+  const POSITIONS = ['QB', 'RB', 'WR', 'TE'];
+  const totals = {};
+  for (const pos of POSITIONS) totals[pos] = { sum: 0, count: 0 };
+
+  // If rosters provided, use only rostered players; otherwise use all players with stats
+  const allIds = new Set();
+  if (rosters?.length) {
+    for (const r of rosters) {
+      for (const id of [...(r.players ?? []), ...(r.reserve ?? [])]) allIds.add(id);
+    }
+  } else if (seasonStats) {
+    for (const id of Object.keys(seasonStats)) allIds.add(id);
+  }
+
+  for (const id of allIds) {
+    const sp = sleeperPlayers?.[id];
+    if (!sp) continue;
+    const pos = sp.position;
+    if (!totals[pos]) continue;
+    const stats = seasonStats?.[id];
+    if (!stats?.gp) continue;
+    const pts = calcPointsFromTotals(stats, scoringSettings, pos);
+    if (!pts) continue;
+    totals[pos].sum += pts / stats.gp;
+    totals[pos].count++;
+  }
+
+  const result = {};
+  for (const pos of POSITIONS) {
+    result[pos] = totals[pos].count > 0 ? totals[pos].sum / totals[pos].count : null;
+  }
+  return result;
+}
+
+/**
+ * Compute the ratio of KTC fantasy value per PPG for each skill position.
+ * Used to estimate redraft trade value for dynasty-fallback players — anchors
+ * their value to the same scale as players who have direct KTC fantasy rankings.
+ *
+ * Formula per position: sum(productionAdjustedValues) / sum(PPGs) across rostered
+ * players with BOTH a direct KTC fantasy value and gp >= 3.  Uses production-adjusted
+ * values (not raw KTC) so the ratio matches what direct-KTC players actually display.
+ *
+ * @param {Array}    rosters
+ * @param {object}   sleeperPlayers
+ * @param {Array}    ktcPlayers         - League-adjusted redraft KTC array (post applyKtcMultipliers)
+ * @param {string}   leagueType         - '1qb' | 'sf'
+ * @param {object}   seasonStats        - { [playerId]: { gp, ...totals } }
+ * @param {object}   scoringSettings
+ * @param {Function} findKtcFn          - findKtcPlayerFromSleeper(id, players, ktcArr)
+ * @param {Function} getKtcValFn        - getKtcValue(ktcPlayer, leagueType)
+ * @param {Function} prodAdjFn          - productionAdjustedValue(ktcVal, avgPPG, posAvgPPG)
+ * @returns {{ QB: number|null, RB: number|null, WR: number|null, TE: number|null }}
+ */
+export function computePositionalValuePerPPG(
+  rosters, sleeperPlayers, ktcPlayers, leagueType, seasonStats, scoringSettings,
+  findKtcFn, getKtcValFn, prodAdjFn,
+) {
+  const POSITIONS = ['QB', 'RB', 'WR', 'TE'];
+  const buckets = {};
+  for (const pos of POSITIONS) buckets[pos] = { sumVal: 0, sumPPG: 0, count: 0 };
+
+  // First pass: collect all rostered player IDs
+  const allIds = new Set();
+  if (rosters?.length) {
+    for (const r of rosters) {
+      for (const id of [...(r.players ?? []), ...(r.reserve ?? [])]) allIds.add(id);
+    }
+  }
+
+  // Compute positional avg PPG (needed for production adjustment)
+  const posAvg = computePositionalAvgPPG(rosters, seasonStats, sleeperPlayers, scoringSettings);
+
+  // Second pass: accumulate production-adjusted values and PPGs
+  for (const id of allIds) {
+    const sp = sleeperPlayers?.[id];
+    if (!sp) continue;
+    const pos = sp.position;
+    if (!buckets[pos]) continue;
+
+    // Only include players with a direct KTC fantasy value (not dynasty fallback)
+    const ktc = findKtcFn(id, sleeperPlayers, ktcPlayers);
+    const rawVal = getKtcValFn(ktc, leagueType);
+    if (rawVal == null) continue;
+
+    const stats = seasonStats?.[id];
+    if (!stats?.gp || stats.gp < 3) continue;
+    const pts = calcPointsFromTotals(stats, scoringSettings, pos);
+    if (!pts || pts <= 0) continue;
+    const ppg = pts / stats.gp;
+
+    // Use the production-adjusted value — the same value that displays for direct-KTC
+    // players — so dynasty-fallback estimates land on the identical scale.
+    // blendWeight=0.50 matches the trade agent's higher PPG sensitivity.
+    const adjVal = prodAdjFn(rawVal, ppg, posAvg[pos], 0.50);
+    buckets[pos].sumVal += adjVal ?? rawVal;
+    buckets[pos].sumPPG += ppg;
+    buckets[pos].count++;
+  }
+
+  const result = {};
+  for (const pos of POSITIONS) {
+    const b = buckets[pos];
+    // Require at least 3 players for a reliable ratio
+    result[pos] = b.count >= 3 && b.sumPPG > 0 ? b.sumVal / b.sumPPG : null;
+  }
+  return result;
+}
+
+/**
+ * Compute the average production multiplier across all rostered players with stats.
+ * Used to scale draft pick values proportionally so picks stay consistent with players.
+ *
+ * @param {Array}  rosters
+ * @param {object} seasonStats
+ * @param {object} sleeperPlayers
+ * @param {object} scoringSettings
+ * @param {Function} productionAdjustedValueFn - imported from ktcApi
+ * @returns {number} mean multiplier (typically near 1.0)
+ */
+export function computeLeagueAvgMult(rosters, seasonStats, sleeperPlayers, scoringSettings, productionAdjustedValueFn) {
+  const positionalAvg = computePositionalAvgPPG(rosters, seasonStats, sleeperPlayers, scoringSettings);
+  const POSITIONS = ['QB', 'RB', 'WR', 'TE'];
+  const mults = [];
+
+  const allIds = new Set();
+  if (rosters?.length) {
+    for (const r of rosters) {
+      for (const id of [...(r.players ?? []), ...(r.reserve ?? [])]) allIds.add(id);
+    }
+  } else if (seasonStats) {
+    for (const id of Object.keys(seasonStats)) allIds.add(id);
+  }
+
+  for (const id of allIds) {
+    const sp = sleeperPlayers?.[id];
+    if (!sp || !POSITIONS.includes(sp.position)) continue;
+    const stats = seasonStats?.[id];
+    if (!stats?.gp) continue;
+    const pts = calcPointsFromTotals(stats, scoringSettings, sp.position);
+    if (!pts) continue;
+    const avgPPG = pts / stats.gp;
+    const posAvg = positionalAvg[sp.position];
+    if (!posAvg) continue;
+    // Compute what the multiplier would be for a notional value of 5000 (cancels out)
+    const adj = productionAdjustedValueFn(5000, avgPPG, posAvg);
+    mults.push(adj / 5000);
+  }
+
+  if (!mults.length) return 1;
+  return mults.reduce((s, m) => s + m, 0) / mults.length;
 }
 
 /**

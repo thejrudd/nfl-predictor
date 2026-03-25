@@ -47,7 +47,8 @@ export default function CompanionRankings() {
     return ids;
   }, [rosters]);
 
-  const ranked = useMemo(() => {
+  // Full sorted list with true ranks — search is NOT applied here so ranks are stable.
+  const allRanked = useMemo(() => {
     if (!players || !seasonStats) return [];
 
     return Object.entries(seasonStats)
@@ -60,8 +61,6 @@ export default function CompanionRankings() {
           const group = POSITION_FILTER_MAP[posFilter];
           if (group ? !group.has(pos) : pos !== posFilter) return null;
         }
-        const q = search.trim().toLowerCase();
-        if (q && !p.full_name?.toLowerCase().includes(q) && !p.team?.toLowerCase().includes(q)) return null;
 
         const pts = calcPointsFromTotals(stats, scoringSettings, p.position);
         if (pts <= 0) return null;
@@ -77,8 +76,18 @@ export default function CompanionRankings() {
       })
       .filter(Boolean)
       .sort((a, b) => b.pts - a.pts)
-      .slice(0, 100);
-  }, [players, seasonStats, scoringSettings, posFilter, search, rosteredIds]);
+      .slice(0, 100)
+      .map((player, i) => ({ ...player, rank: i + 1 }));
+  }, [players, seasonStats, scoringSettings, posFilter, rosteredIds]);
+
+  // Apply search on top of the ranked list — rank numbers are preserved from above.
+  const ranked = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return allRanked;
+    return allRanked.filter(p =>
+      p.name.toLowerCase().includes(q) || p.team.toLowerCase().includes(q),
+    );
+  }, [allRanked, search]);
 
   return (
     <div className="pb-6">
@@ -152,8 +161,8 @@ export default function CompanionRankings() {
         </div>
       )}
 
-      {ranked.map((player, i) => (
-        <RankRow key={player.id} rank={i + 1} player={player} onSelect={() => setSelectedPlayerId(player.id)} />
+      {ranked.map((player) => (
+        <RankRow key={player.id} rank={player.rank} player={player} onSelect={() => setSelectedPlayerId(player.id)} />
       ))}
 
       {ranked.length === 0 && seasonStats && (

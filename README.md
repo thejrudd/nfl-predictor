@@ -75,11 +75,11 @@ PORT=8080 docker compose up -d --build
 | PWA | vite-plugin-pwa + Workbox |
 | Production serving | nginx (Docker) |
 
-## What's New in v4.8
+## What's New in v5.8.7
 
-- **League tab** — New League sub-tab in the Companion section gives full visibility into the rest of the league
-- **Opponent roster view** — Browse any league member's full roster with season pts, avg PPG, positional rank, and weekly breakdown; same depth as your own Roster view
-- **Draft capital grid** — League-wide picks grid showing every team's currently owned draft picks by round and year; color-coded to distinguish own picks from acquired picks, with trading-away shown as empty slots
+- **Trade Agent UX overhaul** — Team chips now switch partner without opening a modal; new "View Roster & Picks" button opens a multi-add modal for adding multiple players/picks at once; "Search All Rostered Players" shows all players by default with position filter chips and partial city name matching (type "New" → Saints, "Kansas" → Chiefs)
+- **Own-roster Trade button** — Companion → League now shows a Trade button on your own players, pre-populating Your Side of the trade
+- **Bug fixes** — Adding a player to Their Side no longer wipes Your Side; Rankings rank numbers stay stable during search; Their Side +Player correctly locks to the selected partner's roster
 
 For the full version history, see [CHANGELOG.md](CHANGELOG.md).
 

@@ -111,3 +111,11 @@ Open bugs are listed first, fixed bugs below. Add new entries at the bottom of e
 | Position-specific bonuses silently skipped in `projectPlayer`, `getDefenseStrength`, `getLeagueAvgPPG`, and CompanionDefense Defense Scored — 7 `calcPoints` calls missing the position argument | v5.8.1 |
 | Big-play bonus fields (`bonus_pass_td_40p`, etc.) imported from Sleeper under wrong key — Sleeper `scoring_settings` uses short form (`pass_td_40p`) but `calcPoints` looks up `bonus_pass_td_40p`; all 9 big-play bonuses stayed at 0 despite non-zero league settings | v5.8.2 |
 | Pick 6 Thrown (`pass_int_td` / `int_ret_td`) missing entirely — not in DEFAULT_SCORING, STAT_TO_SCORING_KEY, or CompanionScoring | v5.8.2 |
+| Trade Agent: players absent from KTC redraft rankings (but present in dynasty) showed "—" instead of an estimated value — dynasty fallback existed in `valueSide` but `dynastyKtcPlayers` was not passed to `TradeRosterPicker` or applied to `adjustedDynastyKtcPlayers` | v5.8.7 |
+| Dynasty fallback multiplier (35%) produced values far too low relative to directly-ranked players — raised to 60% | v5.8.7 |
+| Dynasty fallback applied to raw (unadjusted) dynasty values — `applyKtcMultipliers` was not called on `dynastyKtcPlayers`, so TE premium and other league-specific adjustments were skipped | v5.8.7 |
+| Trade Agent "Search All Players" button locked to selected opponent's roster — tapping a team chip set `partnerRosterId`, which changed the button label to "Browse Their Roster" with no way to revert to all-player search | v5.8.7 |
+| Trade Agent: adding a player to "Their Side" removed the player from "Your Side" — switching partners reset `yourPlayers` unnecessarily | v5.8.7 |
+| Companion → Rankings rank numbers changed during search — rank was derived from filtered list index instead of overall sorted position | v5.8.7 |
+| Trade Agent "+Player" on Their Side showed global player search even when a partner was selected — should lock to partner's roster | v5.8.7 |
+| Trade Agent: tapping a different team chip showed their roster modal but did not update the selected partner — chip highlight and "+Player"/"+Pick" still targeted the original partner | v5.8.7 |

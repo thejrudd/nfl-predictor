@@ -200,9 +200,14 @@ function LeagueRosterView({ onTradePlayer }) {
             </div>
             {grouped[pos].map(player => {
               const isOpponent = selectedRosterId !== myRosterData?.roster_id;
+              const isOwnRoster = selectedRosterId === myRosterData?.roster_id;
               return (
                 <LeaguePlayerRow key={player.id} player={player} onSelect={() => setSelectedPlayerId(player.id)}
-                  onTrade={onTradePlayer && isOpponent ? () => onTradePlayer(player.id, selectedRosterId) : null} />
+                  onTrade={
+                    onTradePlayer && isOpponent ? () => onTradePlayer(player.id, selectedRosterId, 'get')
+                    : onTradePlayer && isOwnRoster ? () => onTradePlayer(player.id, null, 'give')
+                    : null
+                  } />
               );
             })}
           </div>

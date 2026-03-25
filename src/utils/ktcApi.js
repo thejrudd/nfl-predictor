@@ -378,6 +378,24 @@ export function applyKtcMultipliers(ktcPlayers, multipliers) {
   });
 }
 
+/**
+ * Adjust a raw KTC value by blending in a per-player production factor.
+ * Players above their positional PPG average are boosted; below-average are reduced.
+ * Players without stats (rookies, IR, no games played) return ktcVal unchanged.
+ *
+ * @param {number} ktcVal           - Base KTC value (post scoring-setting multipliers)
+ * @param {number|null} avgPPG      - Player's average PPG this season (null = no stats)
+ * @param {number|null} positionalAvgPPG - League avg PPG for this position (null = skip)
+ * @param {number} blendWeight      - 0–1; how much production drives the adjustment (default 0.35)
+ * @returns {number}
+ */
+export function productionAdjustedValue(ktcVal, avgPPG, positionalAvgPPG, blendWeight = 0.35) {
+  if (!ktcVal || avgPPG == null || !positionalAvgPPG) return ktcVal ?? null;
+  const factor = avgPPG / positionalAvgPPG;
+  const mult = Math.max(0.80, Math.min(1.40, (1 - blendWeight) + blendWeight * factor));
+  return Math.round(ktcVal * mult);
+}
+
 // ── Draft pick matching ───────────────────────────────────────────────────────
 
 const ORDINALS = { 1: '1st', 2: '2nd', 3: '3rd', 4: '4th', 5: '5th', 6: '6th', 7: '7th', 8: '8th', 9: '9th', 10: '10th' };

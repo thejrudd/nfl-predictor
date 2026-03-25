@@ -587,6 +587,22 @@ All notable changes, oldest first. Add new entries at the bottom.
 
 ---
 
+## v5.8.7 — Trade Agent: Partner Selection & Multi-Add
+*2026-03-24*
+
+- **Team chip now selects partner only** — Tapping a team chip updates the active trade partner and clears their side without auto-opening a roster modal. Re-tapping the same chip is a no-op.
+- **View Roster & Picks modal** — New "View Roster & Picks" button (appears when a partner is selected) opens a full multi-add modal showing all of that partner's players (sorted by trade value) and owned draft picks. Each row has a `+` button; items can be added one-by-one without closing the modal. Already-added items show a checkmark and dim.
+- **Search All Rostered Players: open by default** — The all-rosters picker now shows all players immediately on open (sorted by value, grouped by position) instead of displaying a search guide. No typing required to browse.
+- **Position filter chips in search picker** — ALL / QB / RB / WR / TE / K / DL chips narrow the all-rosters player list independent of the text search.
+- **Partial team name matching** — Typing a city or partial team name (e.g. "New", "Kansas", "Tampa") now matches rostered players on those teams, not just exact abbreviations.
+- **Browse/search buttons moved below trade builder** — "View Roster & Picks" and "Search All Rostered Players" now appear below the Your Side / Their Side columns rather than above them.
+- **Rankings: rank numbers stable during search** — Searching in Companion → Rankings no longer renumbers players; each player retains their true overall rank regardless of search filter.
+- **Trade Agent: Their Side +Player locks to partner roster** — When a trade partner is selected, tapping "+Player" on Their Side opens a picker locked to that partner's roster instead of global search.
+- **Trade Agent: adding to Their Side no longer wipes Your Side** — Selecting a partner for the first time via global search now only resets Their Side; Your Side players are preserved.
+- **League → Trade button for own roster** — Players on your own roster in Companion → League now show a "Trade" button that navigates to Trade Agent with that player pre-loaded on Your Side.
+
+---
+
 ## v5.8.5 — Trade Agent: Natural Language Search & Inline Builder
 *2026-03-24*
 

@@ -2,10 +2,10 @@
 // v5.5 — Trade Agent: live KeepTradeCut values for the two compared players.
 
 import { useEffect, useMemo, useState } from 'react';
-import { fetchKtcPlayers, findKtcPlayer, getKtcValue, fmtKtcValue } from '../../utils/ktcApi';
+import { fetchKtcPlayers, findKtcPlayer, getKtcValue, fmtKtcValue, productionAdjustedValue } from '../../utils/ktcApi';
 import { useSleeper } from '../../context/SleeperContext';
 import { calcPointsFromTotals } from '../../utils/scoringEngine';
-import { computePositionalRanks, buildDefenseTable } from '../../utils/projectionEngine';
+import { computePositionalRanks, buildDefenseTable, computePositionalAvgPPG } from '../../utils/projectionEngine';
 
 function detectLeagueFormat(league) {
   return league?.settings?.type === 2 ? 'dynasty' : 'redraft';
@@ -335,6 +335,12 @@ export default function CompareTradePanel({ playerA, playerB, sleeperPlayerA, sl
     [seasonStats, players, scoringSettings]
   );
 
+  // Average PPG per position across all players with stats — anchors production multipliers
+  const positionalAvgPPG = useMemo(
+    () => computePositionalAvgPPG(null, seasonStats, players, scoringSettings),
+    [seasonStats, players, scoringSettings]
+  );
+
   // Per-position stat rankings: { [pos]: { [statKey]: { [playerId]: rank } } }
   const statRanksByPos = useMemo(() => {
     if (!seasonStats || !players) return {};
@@ -364,8 +370,24 @@ export default function CompareTradePanel({ playerA, playerB, sleeperPlayerA, sl
   // Compute values (safe when ktcPlayers or players are null)
   const ktcA = (ktcPlayers && playerA) ? findKtcPlayer(playerA, ktcPlayers, sleeperPlayerA) : null;
   const ktcB = (ktcPlayers && playerB) ? findKtcPlayer(playerB, ktcPlayers, sleeperPlayerB) : null;
-  const valA = getKtcValue(ktcA, leagueType);
-  const valB = getKtcValue(ktcB, leagueType);
+
+  // Apply per-player production adjustment (35% blend toward PPG vs positional avg)
+  const rawValA = getKtcValue(ktcA, leagueType);
+  const rawValB = getKtcValue(ktcB, leagueType);
+
+  const ppgA = (() => {
+    const stats = playerA?.id ? seasonStats?.[playerA.id] : null;
+    const pts = stats ? calcPointsFromTotals(stats, scoringSettings, playerA?.position) : null;
+    return pts != null && stats?.gp ? pts / stats.gp : null;
+  })();
+  const ppgB = (() => {
+    const stats = playerB?.id ? seasonStats?.[playerB.id] : null;
+    const pts = stats ? calcPointsFromTotals(stats, scoringSettings, playerB?.position) : null;
+    return pts != null && stats?.gp ? pts / stats.gp : null;
+  })();
+
+  const valA = productionAdjustedValue(rawValA, ppgA, positionalAvgPPG[playerA?.position]);
+  const valB = productionAdjustedValue(rawValB, ppgB, positionalAvgPPG[playerB?.position]);
 
   const bothKnown = valA != null && valB != null;
   const maxVal    = bothKnown ? Math.max(valA, valB) : null;

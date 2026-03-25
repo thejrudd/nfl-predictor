@@ -116,9 +116,9 @@ After committing: do NOT run `git push` — the user pushes manually.
 
 ## Bug Tracking (KNOWN_BUGS.md)
 
-- When a bug is identified: add it to the **Open** section immediately.
+- When a bug is identified (whether reported or found during work): add it to the **Open** section immediately, before fixing it.
 - If the bug was previously in **Fixed**: move it back to Open and remove the "Fixed In" version note.
-- Only move a bug to **Fixed** once the user confirms the fix is working — with a specific version number (e.g. v5.9.1). Never use "Unreleased".
+- Move a bug to **Fixed** at commit time, using the version number being committed. Never use "Unreleased".
 
 ---
 
@@ -203,3 +203,13 @@ When making any change to scoring logic (new fields in `DEFAULT_SCORING`/`STAT_T
 | `src/utils/ktcApi.js` — `computeKtcMultipliers` | Add multiplier logic for any new scoring field that materially affects positional value |
 
 **Before closing any scoring-related change:** grep for `calcPoints(` and `calcPointsFromTotals(` across the repo and verify every call site either (a) passes position or (b) is in a context where position is genuinely unavailable.
+
+---
+
+## Common Gotchas
+
+### Ranked lists with search filters
+Always compute rank (`i + 1`) on the full sorted list, then filter for display. Never derive rank after filtering — the rank number will reflect position in the filtered subset, not the true overall rank. Carry `rank` as a property on each item; render uses `item.rank`, not the map index.
+
+### `productionAdjustedValue` null propagation
+The early-return guard must be `return ktcVal` (not `return ktcVal ?? 0`). Returning `0` for players with no KTC match causes `fmtKtcValue(0)` to render "0" instead of "—", since `adjVal ?? it.val` only falls back on null/undefined, not `0`.

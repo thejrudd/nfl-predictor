@@ -364,7 +364,7 @@ function AppInner() {
               {companionView === 'rankings'  && <CompanionRankings />}
               {companionView === 'matchup'   && <CompanionMatchup onViewPlayer={(id, meta) => { setStatsInitPlayer({ id, ...meta }); setStatsNavBack({ label: 'Matchup', onBack: () => { setActiveTab('companion'); setStatsNavBack(null); } }); setActiveTab('statistics'); }} />}
               {companionView === 'waiver'    && <CompanionWaiver onViewPlayer={(id, meta) => { setStatsInitPlayer({ id, ...meta }); setStatsNavBack({ label: 'Waiver', onBack: () => { setActiveTab('companion'); setStatsNavBack(null); } }); setActiveTab('statistics'); }} />}
-              {companionView === 'league'   && <CompanionLeague onTradePlayer={(sleeperId, partnerRosterId) => { setTradeInitPlayer({ sleeperId, side: 'get', partnerRosterId }); setCompanionView('trade'); }} />}
+              {companionView === 'league'   && <CompanionLeague onTradePlayer={(sleeperId, partnerRosterId, side = 'get') => { setTradeInitPlayer({ sleeperId, side, partnerRosterId }); setCompanionView('trade'); }} />}
               {companionView === 'defense'   && <CompanionDefense onViewPlayer={(id, meta) => { setStatsInitPlayer({ id, ...meta }); setStatsNavBack({ label: 'Heatmap', onBack: () => { setActiveTab('companion'); setStatsNavBack(null); } }); setActiveTab('statistics'); }} />}
               {companionView === 'trade'     && <CompanionTrade initialPlayer={tradeInitPlayer} onConsumeInitialPlayer={() => setTradeInitPlayer(null)} />}
               {companionView === 'scoring'   && <CompanionScoring />}

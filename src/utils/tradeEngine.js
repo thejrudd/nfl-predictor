@@ -2,7 +2,13 @@
 // Value balancing, package suggestions, and draft pick ownership for the
 // Companion Trade Agent.
 
-import { findKtcPlayerFromSleeper, findKtcDraftPick, getKtcValue } from './ktcApi';
+import { findKtcPlayerFromSleeper, findKtcDraftPick, getKtcValue, productionAdjustedValue } from './ktcApi';
+import { calcPointsFromTotals } from './scoringEngine';
+
+// When a player has no redraft (fantasy) KTC value, we fall back to their
+// dynasty value and apply this discount.  Dynasty values are inflated by
+// age/upside; a ~0.35 factor brings them roughly in line with redraft scale.
+export const DYNASTY_FALLBACK_MULT = 0.60;
 
 // ── Redraft pick valuation ────────────────────────────────────────────────────
 
@@ -210,19 +216,34 @@ export function getPickQuality(rosterId, rosters) {
  * @param {string}   currentSeason  - e.g. "2025" — for year-based pick discount
  * @returns {{ total: number, items: Array<{ id, label, val, type }> }}
  */
-export function valueSide(playerIds, pickItems, sleeperPlayers, ktcPlayers, leagueType, rosters, pickValueMap, currentSeason) {
+export function valueSide(playerIds, pickItems, sleeperPlayers, ktcPlayers, leagueType, rosters, pickValueMap, currentSeason, dynastyFallbackPlayers = null) {
   const items = [];
 
   for (const pid of playerIds) {
     const sp = sleeperPlayers?.[pid];
     const ktc = findKtcPlayerFromSleeper(pid, sleeperPlayers, ktcPlayers);
-    const val = getKtcValue(ktc, leagueType);
+    let rawVal = getKtcValue(ktc, leagueType);
+    let dynastyFallback = false;
+
+    // If no redraft value found, try dynasty rankings as a fallback and discount.
+    if (rawVal == null && dynastyFallbackPlayers?.length) {
+      const dynastyKtc = findKtcPlayerFromSleeper(pid, sleeperPlayers, dynastyFallbackPlayers);
+      const dynastyVal = getKtcValue(dynastyKtc, leagueType);
+      if (dynastyVal != null) {
+        rawVal = Math.round(dynastyVal * DYNASTY_FALLBACK_MULT);
+        dynastyFallback = true;
+      }
+    }
+
+    // Null = KTC not loaded yet (shows "—"). 0 = loaded but no value found.
+    const val = rawVal ?? (ktcPlayers.length > 0 ? 0 : null);
     items.push({
       id: pid,
       label: sp?.full_name ?? (`${sp?.first_name ?? ''} ${sp?.last_name ?? ''}`.trim() || pid),
       position: sp?.position ?? '',
       team: sp?.team ?? '',
       val,
+      dynastyFallback,
       type: 'player',
       ktcEntry: ktc,
     });
@@ -463,7 +484,8 @@ export function suggestPackage({ gap, deficitSide, deficitCandidates, deficitIte
  */
 export function buildCandidatePool(
   rosterId, rosters, excludeIds, excludePickKeys,
-  sleeperPlayers, ktcPlayers, leagueType, rosterPicks, slots, pickValueMap, currentSeason
+  sleeperPlayers, ktcPlayers, leagueType, rosterPicks, slots, pickValueMap, currentSeason,
+  { dynastyKtcPlayers, seasonStats, scoringSettings, positionalValuePerPPG, positionalAvgPPG, rankMap } = {},
 ) {
   const candidates = [];
   const roster = rosters.find(r => r.roster_id === rosterId);
@@ -474,13 +496,49 @@ export function buildCandidatePool(
   const excludeSet = new Set(excludeIds);
   for (const pid of playerIds) {
     if (excludeSet.has(pid)) continue;
-    const ktc = findKtcPlayerFromSleeper(pid, sleeperPlayers, ktcPlayers);
-    const val = getKtcValue(ktc, leagueType);
     const sp = sleeperPlayers?.[pid];
+    const ktc = findKtcPlayerFromSleeper(pid, sleeperPlayers, ktcPlayers);
+    let rawVal = getKtcValue(ktc, leagueType);
+    let dynastyFallback = false;
+    // Dynasty fallback for players absent from redraft rankings
+    if (rawVal == null && dynastyKtcPlayers?.length) {
+      const dKtc = findKtcPlayerFromSleeper(pid, sleeperPlayers, dynastyKtcPlayers);
+      const dVal = getKtcValue(dKtc, leagueType);
+      if (dVal != null) { rawVal = Math.round(dVal * DYNASTY_FALLBACK_MULT); dynastyFallback = true; }
+    }
+    rawVal = rawVal ?? (ktcPlayers?.length > 0 ? 0 : null);
+
+    // Production adjustment for all players; dynasty-fallback uses PPG-calibrated path
+    let val = rawVal;
+    const pos = sp?.position ?? '';
+    if (seasonStats && scoringSettings) {
+      const stats = seasonStats[pid];
+      const gp = stats?.gp ?? 0;
+      const pts = stats ? calcPointsFromTotals(stats, scoringSettings, pos) : null;
+      const avgPPG = pts != null && gp ? pts / gp : null;
+      if (dynastyFallback && positionalValuePerPPG) {
+        if (gp >= 3 && avgPPG != null && positionalValuePerPPG[pos] != null) {
+          val = Math.round(avgPPG * positionalValuePerPPG[pos]);
+        } else if (positionalAvgPPG) {
+          val = productionAdjustedValue(rawVal, avgPPG, positionalAvgPPG[pos], 0.50);
+        }
+      } else if (positionalAvgPPG) {
+        // Direct-KTC players: 50% PPG blend weight for trade agent
+        val = productionAdjustedValue(rawVal, avgPPG, positionalAvgPPG[pos], 0.50);
+      }
+    }
+
+    // Layer 2 — rank-percentile nudge (±12%)
+    const rankInfo = rankMap?.[pid] ?? null;
+    if (rankInfo?.rank != null && rankInfo?.posCount > 1) {
+      const percentile = 1 - (rankInfo.rank - 1) / (rankInfo.posCount - 1);
+      val = Math.round((val ?? 0) * (0.88 + 0.24 * percentile));
+    }
+
     candidates.push({
       id: pid,
       label: sp?.full_name ?? pid,
-      position: sp?.position ?? '',
+      position: pos,
       team: sp?.team ?? '',
       val,
       type: 'player',
