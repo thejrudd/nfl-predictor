@@ -75,17 +75,16 @@ PORT=8080 docker compose up -d --build
 | PWA | vite-plugin-pwa + Workbox |
 | Production serving | nginx (Docker) |
 
-## What's New in v5.8.8
+## What's New in v6.0.1
 
-- **Trade Agent defensive valuation fixes** — IDP and D/ST players now get production-based fallback values when KTC has no listing, including in roster pickers and refinement flows. Defensive players no longer appear as `0` just because Sleeper omitted `gp` in aggregated season stats.
-- **Trade picker parity + polish** — The selected-roster `+ Player` modal now uses the same defensive position grouping and inline multi-add pattern as `View Roster & Picks`, adds LB / DB / D/ST filter chips to global search, disables browser autofill on the search field, and only shows additive side totals when adding a player would actually preserve the current partner.
-- **Heatmap and docs groundwork** — Companion → Heatmap now uses a cached local offense table path and exposes a lightweight "Preparing heatmap…" state during stat enhancement, and the repo now includes an Obsidian-friendly `docs/` starter wiki for architecture, feature maps, and edit guides.
+- **Desktop trade-card readability** — Trade proposal player and draft cards are larger on desktop, with more readable stat-box text and better spacing in the lower `Game Stats`, `Fantasy`, and `Proj. Pick` sections.
+- **Content-safe height syncing** — Proposal cards now sync using a shared minimum height instead of a fixed height, so both sides of a package stay aligned without clipping text when a card needs more vertical room.
+- **Follow-up polish for Trade Suite** — This is a patch release on top of `v6.0` focused on making the new Trade proposal cards read more cleanly in real desktop usage.
 
 For the full version history, see [CHANGELOG.md](CHANGELOG.md).
 
 ## Roadmap
 
-- **v6.0 — Trade Suite** — New top-level Trade section with Agent, Intelligence, Upgrades, and Compare, surfacing roster weakness analysis, partner-aware trade ideas, and package-driven upgrade paths.
 - **v7.0 — Draft Coach** — Rookie scouting hub with draft slot, college production, combine metrics, consensus ranking, and dynasty rookie ADP.
 - **Week-by-Week View** *(blocked on 2026 schedule data)* — Browse the full schedule by week with predictions reflected
 

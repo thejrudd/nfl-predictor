@@ -1502,15 +1502,15 @@ function ProposalPlayerCard({ player = null, palette = null, pick = null, side, 
     }
 
     return (
-      <div
-        ref={cardRef}
-        className="w-full rounded-xl flex flex-col overflow-hidden relative"
-        style={{
-          background: pt.bg,
-          border: `2px solid ${pt.border}`,
-          height: forcedHeight ? `${forcedHeight}px` : undefined,
-        }}
-      >
+        <div
+          ref={cardRef}
+          className="w-full rounded-xl flex flex-col overflow-hidden relative"
+          style={{
+            background: pt.bg,
+            border: `2px solid ${pt.border}`,
+            minHeight: forcedHeight ? `${forcedHeight}px` : undefined,
+          }}
+        >
         <div className="relative w-full overflow-hidden" style={{ aspectRatio: '5 / 4', flexShrink: 0 }}>
           <div className="absolute inset-0" style={{ background: pt.bg }} />
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
@@ -1547,7 +1547,7 @@ function ProposalPlayerCard({ player = null, palette = null, pick = null, side, 
             <span
               style={{
                 fontFamily: "'Barlow Condensed', sans-serif",
-                fontSize: 'clamp(8px, 4cqw, 10px)',
+                fontSize: '10px',
                 fontWeight: 700,
                 color: pt.accentMuted,
                 letterSpacing: '0.35em',
@@ -1560,7 +1560,7 @@ function ProposalPlayerCard({ player = null, palette = null, pick = null, side, 
               className="mt-2"
               style={{
                 fontFamily: "'Barlow Condensed', sans-serif",
-                fontSize: 'clamp(34px, 16cqw, 48px)',
+                fontSize: 'clamp(34px, 4vw, 48px)',
                 fontWeight: 300,
                 color: pt.yearText,
                 lineHeight: 1,
@@ -1595,7 +1595,7 @@ function ProposalPlayerCard({ player = null, palette = null, pick = null, side, 
         <div className="flex flex-col flex-1 px-2 pb-2 min-h-0 items-center" style={{ background: pt.glassBg }}>
           <div className="flex items-center justify-center py-1 lg:py-1.5">
             <span
-              className="text-sm lg:text-base font-bold tabular-nums leading-tight"
+              className="text-sm lg:text-[18px] font-bold tabular-nums leading-tight"
               style={{ color: pt.accent, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '0.02em' }}
             >
               {primaryPick.value != null ? fmtKtcValue(primaryPick.value) : '—'}
@@ -1611,10 +1611,10 @@ function ProposalPlayerCard({ player = null, palette = null, pick = null, side, 
             </div>
           </div>
 
-          <div className="hidden lg:flex gap-1 w-full">
+          <div className="hidden lg:flex gap-1.5 w-full">
             <div className="flex-1 rounded-lg p-1.5 flex flex-col gap-px" style={{ background: 'rgba(0,0,0,0.22)' }}>
-              <span className="text-[8px] font-bold uppercase tracking-wide mb-0.5" style={{ color: pt.accentMuted }}>Proj. Pick</span>
-              <span className="text-[10px] font-semibold tabular-nums" style={{ color: pt.labelText }}>
+              <span className="text-[9px] font-bold uppercase tracking-wide mb-0.5" style={{ color: pt.accentMuted }}>Proj. Pick</span>
+              <span className="text-[11px] font-semibold tabular-nums" style={{ color: pt.labelText }}>
                 {pickRange ?? '—'}
               </span>
             </div>
@@ -1631,7 +1631,7 @@ function ProposalPlayerCard({ player = null, palette = null, pick = null, side, 
       style={{
         background: cardBg,
         border: `2px solid ${cardBorder}`,
-        height: forcedHeight ? `${forcedHeight}px` : undefined,
+        minHeight: forcedHeight ? `${forcedHeight}px` : undefined,
       }}
     >
       {/* ── Photo area (~45% of card height) ──────────────────── */}
@@ -1722,7 +1722,7 @@ function ProposalPlayerCard({ player = null, palette = null, pick = null, side, 
         {/* ── Featured trade value ─── */}
         {primary?.value != null && (
           <div className="flex items-center justify-center py-1 lg:py-1.5">
-            <span className="text-sm lg:text-base font-bold tabular-nums leading-tight"
+            <span className="text-sm lg:text-[18px] font-bold tabular-nums leading-tight"
               style={{ color: accentColor, textShadow: '0 1px 3px rgba(0,0,0,0.4)', WebkitTextStroke: darkMode ? '0.4px rgba(0,0,0,0.28)' : '0.4px rgba(255,255,255,0.25)' }}>
               {fmtKtcValue(primary.value)}
             </span>
@@ -1756,62 +1756,62 @@ function ProposalPlayerCard({ player = null, palette = null, pick = null, side, 
             </div>
 
             {/* ── DESKTOP stat boxes (hidden lg:flex) ─── */}
-            <div className="hidden lg:flex gap-1 w-full">
+            <div className="hidden lg:flex gap-1.5 w-full">
               {/* Left: Game Stats */}
-              <div className="flex-1 rounded-lg p-1.5 flex flex-col gap-px" style={{ background: 'rgba(0,0,0,0.35)' }}>
-                <span className="text-[7px] font-bold uppercase tracking-wide mb-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>Game Stats</span>
+              <div className="flex-1 rounded-lg p-2 flex flex-col gap-0.5" style={{ background: 'rgba(0,0,0,0.35)' }}>
+                <span className="text-[8px] font-bold uppercase tracking-wide mb-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>Game Stats</span>
                 {statDefs.length > 0 && playerStats ? (
                   statDefs.map(sd => (
                     <div key={sd.key} className="flex justify-between items-baseline">
-                      <span className="text-[8px]" style={{ color: 'rgba(255,255,255,0.55)' }}>{sd.label}</span>
-                      <span className="text-[9px] font-semibold tabular-nums" style={{ color: 'white' }}>
+                      <span className="text-[9px]" style={{ color: 'rgba(255,255,255,0.55)' }}>{sd.label}</span>
+                      <span className="text-[10px] font-semibold tabular-nums" style={{ color: 'white' }}>
                         {fmtStat(playerStats[sd.key])}
                       </span>
                     </div>
                   ))
                 ) : (
-                  <span className="text-[8px]" style={{ color: 'rgba(255,255,255,0.35)' }}>—</span>
+                  <span className="text-[9px]" style={{ color: 'rgba(255,255,255,0.35)' }}>—</span>
                 )}
               </div>
 
               {/* Right: Fantasy Stats */}
-              <div className="flex-1 rounded-lg p-1.5 flex flex-col gap-px" style={{ background: 'rgba(0,0,0,0.35)' }}>
-                <span className="text-[7px] font-bold uppercase tracking-wide mb-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>Fantasy</span>
+              <div className="flex-1 rounded-lg p-2 flex flex-col gap-0.5" style={{ background: 'rgba(0,0,0,0.35)' }}>
+                <span className="text-[8px] font-bold uppercase tracking-wide mb-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>Fantasy</span>
                 {primary ? (
                   <>
                     <div className="flex justify-between items-baseline">
-                      <span className="text-[8px]" style={{ color: 'rgba(255,255,255,0.55)' }}>PPG</span>
-                      <span className="text-[9px] font-semibold tabular-nums" style={{ color: 'white' }}>
+                      <span className="text-[9px]" style={{ color: 'rgba(255,255,255,0.55)' }}>PPG</span>
+                      <span className="text-[10px] font-semibold tabular-nums" style={{ color: 'white' }}>
                         {primary.ppg > 0 ? primary.ppg.toFixed(1) : '—'}
                       </span>
                     </div>
                     {primary.recentAvg > 0 && (
                       <div className="flex justify-between items-baseline">
-                        <span className="text-[8px]" style={{ color: 'rgba(255,255,255,0.55)' }}>L3 Avg</span>
-                        <span className="text-[9px] font-semibold tabular-nums" style={{ color: 'white' }}>
+                        <span className="text-[9px]" style={{ color: 'rgba(255,255,255,0.55)' }}>L3 Avg</span>
+                        <span className="text-[10px] font-semibold tabular-nums" style={{ color: 'white' }}>
                           {primary.recentAvg.toFixed(1)}
                         </span>
                       </div>
                     )}
                     {primary.seasonPts > 0 && (
                       <div className="flex justify-between items-baseline">
-                        <span className="text-[8px]" style={{ color: 'rgba(255,255,255,0.55)' }}>Season</span>
-                        <span className="text-[9px] font-semibold tabular-nums" style={{ color: 'white' }}>
+                        <span className="text-[9px]" style={{ color: 'rgba(255,255,255,0.55)' }}>Season</span>
+                        <span className="text-[10px] font-semibold tabular-nums" style={{ color: 'white' }}>
                           {primary.seasonPts.toFixed(1)}
                         </span>
                       </div>
                     )}
                     {primary.rank?.posLabel && (
                       <div className="flex justify-between items-baseline">
-                        <span className="text-[8px]" style={{ color: 'rgba(255,255,255,0.55)' }}>Rank</span>
-                        <span className="text-[9px] font-semibold tabular-nums" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                        <span className="text-[9px]" style={{ color: 'rgba(255,255,255,0.55)' }}>Rank</span>
+                        <span className="text-[10px] font-semibold tabular-nums" style={{ color: 'rgba(255,255,255,0.85)' }}>
                           {primary.rank.posLabel}
                         </span>
                       </div>
                     )}
                   </>
                 ) : (
-                  <span className="text-[8px]" style={{ color: 'rgba(255,255,255,0.35)' }}>—</span>
+                  <span className="text-[9px]" style={{ color: 'rgba(255,255,255,0.35)' }}>—</span>
                 )}
               </div>
             </div>
@@ -1828,14 +1828,14 @@ function getProposalCardSlotStyle(assetCount) {
   const count = Math.max(assetCount || 1, 1);
   const availableWidth = `calc((100% - (${count - 1} * var(--proposal-card-gap, 0.625rem))) / ${count})`;
   const cardMaxWidth = count >= 3
-    ? 'clamp(9.5rem, 11vw, 11.5rem)'
+    ? '12rem'
     : count === 2
-      ? 'clamp(10rem, 12vw, 12.25rem)'
-      : 'clamp(10.5rem, 13vw, 13rem)';
+      ? '13rem'
+      : '14rem';
   return {
-    flex: `1 1 ${availableWidth}`,
+    flex: `1 1 ${cardMaxWidth}`,
     maxWidth: `min(${availableWidth}, ${cardMaxWidth})`,
-    minWidth: 'min(100%, 9.5rem)',
+    minWidth: 'min(100%, 10.25rem)',
     width: '100%',
   };
 }
@@ -1964,7 +1964,7 @@ function TradeProposalItem({
               <div
                 key={asset.id}
                 className="w-full xl:w-auto flex"
-                style={{ ...sharedCardSlotStyle, height: equalizedCardHeight ? `${equalizedCardHeight}px` : '100%' }}
+                style={{ ...sharedCardSlotStyle, minHeight: equalizedCardHeight ? `${equalizedCardHeight}px` : undefined }}
               >
                 <ProposalPlayerCard
                   cardRef={(node) => registerCardRef(`give:${asset.id}:${index}`, node)}
@@ -1994,7 +1994,7 @@ function TradeProposalItem({
               <div
                 key={asset.id}
                 className="w-full xl:w-auto flex"
-                style={{ ...sharedCardSlotStyle, height: equalizedCardHeight ? `${equalizedCardHeight}px` : '100%' }}
+                style={{ ...sharedCardSlotStyle, minHeight: equalizedCardHeight ? `${equalizedCardHeight}px` : undefined }}
               >
                 <ProposalPlayerCard
                   cardRef={(node) => registerCardRef(`get:${asset.id}:${index}`, node)}

@@ -6,11 +6,11 @@
 - **Dark mode**: `.dark` class on `<html>`
 - **PWA**: vite-plugin-pwa + nginx in Docker
 - **Active branch**: `main` — all work ships directly here
-- **Current version**: v5.8.6
+- **Current version**: v6.0.1
 
 ## Versioning Roadmap
-- **v5.9** — Areas of Opportunity (Companion sub-tab: roster weakness analysis + trade/waiver CTAs)
-- **v6.0** — Draft Coach (rookie scouting data, combine results, dynasty ADP)
+- **v6.0** — Trade Suite (shipped)
+- **v7.0** — Draft Coach (rookie scouting data, combine results, dynasty ADP)
 
 ---
 
@@ -212,6 +212,9 @@ When making any change to scoring logic (new fields in `DEFAULT_SCORING`/`STAT_T
 ---
 
 ## Common Gotchas
+
+### Trade proposal card sizing
+Any time proposal player or draft cards are resized, also verify vertical content fit on desktop. Larger or narrower cards must still allow the stat sections to expand the card height instead of clipping or overflowing, and equal-height syncing across a trade package must continue to hold after the size change.
 
 ### Ranked lists with search filters
 Always compute rank (`i + 1`) on the full sorted list, then filter for display. Never derive rank after filtering — the rank number will reflect position in the filtered subset, not the true overall rank. Carry `rank` as a property on each item; render uses `item.rank`, not the map index.

@@ -7,32 +7,6 @@ New features requested or planned should be added here.
 
 ## Planned Versions
 
-### v6.0 — Trade Suite
-
-A new top-level **Trade** section with dedicated **Agent**, **Intelligence**, **Upgrades**, and **Compare** tabs. The release centers on roster weakness analysis, package-building, partner-aware trade ideas, and surplus-driven upgrade paths.
-
-**Weakness Analysis (in priority order):**
-1. **Position depth** — Rosters with thin starter depth at a position (e.g., only one viable WR2) are flagged as exploitable.
-2. **Bye week clustering** — If multiple starters share the same bye week, that's a roster construction vulnerability.
-3. **Glaring positional hole** — A roster position that has no viable starter (empty slot or only low-floor options).
-4. **Age/decline risk** — A position anchored by aging starters past their dynasty prime window with no heir apparent on the roster.
-
-**Output per weakness:**
-- Weakness title + explanation (e.g. "Your weakest position is RB2 — here's why")
-- CTA into a relevant Trade flow, such as Intelligence proposals, Upgrades, or a manual Agent build with preselected context
-
-**Player Suggestions:**
-- When recommending a trade, surface 2–3 specific players from your roster surplus that could be used as trade chips
-- Offer options (not a single answer) so the user can choose the best fit
-
-**Roster scope:**
-- Default view: analyze your own roster
-- Toggle to analyze a specific opponent's roster (same output, different framing — useful for identifying what they need before proposing a trade)
-
-**Data used:** `rosters`, `players`, `seasonStats`, `weeklyStats`, `scoringSettings`, `positionalRanks`, `scheduleMap`, `league.roster_positions`, KTC values (for surplus identification)
-
----
-
 ### v7.0 — Draft Coach
 
 Surfaces publicly available scouting and evaluation data to help users make informed draft decisions.
@@ -52,6 +26,7 @@ Surfaces publicly available scouting and evaluation data to help users make info
 
 ## Optimizations
 
+- **Trade proposal card desktop sizing polish** — Continue refining desktop card sizing so larger cards remain crisp and readable without reintroducing vertical text overflow or awkward package wrapping on narrower desktop widths.
 - **Lint modernization / cleanup pass** — Resolve the current ESLint backlog across the app so `npm run lint` passes cleanly. Prioritize the new Trade surfaces and active Companion areas first, then address broader React hook/state-effect warnings, unused vars, Fast Refresh export issues, and config globals like `__APP_VERSION__`.
 - **Trade valuation path deduplication** — Consolidate roster search, roster browse, partner preview, and side-card value calculations onto a shared helper so player availability, estimated values, and additive totals stay consistent across all Trade entry points.
 - **Companion tab load-time optimization** — Improve initial and first-open load times across all Companion tabs by preloading shared data more intentionally, deferring non-critical derivations, reducing duplicate calculations between tabs, and minimizing context-driven rerenders.

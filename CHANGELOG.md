@@ -731,3 +731,13 @@ All notable changes, oldest first. Add new entries at the bottom.
 - **Multi-asset proposal layout cleaned up** — Each player in a package now renders as its own card, picks are shown as distinct supporting chips instead of duplicated card content, and desktop rows pack more efficiently with wrap-aware layouts, orphan-row centering, and dense backfilling.
 - **Trade entry points were rewired across the app** — Roster, League, Compare, and Trade proposal apply actions now route into the correct Trade sub-view, and Trade CTAs can send position-specific requests into Waiver with the relevant filter preselected.
 - **Trade labeling and release badges updated** — The top-level Trade section is now marked Beta, Agent and Intelligence are tagged Beta, Upgrades is tagged Alpha, and Compare no longer carries a beta badge.
+
+---
+
+## v6.0.1 — Trade Card Desktop Readability
+*2026-03-29*
+
+- **Desktop proposal cards enlarged** — Trade proposal player and draft cards now use larger desktop width caps so the card face reads more comfortably on wider displays without falling back to blurry fractional scaling.
+- **Desktop stat panels made more readable** — The `Game Stats`, `Fantasy`, and draft-card `Proj. Pick` sections now use larger desktop typography and spacing, improving legibility inside the lower info boxes.
+- **Height syncing changed to content-safe min-height** — Proposal-card equalization now uses a synced minimum height instead of a fixed height, so larger cards can still grow tall enough for stat content without clipping while both sides of a package remain aligned.
+- **Project memory updated for future card changes** — Added an explicit repo note that any proposal-card size adjustment must also be checked for desktop text fit, vertical expansion, and equal-height behavior.

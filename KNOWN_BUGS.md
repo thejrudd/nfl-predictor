@@ -20,7 +20,6 @@ Open bugs are listed first, fixed bugs below. Add new entries at the bottom of e
 | Trade Intelligence → Fix Needs can skew too heavily toward 2-player and 3-player incoming packages, crowding out more balanced player-plus-pick returns on the other team’s side |
 | Trade Intelligence → Use Surplus can stamp unrelated package shapes with the `Two-Player Swap` label because proposal labeling is still derived too narrowly from one side of the trade |
 | Trade Intelligence still shows stale `Upgrade Finder` and `Hide` controls inside the standalone Intelligence tab even though Upgrades now lives in its own Trade tab |
-| Trade Intelligence proposal cards can fall out of shared height sync, leaving player and draft-pick cards mismatched within the same package |
 | Trade Intelligence midpoint swap arrow can sit above center on mobile instead of aligning vertically between both sides of the package |
 
 ---
@@ -141,3 +140,4 @@ Open bugs are listed first, fixed bugs below. Add new entries at the bottom of e
 | Trade Agent: `+ Player` search input can trigger browser autofill/autocomplete suggestions instead of behaving like a plain player search field | v5.8.8 |
 | Trade Agent: `Search All Rostered Players` lacks defensive position filter chips for LB / DB / D/ST | v5.8.8 |
 | Trade Agent: `Search All Rostered Players` shows projected side totals for players from other rosters even when selecting them would switch partners and replace the current opponent assets | v5.8.8 |
+| Trade Intelligence proposal cards could fall out of shared height sync, leaving player and draft-pick cards mismatched within the same package | v6.0.1 |
