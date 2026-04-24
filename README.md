@@ -86,13 +86,11 @@ npm run validate:routing
 | PWA | vite-plugin-pwa + Workbox |
 | Production serving | nginx (Docker) |
 
-## What's New in v7.0
+## What's New in v7.0.1
 
-- **Scout launched as a top-level Alpha section** - Rookie scouting now lives in its own main tab on desktop and mobile, with Companion and Trade moving out of Beta.
-- **2026 rookie board and combine data shipped** - Scout includes a broad 2026 prospect board, all 319 official combine invitees, real measurements/testing where available, and automatically derived percentile bars for the combine cards.
-- **Pre-draft draft coach workflow is live** - Prospect detail, compare, and filtering all support the pre-draft state cleanly, with nullable draft results ready to be filled in as the draft happens.
-- **Live draft sync (ESPN API)** - During the draft window, Scout Picks and Results auto-update in real time by polling the official ESPN draft endpoint. The on-the-clock banner shows the current team with countdown timer, best available prospects, and team gradient styling.
-- **Team logo refactoring** - College and NFL team logos now render inline next to names in the Prospect Profile and Scout Results for cleaner, more contextual layouts.
+- **Statistics browser visuals restored** - The team browser again uses the richer team-color card treatment with split city/nickname display, conference framing, and responsive typography.
+- **Team metadata restored** - The 2026 team data bundle again includes `city` and `nickname`, which the Statistics cards use for the editorial card layout.
+- **Contrast tuning for edge-case team cards** - Jets and Giants cards were adjusted through gradient/text tuning rather than introducing a different card pattern.
 
 For the full version history, see [CHANGELOG.md](CHANGELOG.md).
 
@@ -100,6 +98,7 @@ For the full version history, see [CHANGELOG.md](CHANGELOG.md).
 
 - **v7.1 - Trade Module Decomposition** - Split the largest Trade components and engines into focused modules for lower maintenance cost.
 - **v7.2 - Statistics / Fantasy Drilldown Unification** - One canonical player-analysis destination with mode-aware drilldowns across Statistics and Companion.
+- **v7.3 - Scout Rookie Projection Layer** - Add next-season rookie projections that work for standard and IDP-focused draft prep without overloading the current Scout board.
 - **Week-by-Week View** *(blocked on 2026 schedule data)* — Browse the full schedule by week with predictions reflected
 
 ## Project Structure

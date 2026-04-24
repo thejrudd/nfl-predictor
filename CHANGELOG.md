@@ -893,3 +893,11 @@ All notable changes, oldest first. Add new entries at the bottom.
 - **Team logo refactoring** - College and NFL team logos now render inline next to names: college logo sits beside school name under player name in Prospect Profile, NFL logo next to team name in Draft section and Results rows. Removed the standalone 2-column logo card strip in favor of compact, contextual placement. Updated `nflLogoUrl()` to accept full team names as fallback for logo resolution.
 - **CFBD game-log importer hardened** - Fixed `scripts/import-scout-game-logs.mjs` to work with CFBD's current `/games/players` API endpoint (now requires at least one of week/team/conference scope). Script derives distinct week list from `/games` response and iterates week-by-week to pull comprehensive game-by-game player stats across years and categories without CORS issues.
 - **Scout docs and data tooling added** - Documented the Scout architecture and post-draft update flow, added ESPN photo ID and combine audit helpers, updated CFBD importer docs and usage, and moved shipped Draft Coach work out of `TO_DO.md`.
+
+## v7.0.1 - Statistics Browser Recovery
+*2026-04-23*
+
+- **Statistics browser visuals restored** - The team browser on the `v7.0.1` line now again uses the richer conference framing, team-color cards, split city/nickname presentation, and responsive card typography that had been stripped during the `v7.0` branch separation.
+- **Team metadata restored for all 32 clubs** - `public/nfl-data-2026.json` again includes `city` and `nickname`, so Statistics team cards can render the intended editorial treatment instead of falling back to a flat full-team-name label.
+- **Statistics dark-mode handoff repaired** - `App.jsx` now passes `darkMode` back into `PlayerBrowser`, restoring the intended contrast behavior for the Statistics browser cards.
+- **Jets/Giants contrast adjusted without extra chrome** - The outlier team cards now rely on gradient direction and text-color tuning rather than adding separate logo badges, keeping the card system visually consistent.
