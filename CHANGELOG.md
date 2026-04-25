@@ -921,3 +921,12 @@ All notable changes, oldest first. Add new entries at the bottom.
 - **Adaptive live banner polling** - The live draft banner now polls the ESPN endpoint at 5 s when the OTC clock has 30 s or less remaining, 15 s while the clock is comfortably running or between picks during a live session, and 60 s when the draft is not live. This catches the moment a pick lands without hammering the API the rest of the time.
 - **Draft Results sort toggle** - Added a Top Picks / Most Recent toggle to Scout → Results so users can see the most recent pick at the top during a live draft, then flip back to ascending order to scan the board top-down.
 - **Scout becomes the primary landing section** - The default landing tab is now Scout, and the desktop sidebar and mobile bottom tab bar are reordered to Scout, Companion, Statistics, Trade, Predictions. Existing deep links (`/predictions`, `/companion/...`, etc.) continue to resolve directly to their target sections.
+
+---
+
+## v7.0.4 - Live Results Sync With Banner
+*2026-04-24*
+
+- **Draft Results refresh in lockstep with the live banner** - The Scout → Results list now updates whenever the live draft banner fetches a new payload, instead of running on its own slower 30 s loop. The banner already polls adaptively at 5 s / 15 s / 60 s, so Results inherits the same cadence and the two surfaces stop drifting out of sync during a live draft.
+- **Single fetch shared between banner and Results** - When both surfaces target the same ESPN endpoint (the default), the banner reuses the fetched payload to drive the Results merge through a new `applyLivePayload` callback on the Scout draft results hook, eliminating the duplicate request the Results poller used to make.
+- **Picks view stays current during live drafts** - Because the banner-driven refresh now updates `draftResults` even when the standalone Results poller is paused, the Scout → Picks view also reflects newly landed picks in real time without waiting for a tab switch.

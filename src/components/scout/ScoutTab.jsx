@@ -682,6 +682,43 @@ function useScoutDraftResults(shouldPoll) {
     error: null,
   });
 
+  // Shared merge helper — used by both the internal poller and the
+  // externally-driven `applyLivePayload` so the two stay in lockstep.
+  const mergePayload = useCallback((payload) => {
+    const liveResults = normalizeDraftResultsPayload(payload);
+    const manualByPlayerId = new Map(DRAFT_RESULTS_2026.map(result => [result.playerId, result]).filter(([id]) => id));
+    const manualByOverall = new Map(DRAFT_RESULTS_2026.map(result => [result.overall, result]));
+    const nextResults = [
+      ...liveResults.filter(result => !manualByPlayerId.has(result.playerId) && !manualByOverall.has(result.overall)),
+      ...DRAFT_RESULTS_2026,
+    ].sort((a, b) => a.overall - b.overall);
+    if (nextResults.length === 0) throw new Error('No results in live feed');
+    return nextResults;
+  }, []);
+
+  // Allow outside callers (the banner poller) to push the same payload they just
+  // fetched so Results updates at the banner's adaptive cadence instead of
+  // running a second, slower fetch loop.
+  const applyLivePayload = useCallback((payload) => {
+    if (!payload) return;
+    try {
+      const nextResults = mergePayload(payload);
+      setDraftResults(nextResults);
+      setLiveFeedState({
+        enabled: true,
+        status: 'live',
+        updatedAt: new Date().toISOString(),
+        error: null,
+      });
+    } catch (error) {
+      setLiveFeedState(prev => ({
+        ...prev,
+        status: prev.updatedAt ? 'stale' : 'fallback',
+        error: error.message,
+      }));
+    }
+  }, [mergePayload]);
+
   useEffect(() => {
     if (!shouldPoll || !LIVE_DRAFT_RESULTS_URL) return undefined;
 
@@ -709,14 +746,7 @@ function useScoutDraftResults(shouldPoll) {
       try {
         setLiveFeedState(prev => ({ ...prev, status: prev.updatedAt ? 'refreshing' : 'loading', error: null }));
         const payload = await fetchDraftResultsPayload(LIVE_DRAFT_RESULTS_URL, controller.signal);
-        const liveResults = normalizeDraftResultsPayload(payload);
-        const manualByPlayerId = new Map(DRAFT_RESULTS_2026.map(result => [result.playerId, result]).filter(([id]) => id));
-        const manualByOverall = new Map(DRAFT_RESULTS_2026.map(result => [result.overall, result]));
-        const nextResults = [
-          ...liveResults.filter(result => !manualByPlayerId.has(result.playerId) && !manualByOverall.has(result.overall)),
-          ...DRAFT_RESULTS_2026,
-        ].sort((a, b) => a.overall - b.overall);
-        if (nextResults.length === 0) throw new Error('No results in live feed');
+        const nextResults = mergePayload(payload);
         if (stopped) return;
 
         setDraftResults(nextResults);
@@ -757,9 +787,9 @@ function useScoutDraftResults(shouldPoll) {
       clearScheduledLoad();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [shouldPoll]);
+  }, [shouldPoll, mergePayload]);
 
-  return { draftResults, liveFeedState };
+  return { draftResults, liveFeedState, applyLivePayload };
 }
 
 function groupDraftPicks(picks) {
@@ -893,7 +923,7 @@ export default function ScoutTab({ view = 'prospects', onViewChange }) {
   const listShellRef = useRef(null);
   const detailPanelRef = useRef(null);
   const [liveDraftInfo, setLiveDraftInfo] = useState(null);
-  const { draftResults, liveFeedState: resultsFeedState } = useScoutDraftResults(scoutView !== 'picks');
+  const { draftResults, liveFeedState: resultsFeedState, applyLivePayload } = useScoutDraftResults(scoutView !== 'picks');
   const scoutPlayers = applyDraftResultsToPlayers(ROOKIES_2026, draftResults);
   const selectedScoutPlayer = selectedPlayerId
     ? (scoutPlayers.find(player => player.id === selectedPlayerId) ?? null)
@@ -1092,6 +1122,12 @@ export default function ScoutTab({ view = 'prospects', onViewChange }) {
         if (stopped) return;
         const info = normalizeEspnLiveDraftPayload(payload);
         setLiveDraftInfo(info);
+        // Reuse the same payload to refresh the Results list at the banner's
+        // adaptive cadence (5/15/60 s) instead of the slower internal poller.
+        // Safe only when both feeds point at the same ESPN endpoint.
+        if (LIVE_DRAFT_RESULTS_URL === ESPN_LIVE_DRAFT_URL) {
+          applyLivePayload(payload);
+        }
         nextInterval = computeNextInterval(info);
       } catch (err) {
         if (stopped || err.name === 'AbortError') return;
@@ -1115,7 +1151,7 @@ export default function ScoutTab({ view = 'prospects', onViewChange }) {
       clearScheduled();
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, []);
+  }, [applyLivePayload]);
 
   const draftScheduleState = getDraftScheduleState(draftScheduleNow);
   const liveBannerInfo = liveDraftInfo ?? { isDraftLive: false, hasActiveClock: false, bestAvailable: [], bestFit: [] };

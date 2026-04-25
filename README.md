@@ -86,17 +86,17 @@ npm run validate:routing
 | PWA | vite-plugin-pwa + Workbox |
 | Production serving | nginx (Docker) |
 
-## What's New in v7.0.3
+## What's New in v7.0.4
 
-- **Scout is now the primary landing section** - Default tab on first load is Scout, with the desktop sidebar and mobile bottom tab bar reordered to Scout, Companion, Statistics, Trade, Predictions.
-- **Live draft banner — adaptive polling and accurate state** - The banner now polls every 5 s when the OTC clock is under 30 s, 15 s during the rest of an active session, and 60 s when the draft is idle. The pill reads `Pick In` between selections during a live session and `Paused` only when the draft is between scheduled sessions.
-- **Picks view OTC fix and Results sort toggle** - Scout → Picks now marks only the single authoritative pick as on the clock instead of every upcoming slot, and Scout → Results gained a Top Picks / Most Recent toggle for live viewing.
+- **Live Results sync with the draft banner** - The Scout → Results list now refreshes whenever the live banner fetches a new payload, inheriting the banner's adaptive 5 s / 15 s / 60 s cadence instead of running on its own slower loop.
+- **Shared fetch between banner and Results** - When both surfaces point at the same ESPN endpoint, the banner reuses its payload to drive the Results merge, removing the duplicate request the Results poller used to make.
+- **Picks view stays current during live drafts** - Banner-driven refreshes now keep `draftResults` updated even when the standalone Results poller is paused, so Scout → Picks reflects newly landed selections in real time.
 
 For the full version history, see [CHANGELOG.md](CHANGELOG.md).
 
 ## Roadmap
 
-- **v7.0.4 - Post-Draft nflverse Enrichment** - Patch Scout with verified draft-slot enrichment from nflverse after the draft concludes.
+- **v7.0.5 - Post-Draft nflverse Enrichment** - Patch Scout with verified draft-slot enrichment from nflverse after the draft concludes.
 - **v7.1 - Trade Module Decomposition** - Split the largest Trade components and engines into focused modules for lower maintenance cost.
 - **v7.2 - Statistics / Fantasy Drilldown Unification** - One canonical player-analysis destination with mode-aware drilldowns across Statistics and Companion.
 - **v7.3 - Scout Rookie Projection Layer** - Add next-season rookie projections that work for standard and IDP-focused draft prep without overloading the current Scout board.
