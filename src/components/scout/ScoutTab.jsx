@@ -1222,21 +1222,6 @@ export default function ScoutTab({ view = 'prospects', onViewChange }) {
           scheduleState={draftScheduleState}
         />
       )}
-      <div className="scout-view-tabs" role="tablist" aria-label="Scout views">
-        {SCOUT_VIEWS.map(item => (
-          <button
-            key={item.value}
-            type="button"
-            role="tab"
-            aria-selected={scoutView === item.value}
-            className="scout-view-tab"
-            onClick={() => handleScoutViewChange(item.value)}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
-
       {scoutView === 'prospects' && (
         <>
       {/* ── Editorial header ───────────────────────────────── */}

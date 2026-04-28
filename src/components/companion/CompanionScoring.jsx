@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useSleeperLeague } from '../../context/SleeperContext';
 import {
   DEFAULT_SCORING, importLeagueScoring,
 } from '../../utils/scoringEngine';
+import { getLeague } from '../../api/sleeperApi';
 import { formatScoringSettingValue } from '../../utils/scoringDisplay';
 
 const STAT_GROUPS = [
@@ -241,8 +242,15 @@ const STAT_GROUPS = [
 ];
 
 export default function CompanionScoring() {
-  const { scoringSettings, setScoringSettings, league } = useSleeperLeague();
+  const {
+    scoringSettings, setScoringSettings, league,
+    leaguesBySeason, setScoringOverride, scoringOverride, clearScoringOverride,
+  } = useSleeperLeague();
   const [showActiveOnly, setShowActiveOnly] = useState(true);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerLoading, setPickerLoading] = useState(false);
+  const [pickerError, setPickerError] = useState(null);
+  const [expandedSeason, setExpandedSeason] = useState(null);
   const settings = { ...DEFAULT_SCORING, ...scoringSettings };
 
   const handleImportLeague = () => {
@@ -250,6 +258,25 @@ export default function CompanionScoring() {
     const imported = importLeagueScoring(league.scoring_settings);
     setScoringSettings({ ...DEFAULT_SCORING, ...imported });
   };
+
+  const handlePickLeague = useCallback(async (leagueId, leagueName, season) => {
+    setPickerLoading(true);
+    setPickerError(null);
+    try {
+      const fetched = await getLeague(leagueId);
+      if (!fetched?.scoring_settings) throw new Error('No scoring settings found for this league.');
+      const overrideSettings = { ...DEFAULT_SCORING, ...importLeagueScoring(fetched.scoring_settings) };
+      setScoringOverride({ settings: overrideSettings, leagueName, leagueId, season });
+    } catch (err) {
+      setPickerError(err.message ?? 'Failed to load league scoring.');
+    } finally {
+      setPickerLoading(false);
+    }
+  }, [setScoringOverride]);
+
+  const pickerSeasons = Object.keys(leaguesBySeason ?? {})
+    .filter(s => (leaguesBySeason[s]?.length ?? 0) > 0)
+    .sort((a, b) => Number(b) - Number(a));
 
   // Filter groups/stats based on toggle
   const visibleGroups = STAT_GROUPS.map(group => ({
@@ -296,6 +323,106 @@ export default function CompanionScoring() {
           ))}
         </div>
       </div>
+
+      {/* Preview another league's scoring */}
+      {pickerSeasons.length > 0 && (
+        <div className="px-4 pb-4">
+          <div className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'var(--color-label-tertiary)' }}>
+            Preview Another League&apos;s Scoring
+          </div>
+
+          {scoringOverride && (
+            <div
+              className="flex items-center gap-2 px-3 py-2 rounded-xl mb-2 text-sm font-semibold"
+              style={{ background: 'var(--color-signature)', color: 'var(--color-signature-fg)' }}
+            >
+              <span className="flex-1 truncate">{scoringOverride.leagueName} ({scoringOverride.season})</span>
+              <button
+                onClick={clearScoringOverride}
+                className="text-xs font-bold transition-opacity active:opacity-70"
+                style={{ opacity: 0.8 }}
+              >
+                Reset
+              </button>
+            </div>
+          )}
+
+          <button
+            onClick={() => setPickerOpen(v => !v)}
+            className="w-full flex items-center justify-between py-2.5 px-4 rounded-xl text-sm font-semibold transition-opacity active:opacity-70"
+            style={{ background: 'var(--color-fill)', color: 'var(--color-label)' }}
+          >
+            <span>Browse leagues…</span>
+            <svg
+              width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+              style={{ transform: pickerOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+            >
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+
+          {pickerOpen && (
+            <div
+              className="mt-1 rounded-xl overflow-hidden"
+              style={{ background: 'var(--color-fill-secondary)', border: '1px solid var(--color-separator)' }}
+            >
+              {pickerLoading && (
+                <div className="px-4 py-3 text-sm" style={{ color: 'var(--color-label-secondary)' }}>Loading…</div>
+              )}
+              {pickerError && (
+                <div className="px-4 py-3 text-sm" style={{ color: 'var(--color-destructive, #EF4444)' }}>{pickerError}</div>
+              )}
+              {pickerSeasons.map((season, si) => {
+                const seasonLeagues = leaguesBySeason[season] ?? [];
+                const isExpanded = expandedSeason === season;
+                return (
+                  <div key={season} style={{ borderTop: si > 0 ? '1px solid var(--color-separator)' : 'none' }}>
+                    <button
+                      className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-semibold"
+                      style={{ color: 'var(--color-label)' }}
+                      onClick={() => setExpandedSeason(isExpanded ? null : season)}
+                    >
+                      <span>{season} Season</span>
+                      <span className="flex items-center gap-2">
+                        <span className="text-xs" style={{ color: 'var(--color-label-tertiary)' }}>
+                          {seasonLeagues.length} {seasonLeagues.length === 1 ? 'league' : 'leagues'}
+                        </span>
+                        <svg
+                          width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+                          style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: 'var(--color-label-tertiary)' }}
+                        >
+                          <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                      </span>
+                    </button>
+                    {isExpanded && seasonLeagues.map((lg) => {
+                      const isActive = scoringOverride?.leagueId === String(lg.league_id);
+                      return (
+                        <button
+                          key={lg.league_id}
+                          disabled={pickerLoading}
+                          onClick={() => handlePickLeague(lg.league_id, lg.name, season)}
+                          className="w-full flex items-center justify-between px-4 py-2.5 text-sm transition-opacity active:opacity-70 disabled:opacity-50"
+                          style={{
+                            borderTop: '1px solid var(--color-separator)',
+                            background: isActive ? 'rgba(245,183,0,0.12)' : 'transparent',
+                            color: isActive ? 'var(--color-signature)' : 'var(--color-label)',
+                          }}
+                        >
+                          <span className="truncate text-left flex-1">{lg.name}</span>
+                          {isActive && (
+                            <span className="text-xs font-bold ml-2" style={{ color: 'var(--color-signature)' }}>Active</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Stat groups — read-only */}
       {visibleGroups.map(group => (

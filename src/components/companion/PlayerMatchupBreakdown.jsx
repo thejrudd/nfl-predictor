@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSleeperBase } from '../../context/SleeperContext';
 import { useTheme } from '../../context/ThemeContext';
-import { DEFAULT_SCORING } from '../../utils/scoringEngine';
+import { DEFAULT_SCORING, STAT_TO_SCORING_KEY } from '../../utils/scoringEngine';
 import { formatWeather } from '../../api/weatherApi';
 import { getTeamPalette } from '../../data/teamColors.js';
 import useBodyScrollLock from '../../hooks/useBodyScrollLock';
@@ -78,28 +78,71 @@ export const STAT_LABELS = {
   st_td:     'Special Teams TD',
   ret_td:    'Return TD',
   blk_kick:  'Blocked Kick',
-  // Bonuses
-  bonus_pass_yd_300: '300+ Pass Yd Bonus',
-  bonus_pass_yd_400: '400+ Pass Yd Bonus',
-  bonus_rush_yd_100: '100+ Rush Yd Bonus',
-  bonus_rush_yd_200: '200+ Rush Yd Bonus',
-  bonus_rec_yd_100:  '100+ Rec Yd Bonus',
-  bonus_rec_yd_200:  '200+ Rec Yd Bonus',
+  // Pick 6
+  pass_int_td:          'Pick 6 (thrown)',
+  // Big-play bonuses
+  bonus_pass_td_40p:    '40+ Yd Pass TD Bonus',
+  bonus_pass_td_50p:    '50+ Yd Pass TD Bonus',
+  bonus_pass_cmp_40p:   '40+ Yd Completion Bonus',
+  bonus_rush_td_40p:    '40+ Yd Rush TD Bonus',
+  bonus_rush_td_50p:    '50+ Yd Rush TD Bonus',
+  bonus_rec_td_40p:     '40+ Yd Rec TD Bonus',
+  bonus_rec_td_50p:     '50+ Yd Rec TD Bonus',
+  bonus_rec_40p:        '40+ Yd Reception Bonus',
+  bonus_rush_40p:       '40+ Yd Rush Bonus',
+  // Game-threshold bonuses
+  bonus_pass_cmp_25:    '25+ Completion Bonus',
+  bonus_rush_att_20:    '20+ Rush Att Bonus',
+  // Yardage-milestone bonuses
+  bonus_pass_yd_300:    '300+ Pass Yd Bonus',
+  bonus_pass_yd_400:    '400+ Pass Yd Bonus',
+  bonus_rush_yd_100:    '100+ Rush Yd Bonus',
+  bonus_rush_yd_200:    '200+ Rush Yd Bonus',
+  bonus_rec_yd_100:     '100+ Rec Yd Bonus',
+  bonus_rec_yd_200:     '200+ Rec Yd Bonus',
+  bonus_rush_rec_yd_100:'100+ Rush+Rec Yd Bonus',
+  bonus_rush_rec_yd_200:'200+ Rush+Rec Yd Bonus',
+  // Tiered reception distance
+  rec_0_4:   'Short Reception (0–4 yd)',
+  rec_5_9:   'Reception (5–9 yd)',
+  rec_10_19: 'Reception (10–19 yd)',
+  rec_20_29: 'Reception (20–29 yd)',
+  rec_30_39: 'Reception (30–39 yd)',
+  // Special teams
+  kr_yd:           'Kick Return Yards',
+  pr_yd:           'Punt Return Yards',
+  st_tkl_solo:     'Special Teams Tackle',
+  blk_kick_ret_yd: 'Blocked Kick Return Yards',
+  fg_ret_yd:       'Missed FG Return Yards',
+  fum_ret_yd:      'Fumble Return Yards',
   // IDP
   idp_tkl:      'Tackle',
   idp_tkl_solo: 'Solo Tackle',
   idp_tkl_ast:  'Assisted Tackle',
   idp_tkl_loss: 'Tackle for Loss',
-  idp_sack:     'Sack',
-  idp_int:      'Interception (def)',
-  idp_ff:       'Forced Fumble',
-  idp_fr:       'Fumble Recovery',
-  idp_pd:       'Pass Deflection',
-  idp_qbhit:    'QB Hit',
-  idp_safety:   'Safety',
-  idp_int_td:   'INT Return TD',
-  idp_fr_td:    'Fumble Return TD',
-  idp_def_td:   'Defensive TD',
+  idp_sack:         'Sack',
+  idp_sack_yd:      'Sack Yards',
+  idp_int:          'Interception (def)',
+  idp_int_ret_yd:   'Interception Return Yards',
+  idp_ff:           'Forced Fumble',
+  idp_fr:           'Fumble Recovery',
+  idp_fr_yd:        'Fumble Return Yards',
+  idp_pd:           'Pass Deflection',
+  idp_qbhit:        'QB Hit',
+  idp_qb_hit:       'QB Hit',
+  idp_safety:       'Safety',
+  idp_safe:         'Safety',
+  idp_int_td:       'INT Return TD',
+  idp_fr_td:        'Fumble Return TD',
+  idp_def_td:    'Defensive TD',
+  idp_blk_kick:  'Blocked Kick',
+  // IDP threshold bonuses
+  bonus_sack_2p:        '2+ Sack Bonus',
+  bonus_tkl_10p:        '10+ Tackle Bonus',
+  idp_pass_def_3p:      '3+ Pass Def Bonus',
+  // IDP big-play bonuses
+  bonus_def_fum_td_50p: '50+ Yd Fumble Return TD Bonus',
+  bonus_def_int_td_50p: '50+ Yd INT Return TD Bonus',
   // Kicker
   fgm:          'FG Made',
   fgm_0_19:     'FG Made (0–19 yd)',
@@ -115,8 +158,48 @@ export const STAT_LABELS = {
   fgmiss_40_49: 'FG Missed (40–49 yd)',
   fgmiss_50_59: 'FG Missed (50–59 yd)',
   fgmiss_60p:   'FG Missed (60+ yd)',
-  xpm:          'Extra Point Made',
-  xpmiss:       'Extra Point Missed',
+  xpm:               'Extra Point Made',
+  xpmiss:            'Extra Point Missed',
+  fgm_yds:           'FG Yards Bonus',
+  fgm_yds_over_30:   'FG Yards Over 30 Bonus',
+  // Team DST
+  def_td:            'Defensive TD (DST)',
+  def_2pt:           '2-Pt Return Conv (DST)',
+  def_3_and_out:     '3-and-Out Forced',
+  def_4_and_stop:    '4th Down Stop',
+  def_forced_punts:  'Forced Punt',
+  def_pass_def:      'Pass Deflection (DST)',
+  def_st_tkl_solo:   'ST Solo Tackle (DST)',
+  def_kr_yd:         'Kick Return Yards (DST)',
+  def_pr_yd:         'Punt Return Yards (DST)',
+  sack:              'Sack (DST)',
+  sack_yd:           'Sack Yards (DST)',
+  int:               'Interception (DST)',
+  int_ret_yd:        'INT Return Yards (DST)',
+  safe:              'Safety (DST)',
+  tkl:               'Tackle (DST)',
+  tkl_solo:          'Solo Tackle (DST)',
+  tkl_ast:           'Assisted Tackle (DST)',
+  tkl_loss:          'Tackle for Loss (DST)',
+  qb_hit:            'QB Hit (DST)',
+  pts_allow:         'Points Allowed (per pt)',
+  pts_allow_0:       'Shutout',
+  pts_allow_1_6:     '1–6 Points Allowed',
+  pts_allow_7_13:    '7–13 Points Allowed',
+  pts_allow_14_20:   '14–20 Points Allowed',
+  pts_allow_21_27:   '21–27 Points Allowed',
+  pts_allow_28_34:   '28–34 Points Allowed',
+  pts_allow_35p:     '35+ Points Allowed',
+  yds_allow:         'Yards Allowed (per yd)',
+  yds_allow_0_100:   '0–100 Yards Allowed',
+  yds_allow_100_199: '100–199 Yards Allowed',
+  yds_allow_200_299: '200–299 Yards Allowed',
+  yds_allow_300_349: '300–349 Yards Allowed',
+  yds_allow_350_399: '350–399 Yards Allowed',
+  yds_allow_400_449: '400–449 Yards Allowed',
+  yds_allow_450_499: '450–499 Yards Allowed',
+  yds_allow_500_549: '500–549 Yards Allowed',
+  yds_allow_550p:    '550+ Yards Allowed',
 };
 
 function ProjectionMath({ baseAvg, factors, projected, projMin, projMax, oppTeam, locationStr, weatherStr, defLabel }) {
@@ -301,7 +384,7 @@ function InfoRow({ label, children }) {
 }
 
 export default function PlayerMatchupBreakdown({ playerId, week, projection, enrichedPlayer, onClose, onViewStats, onOpenRosterPlayer = null }) {
-  const { players, weeklyStats, scoringSettings, espnIdOverrides } = useSleeperBase();
+  const { players, weeklyStats, activeScoringSettings, espnIdOverrides } = useSleeperBase();
   const { darkMode } = useTheme();
 
   const player = players?.[playerId];
@@ -316,20 +399,23 @@ export default function PlayerMatchupBreakdown({ playerId, week, projection, enr
 
   const breakdown = useMemo(() => {
     if (!weekEntry) return [];
-    const settings = { ...DEFAULT_SCORING, ...scoringSettings };
+    const settings = { ...DEFAULT_SCORING, ...activeScoringSettings };
+    const seen = new Set();
 
-    return Object.entries(STAT_LABELS)
-      .map(([statKey, label]) => {
+    return Object.entries(STAT_TO_SCORING_KEY)
+      .flatMap(([statKey, scoringKey]) => {
+        if (seen.has(scoringKey)) return [];
         const statVal = weekEntry[statKey];
-        if (!statVal) return null;
-        const multiplier = settings[statKey] ?? 0;
-        if (multiplier === 0) return null;
+        if (!statVal) return [];
+        const multiplier = settings[scoringKey] ?? 0;
+        if (multiplier === 0) return [];
+        seen.add(scoringKey);
+        const label = STAT_LABELS[statKey] ?? STAT_LABELS[scoringKey] ?? statKey;
         const pts = Math.round(statVal * multiplier * 100) / 100;
-        return { label, statKey, statVal, multiplier, pts };
+        return [{ label, statKey, statVal, multiplier, pts }];
       })
-      .filter(Boolean)
       .sort((a, b) => b.pts - a.pts);
-  }, [weekEntry, scoringSettings]);
+  }, [weekEntry, activeScoringSettings]);
 
   const total = Math.round(breakdown.reduce((s, r) => s + r.pts, 0) * 100) / 100;
   const projectedScore = projection?.projected ?? null;

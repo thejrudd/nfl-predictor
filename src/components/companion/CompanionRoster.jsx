@@ -206,7 +206,7 @@ export default function CompanionRoster({ onTradePlayer, onOpenMatchupWeek, onVi
     players, loadPlayers,
     weeklyStats, seasonStats, loadSeasonStats,
     statsLoading,
-    scoringSettings,
+    activeScoringSettings,
     myRoster,
   } = useSleeperBase();
   const { darkMode } = useTheme();
@@ -223,8 +223,8 @@ export default function CompanionRoster({ onTradePlayer, onOpenMatchupWeek, onVi
   const roster = myRoster();
 
   const positionalRanks = useMemo(
-    () => computePositionalRanks(seasonStats, players, scoringSettings),
-    [seasonStats, players, scoringSettings],
+    () => computePositionalRanks(seasonStats, players, activeScoringSettings),
+    [seasonStats, players, activeScoringSettings],
   );
 
   const rosterPlayers = useMemo(() => {
@@ -238,8 +238,8 @@ export default function CompanionRoster({ onTradePlayer, onOpenMatchupWeek, onVi
 
       const stats = seasonStats?.[id] ?? null;
       const weekly = weeklyStats?.[id] ?? [];
-      const pts = stats ? calcPointsFromTotals(stats, scoringSettings, p.position) : null;
-      const avgPPG = getAvgPPG(weekly, scoringSettings, p.position);
+      const pts = stats ? calcPointsFromTotals(stats, activeScoringSettings, p.position) : null;
+      const avgPPG = getAvgPPG(weekly, activeScoringSettings, p.position);
       const rank = positionalRanks[id] ?? null;
       const isReserve = roster.reserve?.includes(id);
 
@@ -256,7 +256,7 @@ export default function CompanionRoster({ onTradePlayer, onOpenMatchupWeek, onVi
         teamTheme: teamRowTheme(p.team || '', darkMode),
       };
     }).filter(Boolean);
-  }, [roster, players, seasonStats, weeklyStats, scoringSettings, positionalRanks, darkMode]);
+  }, [roster, players, seasonStats, weeklyStats, activeScoringSettings, positionalRanks, darkMode]);
 
   const nameColPx = useMemo(() => measureMaxNameWidth(rosterPlayers), [rosterPlayers]);
   const layout = useMemo(() => getRosterLayout(isCompactPhone, nameColPx), [isCompactPhone, nameColPx]);

@@ -55,7 +55,7 @@ const normDefPos = (pos) => { for (const [n, s] of Object.entries(DEF_POS_GROUPS
 
 const HEATMAP_OFFENSE_TABLE_CACHE = new WeakMap();
 
-function getCachedOffenseAllowedTable(weeklyStats, players, scheduleMap, scoringSettings, statMode) {
+function getCachedOffenseAllowedTable(weeklyStats, players, scheduleMap, activeScoringSettings, statMode) {
   let byPlayers = HEATMAP_OFFENSE_TABLE_CACHE.get(weeklyStats);
   if (!byPlayers) {
     byPlayers = new WeakMap();
@@ -74,10 +74,10 @@ function getCachedOffenseAllowedTable(weeklyStats, players, scheduleMap, scoring
     bySchedule.set(scheduleMap, byScoring);
   }
 
-  let byStatMode = byScoring.get(scoringSettings);
+  let byStatMode = byScoring.get(activeScoringSettings);
   if (!byStatMode) {
     byStatMode = new Map();
-    byScoring.set(scoringSettings, byStatMode);
+    byScoring.set(activeScoringSettings, byStatMode);
   }
 
   if (byStatMode.has(statMode)) return byStatMode.get(statMode);
@@ -100,7 +100,7 @@ function getCachedOffenseAllowedTable(weeklyStats, players, scheduleMap, scoring
       let val;
       if (statMode === 'rec_yd') val = wEntry.rec_yd ?? 0;
       else if (statMode === 'rush_yd') val = wEntry.rush_yd ?? 0;
-      else val = calcPoints(wEntry, scoringSettings, position);
+      else val = calcPoints(wEntry, activeScoringSettings, position);
       if (val <= 0) continue;
 
       let team = wEntry.team?.toUpperCase() ?? null;
@@ -249,8 +249,8 @@ const BREAKDOWN_DEFS = [
   { statKey: 'idp_blk_kick',      scoringKey: 'idp_blk_kick',      label: 'Blk Kick',         showStat: true  },
 ];
 
-function getScoreBreakdown(wEntry, scoringSettings, position = null) {
-  const settings = { ...DEFAULT_SCORING, ...scoringSettings };
+function getScoreBreakdown(wEntry, activeScoringSettings, position = null) {
+  const settings = { ...DEFAULT_SCORING, ...activeScoringSettings };
   const items = [];
   for (const { statKey, scoringKey, label, showStat } of BREAKDOWN_DEFS) {
     const statVal = wEntry[statKey];
@@ -382,7 +382,7 @@ export default function CompanionDefense({ onViewPlayer, routeState = null, onRo
     weeklyStats,
     players,
     scheduleMap,
-    scoringSettings,
+    activeScoringSettings,
     espnIdOverrides,
     loadPlayers,
     loadSeasonStats,
@@ -560,8 +560,8 @@ export default function CompanionDefense({ onViewPlayer, routeState = null, onRo
     if (statsEnhancing) return null;
     if (viewMode !== 'offense') return null;
     if (!weeklyStats || !players || !scheduleMap) return null;
-    return getCachedOffenseAllowedTable(weeklyStats, players, scheduleMap, scoringSettings, statMode);
-  }, [statsEnhancing, viewMode, weeklyStats, players, scheduleMap, scoringSettings, statMode]);
+    return getCachedOffenseAllowedTable(weeklyStats, players, scheduleMap, activeScoringSettings, statMode);
+  }, [statsEnhancing, viewMode, weeklyStats, players, scheduleMap, activeScoringSettings, statMode]);
 
   // Defense-scored table: keyed by the defensive player's own team
   const defenseScoredTable = useMemo(() => {
@@ -571,7 +571,7 @@ export default function CompanionDefense({ onViewPlayer, routeState = null, onRo
     const defMode = DEF_STAT_MODES.find(m => m.id === defStatMode);
     const getValue = defMode?.statKey
       ? (wEntry) => getModeStatValue(wEntry, defMode)
-      : (wEntry, pos) => calcPoints(wEntry, scoringSettings, pos);
+      : (wEntry, pos) => calcPoints(wEntry, activeScoringSettings, pos);
     const table = {};
     for (const [playerId, playerWeeks] of Object.entries(weeklyStats)) {
       const player = players[playerId];
@@ -591,7 +591,7 @@ export default function CompanionDefense({ onViewPlayer, routeState = null, onRo
       }
     }
     return table;
-  }, [statsEnhancing, viewMode, weeklyStats, players, scoringSettings, defStatMode, scheduleMap]);
+  }, [statsEnhancing, viewMode, weeklyStats, players, activeScoringSettings, defStatMode, scheduleMap]);
 
   const activeTable = viewMode === 'offense' ? offenseAllowedTable : defenseScoredTable;
   const activePositions = viewMode === 'offense' ? OFF_POSITIONS : DEF_POSITIONS;
@@ -870,9 +870,9 @@ export default function CompanionDefense({ onViewPlayer, routeState = null, onRo
         let val;
         if (statMode === 'rec_yd')       val = wEntry.rec_yd  ?? 0;
         else if (statMode === 'rush_yd') val = wEntry.rush_yd ?? 0;
-        else val = calcPoints(wEntry, scoringSettings, player.position);
+        else val = calcPoints(wEntry, activeScoringSettings, player.position);
         if (val <= 0) continue;
-        const breakdown = statMode === 'pts' ? getScoreBreakdown(wEntry, scoringSettings, player.position) : null;
+        const breakdown = statMode === 'pts' ? getScoreBreakdown(wEntry, activeScoringSettings, player.position) : null;
         const name = player.full_name || `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim() || playerId;
         const teamSource = wEntry._teamSource ?? 'fallback';
         results.push({ playerId, name, position: player.position, val, breakdown, teamSource });
@@ -883,7 +883,7 @@ export default function CompanionDefense({ onViewPlayer, routeState = null, onRo
       const defMode = DEF_STAT_MODES.find(m => m.id === defStatMode);
       const getDefVal = defMode?.statKey
         ? (wEntry) => getModeStatValue(wEntry, defMode)
-        : (wEntry, pos) => calcPoints(wEntry, scoringSettings, pos);
+        : (wEntry, pos) => calcPoints(wEntry, activeScoringSettings, pos);
       for (const [playerId, playerWeeks] of Object.entries(weeklyStats)) {
         const player = players[playerId];
         if (!player) continue;
@@ -905,7 +905,7 @@ export default function CompanionDefense({ onViewPlayer, routeState = null, onRo
 
         const val = getDefVal(wEntry, player.position);
         if (val <= 0) continue;
-        const breakdown = defStatMode === 'pts' ? getScoreBreakdown(wEntry, scoringSettings, player.position) : null;
+        const breakdown = defStatMode === 'pts' ? getScoreBreakdown(wEntry, activeScoringSettings, player.position) : null;
         const name = player.full_name || `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim() || playerId;
         const teamSource = wEntry._teamSource ?? 'fallback';
         results.push({ playerId, name, position: player.position, val, breakdown, teamSource });
@@ -913,7 +913,7 @@ export default function CompanionDefense({ onViewPlayer, routeState = null, onRo
     }
 
     return results.sort((a, b) => b.val - a.val);
-  }, [drilldown, weeklyStats, players, viewMode, activePos, statMode, defStatMode, scoringSettings, scheduleMap]);
+  }, [drilldown, weeklyStats, players, viewMode, activePos, statMode, defStatMode, activeScoringSettings, scheduleMap]);
 
   // ── Game box score (Game Score stat mode) ─────────────────────────────────
 
@@ -983,7 +983,7 @@ export default function CompanionDefense({ onViewPlayer, routeState = null, onRo
       left: buildTeamData(leftTeam),
       right: buildTeamData(rightTeam),
     };
-  }, [drilldown, viewMode, statMode, scheduleMap, weeklyStats, players, scoringSettings, espnIdOverrides]);
+  }, [drilldown, viewMode, statMode, scheduleMap, weeklyStats, players, activeScoringSettings, espnIdOverrides]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 

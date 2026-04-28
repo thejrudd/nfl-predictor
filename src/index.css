@@ -188,13 +188,14 @@ body {
   flex-direction: column;
   min-width: 0; /* prevent flex overflow */
   max-width: 100%;
-  overflow-x: hidden;
+  overflow: hidden;
+  height: 100dvh;
 }
 
 @media (min-width: 1024px) {
   .app-main {
     margin-left: 240px;
-    min-height: 100dvh;
+    height: 100dvh;
   }
 }
 
@@ -567,6 +568,8 @@ body {
 
 .content-area {
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   /* Tab bar + safe area on mobile */
   padding-bottom: calc(var(--bar-height-tab) + env(safe-area-inset-bottom) + 20px);
 }
@@ -2584,6 +2587,8 @@ body {
 @media (min-width: 1024px) {
   .scout-detail-panel {
     display: block;
+    position: sticky;
+    top: 0;
   }
 }
 
@@ -2598,12 +2603,8 @@ body {
 
 @media (min-width: 1024px) {
   .scout-panel {
-    position: fixed;
-    top: var(--scout-panel-top, 80px);
-    left: var(--scout-panel-left, auto);
-    width: var(--scout-panel-width, 340px);
-    max-height: calc(100vh - 120px);
-    will-change: top;
+    width: 100%;
+    max-height: calc(100dvh - 120px);
   }
 }
 

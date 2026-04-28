@@ -12,6 +12,7 @@ import BottomTabBar from './components/BottomTabBar';
 import SeasonSubNav from './components/SeasonSubNav';
 import CompanionSubNav from './components/CompanionSubNav';
 import TradeSubNav from './components/TradeSubNav';
+import ScoutSubNav from './components/ScoutSubNav';
 import ActionSheet from './components/ActionSheet';
 import Sidebar from './components/Sidebar';
 import { SleeperProvider, useSleeperLeague, useSleeperStats } from './context/SleeperContext';
@@ -24,6 +25,7 @@ import {
   slugifyRouteSegment,
 } from './utils/appRoutes';
 import { debugCompanionLog, debugCompanionTimeAsync } from './utils/companionPerfDebug';
+import ScoringOverrideBanner from './components/companion/ScoringOverrideBanner';
 
 const ExportPreview = lazy(() => import('./components/ExportPreview'));
 const TeamDetail = lazy(() => import('./components/TeamDetail'));
@@ -37,7 +39,6 @@ const CompanionRoster = lazy(() => import('./components/companion/CompanionRoste
 const CompanionRankings = lazy(() => import('./components/companion/CompanionRankings'));
 const CompanionScoring = lazy(() => import('./components/companion/CompanionScoring'));
 const CompanionLeague = lazy(() => import('./components/companion/CompanionLeague'));
-const ScoringSettings = lazy(() => import('./components/companion/ScoringSettings'));
 const CompanionMatchup = lazy(() => debugCompanionTimeAsync(
   'CompanionMatchup chunk import',
   () => import('./components/companion/CompanionMatchup'),
@@ -86,11 +87,12 @@ function LeagueContextHeader({
   changeSeason,
   seasonOptions,
   onSwitchLeague,
+  className,
 }) {
   const years = seasonOptions?.length ? seasonOptions : [String(league?.season ?? season)];
 
   return (
-    <div className="flex items-center gap-2 mb-3 px-4">
+    <div className={className ?? 'flex items-center gap-2 mb-3 px-4'}>
       <div className="flex-1 min-w-0">
         <span className="text-xs font-semibold truncate" style={{ color: 'var(--color-label-secondary)' }}>
           {league?.name ?? 'League'}
@@ -142,7 +144,6 @@ function AppInner() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [appRoute, setAppRoute] = useState(() => parseAppRoute(window.location.pathname, window.location.search));
-  const [scoringSettingsOpen, setScoringSettingsOpen] = useState(false);
   const [statsNavBack, setStatsNavBack] = useState(null); // { label, onBack } | null — contextual back from external nav
   const [compareInitPlayerA, setCompareInitPlayerA] = useState(null);
   const [compareInitPlayerB, setCompareInitPlayerB] = useState(null);
@@ -163,6 +164,7 @@ function AppInner() {
   const { darkMode, toggleDarkMode, favoriteTeam, setFavoriteTeam } = useTheme();
   const fileInputRef = useRef(null);
 
+  const [contentScrolled, setContentScrolled] = useState(false);
   const [exportPreviewOpen, setExportPreviewOpen] = useState(false);
   const [actionSheetOpen, setActionSheetOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
@@ -491,7 +493,6 @@ function AppInner() {
         onInstall={handleInstall}
         favoriteTeam={favoriteTeam}
         onMyTeam={handleMyTeam}
-        onScoringSettings={() => setScoringSettingsOpen(true)}
       />
 
       {/* ── Main panel ───────────────────────────────────────── */}
@@ -502,6 +503,7 @@ function AppInner() {
           darkMode={darkMode}
           onToggleDarkMode={toggleDarkMode}
           onMenuOpen={() => setActionSheetOpen(true)}
+          scrolled={contentScrolled}
         />
 
         {/* Season sub-navigation */}
@@ -531,19 +533,75 @@ function AppInner() {
 
         {/* Companion sub-navigation */}
         {activeTab === 'companion' && hasLeague && (
-          <div className="season-subnav">
+          <div className="season-subnav" style={{ position: 'relative' }}>
             <CompanionSubNav activeView={companionView} onViewChange={navigateCompanionView} />
+            {/* Mobile: league header frozen below tabs */}
+            <div className="lg:hidden">
+              <LeagueContextHeader
+                league={league}
+                season={season}
+                changeSeason={changeSeason}
+                seasonOptions={linkedLeagueSeasonOptions}
+                onSwitchLeague={() => setLeagueSwitcherOpen(true)}
+              />
+            </div>
+            {/* Desktop: bottom-right of subnav bar, aligned with tab text */}
+            <div className="hidden lg:flex items-center absolute bottom-0 right-8 pb-[9px]">
+              <LeagueContextHeader
+                league={league}
+                season={season}
+                changeSeason={changeSeason}
+                seasonOptions={linkedLeagueSeasonOptions}
+                onSwitchLeague={() => setLeagueSwitcherOpen(true)}
+                className="flex items-center gap-2"
+              />
+            </div>
           </div>
         )}
 
         {activeTab === 'trade' && hasLeague && (
-          <div className="season-subnav">
+          <div className="season-subnav" style={{ position: 'relative' }}>
             <TradeSubNav activeView={tradeView} onViewChange={navigateTradeView} onViewIntent={prewarmTradeView} />
+            {/* Mobile: league header frozen below tabs */}
+            <div className="lg:hidden">
+              <LeagueContextHeader
+                league={league}
+                season={season}
+                changeSeason={changeSeason}
+                seasonOptions={linkedLeagueSeasonOptions}
+                onSwitchLeague={() => setLeagueSwitcherOpen(true)}
+              />
+            </div>
+            {/* Desktop: bottom-right of subnav bar, aligned with tab text */}
+            <div className="hidden lg:flex items-center absolute bottom-0 right-8 pb-[9px]">
+              <LeagueContextHeader
+                league={league}
+                season={season}
+                changeSeason={changeSeason}
+                seasonOptions={linkedLeagueSeasonOptions}
+                onSwitchLeague={() => setLeagueSwitcherOpen(true)}
+                className="flex items-center gap-2"
+              />
+            </div>
           </div>
         )}
 
+        {activeTab === 'scout' && (
+          <div className="season-subnav">
+            <ScoutSubNav activeView={scoutView} onViewChange={navigateScoutView} />
+          </div>
+        )}
+
+        {/* Scoring override banner — frozen above scroll area */}
+        {activeTab === 'companion' && hasLeague && companionView !== 'scoring' && (
+          <ScoringOverrideBanner />
+        )}
+
         {/* ── Content area ─────────────────────────────────── */}
-        <div className="content-area lg:px-8 pt-4 lg:pt-6">
+        <div
+          className="content-area lg:px-8 pt-4 lg:pt-6"
+          onScroll={(e) => setContentScrolled(e.currentTarget.scrollTop > 2)}
+        >
 
           {activeTab === 'predictions' && (
             <div className="px-4">
@@ -667,13 +725,6 @@ function AppInner() {
 
           {activeTab === 'trade' && hasLeague && (
             <>
-              <LeagueContextHeader
-                league={league}
-                season={season}
-                changeSeason={changeSeason}
-                seasonOptions={linkedLeagueSeasonOptions}
-                onSwitchLeague={() => setLeagueSwitcherOpen(true)}
-              />
               {(keepTradeCompareMounted || tradeView === 'compare') && (
                 <div
                   style={{ display: tradeView === 'compare' ? 'block' : 'none' }}
@@ -742,14 +793,6 @@ function AppInner() {
 
           {activeTab === 'companion' && hasLeague && (
             <>
-              {/* League + season header */}
-              <LeagueContextHeader
-                league={league}
-                season={season}
-                changeSeason={changeSeason}
-                seasonOptions={linkedLeagueSeasonOptions}
-                onSwitchLeague={() => setLeagueSwitcherOpen(true)}
-              />
               {companionView === 'roster'    && (
                 <Suspense fallback={<SectionLoading label="Loading Roster" />}>
                 <CompanionRoster
@@ -921,13 +964,6 @@ function AppInner() {
         {/* Bottom tab bar — mobile/tablet only, hidden lg+ via CSS */}
         <BottomTabBar activeTab={activeTab} onTabChange={navigateToTab} />
       </div>
-
-      {/* ── Scoring Settings modal ────────────────────────────── */}
-      {scoringSettingsOpen && (
-        <Suspense fallback={<ModalLoading label="Loading scoring settings" />}>
-          <ScoringSettings onClose={() => setScoringSettingsOpen(false)} />
-        </Suspense>
-      )}
 
       {/* ── Action Sheet (mobile menu) ───────────────────────── */}
       {actionSheetOpen && (

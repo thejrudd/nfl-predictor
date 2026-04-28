@@ -25,6 +25,7 @@ Prefer the docs folder for current architecture and implementation references in
 - `docs/Home.md` — doc map / entry point
 - `docs/Architecture Map.md` — current architectural layout and file ownership
 - `docs/Where To Edit.md` — feature-to-file edit guide
+- `docs/Design System Quick Ref.md` — key rules checklist and team color palette details
 - `docs/Design Tokens.md` — full token table and design-system details
 - `docs/Scoring Call Sites.md` — full scoring audit checklist
 - `docs/Trade Engine.md` — Trade engine architecture, explanation rules, and maintenance reference
@@ -36,18 +37,11 @@ Prefer the docs folder for current architecture and implementation references in
 
 ## Design System — "Broadcast Editorial"
 
-All colors via CSS custom properties in `src/index.css` — never hardcoded Tailwind palette or hex values in components. The `.dark` class on `<html>` swaps all values. Full token table: **`docs/Design Tokens.md`**
+All colors via CSS custom properties in `src/index.css` — never hardcoded Tailwind palette or hex values. The `.dark` class on `<html>` swaps all values. Full rules and team color palette details: **`docs/Design System Quick Ref.md`** — full token table: **`docs/Design Tokens.md`**
 
-Key rules:
-- `--color-signature` (`#F5B700`) is decorative only — never body text. Use `--color-signature-fg` for text ON signature backgrounds.
-- `font-size: 16px` on all inputs (prevents iOS auto-zoom)
-- Safe area insets: `env(safe-area-inset-bottom)` on fixed bottom bars
-- Motion: spring-curve easing `cubic-bezier(0.32, 0.72, 0, 1)`
-
-### Team Color Palettes
-- NFL teams — `src/data/teamColors.js` (`TEAM_COLORS`, `getTeamPalette`). Used for Statistics, Companion, Scout Results pick rows, and the Compare/Heatmap surfaces.
-- College teams — `src/data/collegeColors.js` (`COLLEGE_COLORS`, `getCollegePalette`, `buildCollegeRowGradient`, `getCollegeForeground`). Used for the optional Scout Prospects "Team Colors" toggle. Mirrors the NFL palette structure (primary / secondary / darkPrimary / darkSecondary) and the same `linear-gradient(135deg, primary 0%, darken(primary,0.28) 58%, secondary 100%)` row treatment used by Scout Results.
-- When adding a new school to `ROOKIES_2026`, add a matching entry to `COLLEGE_COLORS` keyed by the normalized college name (`normalizeCollegeKey`). If the official primary is near-black or very dark navy, set `darkPrimary` to the brighter accent so the gradient still reads in dark mode.
+Critical rules (apply to every UI change):
+- `--color-signature` (`#F5B700`) decorative only — never body text. Use `--color-signature-fg` for text ON signature backgrounds.
+- `font-size: 16px` on all inputs (prevents iOS auto-zoom). Safe areas: `env(safe-area-inset-bottom)` on fixed bottom bars. Motion: `cubic-bezier(0.32, 0.72, 0, 1)`.
 
 ---
 
@@ -56,13 +50,6 @@ Key rules:
 ### Layout Breakpoints
 - `< 1024px` (lg): Mobile/tablet — bottom tab bar + sticky NavBar (44px)
 - `≥ 1024px` (lg+): Desktop — left sidebar (240px) + full-width content area
-
-### Sidebar / Tab Bar Visibility Pattern
-```css
-.app-sidebar { display: none; }
-@media (min-width: 1024px) { .app-sidebar { display: flex; } }
-/* Bottom tab bar / NavBar: inverse of above */
-```
 
 ### State Variables
 - `activeTab`: `'predictions'` | `'statistics'` | `'companion'` | `'compare'`
@@ -138,11 +125,18 @@ After committing: do NOT run `git push` — the user pushes manually.
 
 All modals must be center-aligned. Never bottom-sheet style unless it's a deliberate ActionSheet.
 
-- **Backdrop**: `fixed inset-0 z-50 flex items-center justify-center` with `background: rgba(0,0,0,0.5)`
-- **Container**: `rounded-2xl` (not `rounded-t-2xl`), `w-full mx-4`, `maxWidth` as needed
-- **Body scroll lock**: freeze the page in place on mount, not just overflow-hide it. Use the shared `useBodyScrollLock` hook so the current scroll offset is preserved, the background cannot move while the modal is open, and scroll position is restored on cleanup.
-- Scrollable content goes in the **inner** content div (`overflow-y-auto`), not the outer container
-- Close on backdrop click (`onClick={onClose}`); stop propagation on inner div
+Use the shared `src/components/Modal.jsx` wrapper — it handles backdrop, scroll lock, centering, and stopPropagation automatically:
+
+```jsx
+<Modal onClose={onClose} containerClassName="max-w-lg" containerStyle={{ border: '1px solid var(--color-separator)' }}>
+  {/* content */}
+</Modal>
+```
+
+- `containerClassName` — Tailwind classes for the inner container (e.g. `max-w-3xl`, `flex flex-col`)
+- `containerStyle` — inline styles (maxWidth, maxHeight, border, boxShadow, etc.)
+- Scrollable content goes in an **inner** div with `overflow-y-auto`, not the Modal container itself
+- Bottom-sheet / ActionSheet components use their own pattern (`rounded-t-2xl`, `fixed bottom-0`) — do not wrap with `Modal`
 
 ---
 

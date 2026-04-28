@@ -3,7 +3,7 @@ import { useSleeperLeague, useSleeperStats } from '../../context/SleeperContext'
 import { useTheme } from '../../context/ThemeContext';
 import { calcPoints } from '../../utils/scoringEngine';
 import { getTeamPalette } from '../../data/teamColors.js';
-import useBodyScrollLock from '../../hooks/useBodyScrollLock';
+import Modal from '../Modal';
 
 function hexLuminance(hex) {
   const r = parseInt(hex.slice(1, 3), 16) / 255;
@@ -80,7 +80,7 @@ function HeaderActionButton({ label, onClick, heroBg, heroOnBg, icon }) {
 }
 
 export default function PlayerWeeklySheet({ playerId, onClose, onOpenWeek = null, onViewStats = null }) {
-  const { scoringSettings, league } = useSleeperLeague();
+  const { activeScoringSettings, league } = useSleeperLeague();
   const { players, weeklyStats, scheduleMap } = useSleeperStats();
   const { darkMode } = useTheme();
   const [closeHover, setCloseHover] = useState(false);
@@ -132,13 +132,13 @@ export default function PlayerWeeklySheet({ playerId, onClose, onOpenWeek = null
         rows.push({ week: w, pts: 0, stats: null, opp: null, isBye: true });
       } else if (wEntry && !isBye) {
         const opp = wEntry.opp?.toUpperCase() ?? schedEntry?.opp?.toUpperCase() ?? null;
-        rows.push({ week: w, pts: calcPoints(wEntry, scoringSettings, player?.position), stats: wEntry, opp, isBye: false });
+        rows.push({ week: w, pts: calcPoints(wEntry, activeScoringSettings, player?.position), stats: wEntry, opp, isBye: false });
       } else if (weekHasGames && schedEntry) {
         rows.push({ week: w, pts: 0, stats: null, opp: schedEntry.opp?.toUpperCase() ?? null, isBye: false });
       }
     }
     return rows;
-  }, [fantasySeasonWeeks, weeks, scoringSettings, player, scheduleMap, inferredSeasonTeam]);
+  }, [fantasySeasonWeeks, weeks, activeScoringSettings, player, scheduleMap, inferredSeasonTeam]);
 
   const activeStats = useMemo(() => {
     return statDisplay.filter((stat) =>
@@ -151,32 +151,19 @@ export default function PlayerWeeklySheet({ playerId, onClose, onOpenWeek = null
   const avg = weeksPlayed > 0 ? seasonTotal / weeksPlayed : 0;
   const best = weekRows.reduce((max, row) => (row.pts > max ? row.pts : max), 0);
 
-  useBodyScrollLock();
-
   return (
-    <>
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center"
-        style={{ background: 'rgba(0,0,0,0.5)' }}
-        onClick={onClose}
-      >
-        <div
-          className="rounded-2xl w-full mx-4"
-          style={{
-            background: 'var(--color-bg-secondary)',
-            border: '1px solid var(--color-separator)',
-            maxWidth: '640px',
-            maxHeight: '85vh',
-            minHeight: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            boxShadow: '0 12px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06)',
-          }}
-          role="dialog"
-          aria-modal="true"
-          onClick={(event) => event.stopPropagation()}
-        >
+    <Modal
+      onClose={onClose}
+      containerStyle={{
+        border: '1px solid var(--color-separator)',
+        maxWidth: '640px',
+        maxHeight: '85vh',
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '0 12px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06)',
+      }}
+    >
           <div
             className="px-5 pt-4 pb-3 shrink-0 relative"
             style={{
@@ -279,7 +266,7 @@ export default function PlayerWeeklySheet({ playerId, onClose, onOpenWeek = null
                   <span className="w-9 shrink-0 text-[10px] font-semibold" style={{ color: 'var(--color-label-tertiary)' }}>OPP</span>
                   <div className="flex flex-1 min-w-0">
                     {activeStats.map((stat) => {
-                      const ptsPerUnit = scoringSettings?.[stat.key];
+                      const ptsPerUnit = activeScoringSettings?.[stat.key];
                       return (
                         <div key={stat.key} className="flex-1 flex flex-col items-center px-0.5">
                           <span className="text-[10px] font-semibold leading-tight" style={{ color: 'var(--color-label-tertiary)' }}>
@@ -315,9 +302,7 @@ export default function PlayerWeeklySheet({ playerId, onClose, onOpenWeek = null
               </div>
             )}
           </div>
-        </div>
-      </div>
-    </>
+    </Modal>
   );
 }
 

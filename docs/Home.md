@@ -8,14 +8,24 @@ Use this note as the entry point.
 
 - [[Architecture Map]]
 - [[Where To Edit]]
+- [[Design System Quick Ref]]
 - [[Design Tokens]]
 - [[Scoring Call Sites]]
 - [[Trade Engine]]
 - [[Scout]]
-- [[Open Pencil Integration]]
-- [[Pretext Integration]]
 - [[BALLDONTLIE NFL Integration]]
-- [[Authentication And Memberships]]
+
+## Archive
+
+Completed proposals and speculative integrations that are no longer active:
+
+- [[archive/Shell Redesign Proposal]]
+- [[archive/AP Action Photos Integration]]
+- [[archive/Ollama Delegation]]
+- [[archive/Authentication And Memberships]]
+- [[archive/Pretext Integration]]
+- [[archive/Open Pencil Integration]]
+- [[archive/Card Glow Effect]]
 
 ## Suggested Obsidian Use
 
@@ -41,10 +51,7 @@ flowchart TD
   A --> E[Scoring Call Sites]
   A --> J[Trade Engine]
   A --> K[Scout]
-  A --> F[Open Pencil Integration]
-  A --> G[Pretext Integration]
   A --> H[BALLDONTLIE NFL Integration]
-  A --> I[Authentication And Memberships]
 
   B --> B1[src/main.jsx]
   B --> B2[src/App.jsx]

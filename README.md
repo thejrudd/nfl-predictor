@@ -86,22 +86,23 @@ npm run validate:routing
 | PWA | vite-plugin-pwa + Workbox |
 | Production serving | nginx (Docker) |
 
-## What's New in v7.0.5
+## What's New in v7.0.6
 
-- **College team colors on Scout prospect rows** - Toggle tints each row with the player's college gradient; foreground text inverts for legibility and persists to localStorage.
-- **Additional combine sorts** - Sort the Scout board by Vertical Jump, Broad Jump, 3-Cone, Shuttle, and Bench Press in addition to 40-Yard Dash.
-- **Picks view defaults to Remaining** - Scout → Picks opens on undrafted slots only; round and All filters still available.
-- **Championship badges on Statistics team cards** - Super Bowl, conference, and division title indicators for 2025-season champions.
-- **Rookie season placeholder in Statistics** - Players with no NFL stats yet show a clean "Rookie Season" section instead of empty or failed stat tables.
+- **Scoring override** - Companion → Scoring lets you browse all linked season leagues and apply any season's scoring rules as a temporary overlay. A sticky amber banner appears across all Companion views when active; hold to compare against your own scoring, tap X to clear.
+- **Live override recalculation** - Rankings, Waiver, Matchup, and Heatmap all recalculate in real time using the override scoring. Matchup totals are re-derived from raw weekly stats when an override is active.
+- **Frozen navigation headers** - NavBar, all sub-navigation tab bars, and the Scoring Override Banner are now pinned at the top of the page. Content scrolls underneath so headers never leave the viewport.
+- **Scout tab bar frozen** - "Prospects / Picks / Results" now freezes at the top like every other sub-nav.
+- **Scout prospect profile smooth sticky** - Desktop profile panel converted from JS-driven scroll tracking (bouncy) to native CSS sticky — no lag.
 
 For the full version history, see [CHANGELOG.md](CHANGELOG.md).
 
 ## Roadmap
 
-- **v7.0.6 - Post-Draft nflverse Enrichment** - Patch Scout with verified draft-slot enrichment from nflverse after the draft concludes.
+- **v7.0.7 - Post-Draft nflverse Enrichment** - Patch Scout with verified draft-slot enrichment from nflverse after the draft concludes.
 - **v7.1 - Trade Module Decomposition** - Split the largest Trade components and engines into focused modules for lower maintenance cost.
 - **v7.2 - Statistics / Fantasy Drilldown Unification** - One canonical player-analysis destination with mode-aware drilldowns across Statistics and Companion.
 - **v7.3 - Scout Rookie Projection Layer** - Add next-season rookie projections that work for standard and IDP-focused draft prep without overloading the current Scout board.
+- **v7.4 - Trade Agent & Upgrades UX Redesign** - Redesign the Trade Agent and Trade Upgrades modules with improved UX.
 - **Week-by-Week View** *(blocked on 2026 schedule data)* — Browse the full schedule by week with predictions reflected
 
 ## Project Structure

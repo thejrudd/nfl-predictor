@@ -150,14 +150,14 @@ function getVisibleRowsCacheKey({
   filteredCandidates,
   week,
   scheduleWeekKey,
-  scoringSettings,
+  activeScoringSettings,
   darkMode,
 }) {
   return [
     filteredCandidates.slice(0, 100).map(player => player.id).join(','),
     week,
     scheduleWeekKey,
-    JSON.stringify(scoringSettings ?? {}),
+    JSON.stringify(activeScoringSettings ?? {}),
     darkMode ? 'dark' : 'light',
   ].join('|');
 }
@@ -193,13 +193,13 @@ export default function CompanionWaiver({
     scheduleMap,
     espnIdOverrides,
     statsLoading,
-    scoringSettings,
+    activeScoringSettings,
     myRoster,
   } = useSleeperBase();
   const { darkMode } = useTheme();
   const isCompactPhone = useMediaQuery(COMPACT_PHONE_QUERY);
   const layout = useMemo(() => getWaiverLayout(isCompactPhone), [isCompactPhone]);
-  const calcFantasyPoints = useMemo(() => createPointsCalculator(scoringSettings), [scoringSettings]);
+  const calcFantasyPoints = useMemo(() => createPointsCalculator(activeScoringSettings), [activeScoringSettings]);
 
   const [posFilter, setPosFilter] = useState(positionFilter);
   const [searchInput, setSearchInput] = useState('');
@@ -301,9 +301,9 @@ export default function CompanionWaiver({
       weeklyStatCount,
       rosteredIds.size,
       availablePositions.join(','),
-      JSON.stringify(scoringSettings ?? {}),
+      JSON.stringify(activeScoringSettings ?? {}),
     ].join('|');
-  }, [selectedLeagueId, season, seasonStatCount, playerCount, weeklyStatCount, rosteredIds.size, availablePositions, scoringSettings]);
+  }, [selectedLeagueId, season, seasonStatCount, playerCount, weeklyStatCount, rosteredIds.size, availablePositions, activeScoringSettings]);
 
   const rankedCandidates = useMemo(() => {
     if (!players || !seasonStats) return [];
@@ -383,12 +383,12 @@ export default function CompanionWaiver({
   const defenseTable = useMemo(() => {
     if (!shouldProjectWaivers || !weeklyStats || !players) return null;
     return debugCompanionMeasure('Waiver projection defense table', () => (
-      buildDefenseTable(weeklyStats, players, scheduleMap, scoringSettings)
+      buildDefenseTable(weeklyStats, players, scheduleMap, activeScoringSettings)
     ), {
       playerCount: Object.keys(players).length,
       weeklyStatCount: Object.keys(weeklyStats).length,
     });
-  }, [shouldProjectWaivers, weeklyStats, players, scheduleMap, scoringSettings]);
+  }, [shouldProjectWaivers, weeklyStats, players, scheduleMap, activeScoringSettings]);
 
   const leagueAvgByPos = useMemo(() => {
     if (!shouldProjectWaivers || !weeklyStats || !players) return {};
@@ -396,11 +396,11 @@ export default function CompanionWaiver({
       const result = {};
       for (const pos of availablePositions) {
         if (pos === 'ALL' || !PROJECTION_POSITIONS.has(pos)) continue;
-        result[pos] = getLeagueAvgPPG(pos, weeklyStats, players, scoringSettings, week);
+        result[pos] = getLeagueAvgPPG(pos, weeklyStats, players, activeScoringSettings, week);
       }
       return result;
     }, { availablePositions, week });
-  }, [shouldProjectWaivers, weeklyStats, players, scoringSettings, week, availablePositions]);
+  }, [shouldProjectWaivers, weeklyStats, players, activeScoringSettings, week, availablePositions]);
 
   const available = useMemo(() => {
     if (!shouldProjectWaivers || !defenseTable) {
@@ -408,7 +408,7 @@ export default function CompanionWaiver({
         filteredCandidates,
         week,
         scheduleWeekKey,
-        scoringSettings,
+        activeScoringSettings,
         darkMode,
       });
       if (visibleRowsCacheRef.current.key === visibleRowsCacheKey) {
@@ -465,7 +465,7 @@ export default function CompanionWaiver({
           weather: null,
           allWeeklyStats: null,
           players: null,
-          scoringSettings,
+          activeScoringSettings,
           scheduleMap,
           week,
           defStrength,
@@ -497,7 +497,7 @@ export default function CompanionWaiver({
         candidateCount: filteredCandidates.length,
         week,
       });
-  }, [shouldProjectWaivers, filteredCandidates, defenseTable, week, scheduleWeekKey, scoringSettings, scheduleMap, leagueAvgByPos, darkMode, calcFantasyPoints]);
+  }, [shouldProjectWaivers, filteredCandidates, defenseTable, week, scheduleWeekKey, activeScoringSettings, scheduleMap, leagueAvgByPos, darkMode, calcFantasyPoints]);
 
   const sharedNameColumnWidth = useMemo(
     () => getSharedNameColumnWidth(available),

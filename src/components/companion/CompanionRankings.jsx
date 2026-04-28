@@ -53,7 +53,7 @@ export default function CompanionRankings({ positionFilter = 'ALL', onPositionFi
     players, loadPlayers,
     seasonStats, loadSeasonStats,
     statsLoading,
-    scoringSettings,
+    activeScoringSettings,
     rosters,
     league,
   } = useSleeperBase();
@@ -101,7 +101,7 @@ export default function CompanionRankings({ positionFilter = 'ALL', onPositionFi
         if (!positionMatchesLeagueFilter(pos, 'ALL', { stats, availableFilters: availablePositions })) return null;
         if (!positionMatchesLeagueFilter(pos, posFilter, { stats, availableFilters: availablePositions })) return null;
 
-        const pts = calcPointsFromTotals(stats, scoringSettings, p.position);
+        const pts = calcPointsFromTotals(stats, activeScoringSettings, p.position);
         if (pts <= 0) return null;
 
         return {
@@ -125,7 +125,7 @@ export default function CompanionRankings({ positionFilter = 'ALL', onPositionFi
       })
       .slice(0, 100)
       .map((player, i) => ({ ...player, rank: i + 1 }));
-  }, [players, seasonStats, scoringSettings, posFilter, availablePositions, rosteredIds, darkMode, sortBy]);
+  }, [players, seasonStats, activeScoringSettings, posFilter, availablePositions, rosteredIds, darkMode, sortBy]);
 
   // Apply search on top of the ranked list - rank numbers are preserved from above.
   const ranked = useMemo(() => {

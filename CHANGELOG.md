@@ -947,3 +947,17 @@ All notable changes, oldest first. Add new entries at the bottom.
 - **Statistics - Rookie season placeholder** - Players with `experience === 0` now show a "Rookie Season" badge, a green indicator, and a placeholder stats section instead of empty or failed stat tables.
 - **Statistics - Team card nickname descender fix** - Team card nickname text no longer clips descenders (e.g. Vikings lowercase "k") because `leading-none` was replaced with an explicit `lineHeight: 1.1` that gives Barlow Condensed room for its descenders.
 - **Guide updated** - Scout guide copy revised to reflect the current position filter behavior; stale "Top Prospects as a Snapshot" step removed.
+
+---
+
+## v7.0.6 - Scoring Override & Frozen Navigation
+*2026-04-27*
+
+- **Companion → Scoring override** — "Preview Another League's Scoring" section lets you browse all linked season leagues and apply any season's scoring rules as a temporary overlay. Rankings, Waiver, Matchup, and Heatmap all recalculate live using the override scoring when active.
+- **Scoring override banner** — When an override is active, a sticky amber banner appears across all Companion views. Hold the "Hold" button in the banner to momentarily compare results against your own scoring; tap the X to clear the override.
+- **Matchup totals with override** — When a scoring override is active, the Matchup view recalculates each starter's displayed total from raw weekly stats instead of using Sleeper's pre-computed matchup points, so the comparison reflects the alternate scoring in real time.
+- **Frozen navigation headers** — NavBar, all sub-navigation tab bars (Predictions, Companion, Trade, Scout), and the Scoring Override Banner are now pinned at the top of the page. Content scrolls in a constrained inner area so headers never leave the viewport.
+- **Scout tab bar lifted** — "Prospects / Picks / Results" tab bar extracted from ScoutTab and moved to App-level, matching the frozen-header architecture of every other sub-navigation bar.
+- **Scout prospect profile smooth sticky** — Desktop prospect profile panel converted from JS-driven `position: fixed` + scroll-event tracking (which caused a visible one-frame bounce) to native CSS `position: sticky`, eliminating the lag entirely.
+- **IDP yardage stat labels fixed** — Companion → Matchup player drilldown now shows human-readable labels for IDP yardage stats (`idp_int_ret_yd`, `idp_sack_yd`, `idp_fr_yd`) instead of raw Sleeper stat keys.
+- **Trade modal consistency** — TradePickPicker and TradeRosterPicker modals converted to the shared Modal component for consistent backdrop, scroll lock, and centering.

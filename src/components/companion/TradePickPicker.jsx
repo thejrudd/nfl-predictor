@@ -5,14 +5,12 @@ import { useMemo } from 'react';
 import { getPicksForRoster, getPickQuality, pickYearDiscount } from '../../utils/tradeEngine';
 import { findKtcDraftPick, getKtcValue, fmtKtcValue } from '../../utils/ktcApi';
 import { compareDraftPickAssets, getDraftPickDisplayInfo } from '../../utils/draftPickDisplay';
-import useBodyScrollLock from '../../hooks/useBodyScrollLock';
+import Modal from '../Modal';
 
 export default function TradePickPicker({
   rosterId, rosterPicks, slots, rosters, ktcPlayers, leagueType, pickValueMap, currentSeason,
   league = null, drafts = [], excludeKeys, getUserDisplayName, currentTotal, onSelect, onClose,
 }) {
-  useBodyScrollLock();
-
   const excludeSet = useMemo(() => new Set(excludeKeys ?? []), [excludeKeys]);
 
   const picks = useMemo(() => {
@@ -67,11 +65,11 @@ export default function TradePickPicker({
   const years = Object.keys(grouped).sort();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
-      <div className="flex flex-col rounded-2xl overflow-hidden w-full mx-4"
-        style={{ background: 'var(--color-bg)', maxWidth: 420, maxHeight: 480 }}
-        onClick={e => e.stopPropagation()}>
+    <Modal
+      onClose={onClose}
+      containerClassName="flex flex-col"
+      containerStyle={{ background: 'var(--color-bg)', maxWidth: 420, maxHeight: 480 }}
+    >
 
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3"
@@ -130,7 +128,6 @@ export default function TradePickPicker({
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

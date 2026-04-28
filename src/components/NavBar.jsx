@@ -1,15 +1,5 @@
-import { useState, useEffect } from 'react';
-
 // Mobile + tablet top bar (hidden on lg+ via CSS — sidebar handles desktop nav)
-export default function NavBar({ darkMode, onToggleDarkMode, onMenuOpen }) {
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handle = () => setScrolled(window.scrollY > 2);
-    window.addEventListener('scroll', handle, { passive: true });
-    return () => window.removeEventListener('scroll', handle);
-  }, []);
-
+export default function NavBar({ darkMode, onToggleDarkMode, onMenuOpen, scrolled = false }) {
   return (
     <header
       className={`nav-bar${scrolled ? ' scrolled' : ''}`}
@@ -46,7 +36,7 @@ export default function NavBar({ darkMode, onToggleDarkMode, onMenuOpen }) {
           className="font-display font-bold text-sm"
           style={{ color: 'var(--color-label)', letterSpacing: '0.12em' }}
         >
-          NFL
+          GRID
         </span>
         <span
           className="w-px h-3"
@@ -56,7 +46,7 @@ export default function NavBar({ darkMode, onToggleDarkMode, onMenuOpen }) {
           className="font-display text-sm"
           style={{ color: 'var(--color-label-secondary)', letterSpacing: '0.10em' }}
         >
-          PREDICTOR
+          SHIFT
         </span>
       </div>
 

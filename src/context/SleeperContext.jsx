@@ -132,6 +132,12 @@ export function SleeperProvider({ children }) {
     }
     return persisted?.scoringSettings ?? DEFAULT_SCORING;
   });
+  // Temporary scoring override — not persisted, always null on load.
+  // { settings, leagueName, leagueId, season }
+  const [scoringOverride, setScoringOverride] = useState(null);
+  const [scoringOverridePaused, setScoringOverridePaused] = useState(false);
+  const clearScoringOverride = useCallback(() => setScoringOverride(null), []);
+  const activeScoringSettings = (scoringOverride && !scoringOverridePaused) ? scoringOverride.settings : scoringSettings;
 
   // Players DB
   const [players, setPlayers] = useState(null); // loaded on demand
@@ -395,25 +401,7 @@ export function SleeperProvider({ children }) {
     }
   }, [season]); // removed statsLoading — guarded by ref instead
 
-  /**
-   * After bulk weekly stats + players DB + scheduleMap are all loaded, enrich
-   * each player's weekly stat entries with their confirmed game-time team and
-   * opponent. Three-pass enhancement:
-   *
-   *   Pass 1 — ESPN eventlog for players with espn_id in Sleeper's DB.
-   *   Pass 2 — ESPN roster name-match for players with espn_id: null, then
-   *            the same eventlog pipeline.
-   *   Pass 3 — Schedule-based verification for remaining unresolved players.
-   *            Uses player.team + scheduleMap to confirm the team played that
-   *            week. Marked _teamSource = 'schedule'.
-   *
-   * Root problem: Sleeper's bulk stats endpoint has no team/opponent metadata.
-   * player.team (current roster) is wrong for any traded/signed player.
-   *
-   * Covers all offensive (QB, RB, WR, TE, K) and IDP (DL, LB, DB, etc.)
-   * positions. Entries marked _teamSource = 'espn' or 'schedule' are
-   * considered verified; unmarked entries fall back to player.team.
-   */
+  // Three-pass stats enhancement — see docs/Architecture Map.md › SleeperContext
   useEffect(() => {
     if (statsLoading || !weeklyStats || !players || !scheduleMap || qbOppSeasonRef.current === season) return;
 
@@ -689,6 +677,9 @@ export function SleeperProvider({ children }) {
     leaguesBySeason,
     linkedLeagueSeasonOptions,
     scoringSettings,
+    scoringOverride,
+    scoringOverridePaused,
+    activeScoringSettings,
     connectError,
     connectLoading,
     isConnected,
@@ -698,6 +689,9 @@ export function SleeperProvider({ children }) {
     disconnect,
     changeSeason,
     setScoringSettings,
+    setScoringOverride,
+    clearScoringOverride,
+    setScoringOverridePaused,
     setConnectError,
     myRoster,
     getUserDisplayName,
@@ -713,6 +707,9 @@ export function SleeperProvider({ children }) {
     leaguesBySeason,
     linkedLeagueSeasonOptions,
     scoringSettings,
+    scoringOverride,
+    scoringOverridePaused,
+    activeScoringSettings,
     connectError,
     connectLoading,
     isConnected,
@@ -721,6 +718,7 @@ export function SleeperProvider({ children }) {
     selectLeague,
     disconnect,
     changeSeason,
+    clearScoringOverride,
     myRoster,
     getUserDisplayName,
   ]);

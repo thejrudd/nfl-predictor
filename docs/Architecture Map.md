@@ -47,8 +47,22 @@ Back: [[Home]]
 - Owns Sleeper auth and league selection state.
 - Persists selected Sleeper state in localStorage.
 - Loads league rosters, league users, player database, weekly stats, and aggregate season stats.
-- Re-derives scoring settings from the selected league.
-- Performs player/team/opponent enrichment for weekly stat rows.
+- Re-derives scoring settings from the selected league on startup, so newly supported scoring fields are picked up without requiring the user to re-select their league.
+- Performs player/team/opponent enrichment for weekly stat rows via a three-pass algorithm.
+
+#### Stats Enhancement — Three-Pass Algorithm
+
+**Root problem:** Sleeper's bulk stats endpoint has no team or opponent metadata. `player.team` (current roster) is wrong for any traded or signed player mid-season.
+
+**Solution:** After bulk weekly stats, the players DB, and scheduleMap are all loaded, each player's weekly stat entries are enriched with confirmed game-time team and opponent using three passes:
+
+| Pass | Source | Method |
+|---|---|---|
+| 1 | ESPN eventlog | Players with a valid `espn_id` in Sleeper's DB |
+| 2 | ESPN roster name-match | Players with `espn_id: null` — matched by name, then same eventlog pipeline |
+| 3 | Schedule verification | Remaining unresolved players — `player.team` confirmed against `scheduleMap` for that week |
+
+Entries resolved via Pass 1 or 2 are marked `_teamSource = 'espn'`. Pass 3 entries are marked `_teamSource = 'schedule'`. Unmarked entries fall back to `player.team`. Covers all offensive (QB, RB, WR, TE, K) and IDP (DL, LB, DB, etc.) positions.
 
 ## Main Folders
 

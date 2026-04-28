@@ -125,7 +125,7 @@ function getMatchupDataCacheKey({
   seasonStatCount,
   weeklyStatCount,
   scheduleMap,
-  scoringSettings,
+  activeScoringSettings,
 }) {
   return [
     selectedLeagueId,
@@ -135,7 +135,7 @@ function getMatchupDataCacheKey({
     seasonStatCount,
     weeklyStatCount,
     scheduleMap ? Object.keys(scheduleMap).length : 0,
-    JSON.stringify(scoringSettings ?? {}),
+    JSON.stringify(activeScoringSettings ?? {}),
   ].join('|');
 }
 
@@ -182,7 +182,7 @@ export default function CompanionMatchup({
     sleeperUser, selectedLeagueId, league, season,
     rosters, players, loadPlayers,
     weeklyStats, seasonStats, scheduleMap, loadSeasonStats,
-    statsLoading, scoringSettings,
+    statsLoading, activeScoringSettings, scoringOverride,
     myRoster, getUserDisplayName, espnIdOverrides,
   } = useSleeperBase();
 
@@ -374,8 +374,8 @@ export default function CompanionMatchup({
     seasonStatCount,
     weeklyStatCount,
     scheduleMap,
-    scoringSettings,
-  }), [selectedLeagueId, season, week, playerCount, seasonStatCount, weeklyStatCount, scheduleMap, scoringSettings]);
+    activeScoringSettings,
+  }), [selectedLeagueId, season, week, playerCount, seasonStatCount, weeklyStatCount, scheduleMap, activeScoringSettings]);
   const myPointsMap = myMatchup?.players_points ?? {};
   const oppPointsMap = opponentMatchup?.players_points ?? {};
 
@@ -413,15 +413,40 @@ export default function CompanionMatchup({
     rosters.length,
   ]);
 
+  // When a scoring override is active, sum recalculated starter points instead of
+  // using Sleeper's pre-computed matchup.points (which reflect the league's own scoring).
+  const calcStarterTotal = useCallback((starters) => {
+    if (!starters?.length || !players || !weeklyStats) return null;
+    let total = 0;
+    let hasAny = false;
+    for (const id of starters) {
+      const p = players[id];
+      if (!p) continue;
+      const weekEntry = weeklyStats[id]?.find(w => w.week === week) ?? null;
+      if (!weekEntry) continue;
+      total += calcPoints(weekEntry, activeScoringSettings, p.position);
+      hasAny = true;
+    }
+    return hasAny ? Math.round(total * 100) / 100 : null;
+  }, [players, weeklyStats, week, activeScoringSettings]);
+
+  const myDisplayPoints = useMemo(() => {
+    if (!scoringOverride) return myMatchup?.points ?? null;
+    return calcStarterTotal(myMatchup?.starters) ?? myMatchup?.points ?? null;
+  }, [scoringOverride, myMatchup, calcStarterTotal]);
+
+  const oppDisplayPoints = useMemo(() => {
+    if (!scoringOverride) return opponentMatchup?.points ?? null;
+    return calcStarterTotal(opponentMatchup?.starters) ?? opponentMatchup?.points ?? null;
+  }, [scoringOverride, opponentMatchup, calcStarterTotal]);
+
   const matchupOutcome = useMemo(() => {
-    const myPoints = myMatchup?.points ?? null;
-    const oppPoints = opponentMatchup?.points ?? null;
-    if (myPoints == null || oppPoints == null) return { mine: 'pending', opp: 'pending' };
-    if (myPoints === oppPoints) return { mine: 'tie', opp: 'tie' };
-    return myPoints > oppPoints
+    if (myDisplayPoints == null || oppDisplayPoints == null) return { mine: 'pending', opp: 'pending' };
+    if (myDisplayPoints === oppDisplayPoints) return { mine: 'tie', opp: 'tie' };
+    return myDisplayPoints > oppDisplayPoints
       ? { mine: 'win', opp: 'loss' }
       : { mine: 'loss', opp: 'win' };
-  }, [myMatchup, opponentMatchup]);
+  }, [myDisplayPoints, oppDisplayPoints]);
   const neutralHeaderGlow = darkMode ? '#FFFFFF' : '#F5B700';
   const mineHeaderGlowColor = matchupOutcome.mine === 'win'
     ? '#2ED578'
@@ -469,14 +494,14 @@ export default function CompanionMatchup({
       return advancedCacheRef.current.positionalRanks.value;
     }
     const nextRanks = debugCompanionMeasure('Matchup positional ranks', () => (
-      computePositionalRanks(seasonStats, players, scoringSettings)
+      computePositionalRanks(seasonStats, players, activeScoringSettings)
     ), {
       playerDirectoryCount: playerCount,
       seasonStatCount,
     });
     advancedCacheRef.current.positionalRanks = { key: cacheKey, value: nextRanks };
     return nextRanks;
-  }, [hasAdvancedStats, seasonStats, players, scoringSettings, matchupDataCacheKey, playerCount, seasonStatCount]);
+  }, [hasAdvancedStats, seasonStats, players, activeScoringSettings, matchupDataCacheKey, playerCount, seasonStatCount]);
 
   const weeklyRanks = useMemo(() => {
     if (!hasAdvancedStats) return {};
@@ -486,14 +511,14 @@ export default function CompanionMatchup({
       return advancedCacheRef.current.weeklyRanks.value;
     }
     const nextRanks = debugCompanionMeasure('Matchup weekly ranks', () => (
-      computeWeeklyPositionalRanks(weeklyStats, players, scoringSettings, week)
+      computeWeeklyPositionalRanks(weeklyStats, players, activeScoringSettings, week)
     ), {
       week,
       weeklyStatCount,
     });
     advancedCacheRef.current.weeklyRanks = { key: cacheKey, value: nextRanks };
     return nextRanks;
-  }, [hasAdvancedStats, weeklyStats, players, scoringSettings, week, matchupDataCacheKey, weeklyStatCount]);
+  }, [hasAdvancedStats, weeklyStats, players, activeScoringSettings, week, matchupDataCacheKey, weeklyStatCount]);
 
   // Pre-computed defense table: { [teamAbbr]: { [normPos]: { [week]: totalPts } } }
   // Built once when all data is available; used for O(1) opponent strength lookups.
@@ -505,7 +530,7 @@ export default function CompanionMatchup({
       return advancedCacheRef.current.defenseTable.value;
     }
     const nextDefenseTable = debugCompanionMeasure('Matchup defense table', () => (
-      buildDefenseTable(weeklyStats, players, scheduleMap, scoringSettings, undefined, false, week)
+      buildDefenseTable(weeklyStats, players, scheduleMap, activeScoringSettings, undefined, false, week)
     ), {
       playerDirectoryCount: playerCount,
       weeklyStatCount,
@@ -513,7 +538,7 @@ export default function CompanionMatchup({
     });
     advancedCacheRef.current.defenseTable = { key: cacheKey, value: nextDefenseTable };
     return nextDefenseTable;
-  }, [hasAdvancedStats, weeklyStats, players, scheduleMap, scoringSettings, matchupDataCacheKey, playerCount, weeklyStatCount]);
+  }, [hasAdvancedStats, weeklyStats, players, scheduleMap, activeScoringSettings, matchupDataCacheKey, playerCount, weeklyStatCount]);
 
   const leagueAvgByPos = useMemo(() => {
     if (!hasAdvancedStats || !defenseTable) return {};
@@ -579,8 +604,8 @@ export default function CompanionMatchup({
       name: p.full_name || `${p.first_name} ${p.last_name}`,
       position: p.position,
       team: myTeam,
-      weekPts: weekEntry ? calcPoints(weekEntry, scoringSettings, p.position) : fallbackWeekPts,
-      avgPPG: hasAdvancedStats ? getAvgPPG(weekly, scoringSettings, p.position) : null,
+      weekPts: weekEntry ? calcPoints(weekEntry, activeScoringSettings, p.position) : fallbackWeekPts,
+      avgPPG: hasAdvancedStats ? getAvgPPG(weekly, activeScoringSettings, p.position) : null,
       rank: positionalRanks[id] ?? null,
       weekRank: weeklyRanks[id] ?? null,
       oppTeam,
@@ -595,7 +620,7 @@ export default function CompanionMatchup({
       isBye,
       teamTheme: getPlayerRowTeamTheme(myTeam, darkMode),
     };
-  }, [players, hasAdvancedStats, weeklyStats, scoringSettings, positionalRanks, weeklyRanks, week, scheduleMap, defenseTable, darkMode]);
+  }, [players, hasAdvancedStats, weeklyStats, activeScoringSettings, positionalRanks, weeklyRanks, week, scheduleMap, defenseTable, darkMode]);
 
   // Ordered slot positions for each starter slot (filters out BN/IR)
   const starterPositions = useMemo(
@@ -728,7 +753,7 @@ export default function CompanionMatchup({
           weather,
           allWeeklyStats: weeklyStats,
           players,
-          scoringSettings,
+          activeScoringSettings,
           scheduleMap,
           week,
           defStrength: player.defStrength ?? null,
@@ -748,7 +773,7 @@ export default function CompanionMatchup({
       starterSlotCount: starterSlots.length,
       weatherEntries: Object.keys(weatherMap).length,
     });
-  }, [hasAdvancedStats, starterSlots, weatherMap, week, weeklyStats, players, scoringSettings, scheduleMap, leagueAvgByPos]);
+  }, [hasAdvancedStats, starterSlots, weatherMap, week, weeklyStats, players, activeScoringSettings, scheduleMap, leagueAvgByPos]);
 
   const sharedPlayerNameFontSize = useMemo(() => {
     const labels = [
@@ -941,7 +966,7 @@ export default function CompanionMatchup({
                   {myName}
                 </div>
                 <div className="relative z-[1] mt-1 self-center tabular-nums" style={{ color: 'var(--color-label)', fontFamily: "'Barlow Condensed', 'Arial Narrow', sans-serif", fontSize: isCompactPhone ? 'clamp(24px, 6.2vw, 30px)' : 'clamp(30px, 7vw, 38px)', fontWeight: 800, lineHeight: 0.92 }}>
-                  {myMatchup.points?.toFixed(2) ?? '?'}
+                  {myDisplayPoints?.toFixed(2) ?? '?'}
                 </div>
               </button>
               <div className="flex items-center justify-center self-stretch">
@@ -1011,7 +1036,7 @@ export default function CompanionMatchup({
                   {opponentName}
                 </div>
                 <div className="relative z-[1] mt-1 self-center tabular-nums" style={{ color: 'var(--color-label)', fontFamily: "'Barlow Condensed', 'Arial Narrow', sans-serif", fontSize: isCompactPhone ? 'clamp(24px, 6.2vw, 30px)' : 'clamp(30px, 7vw, 38px)', fontWeight: 800, lineHeight: 0.92 }}>
-                  {opponentMatchup?.points?.toFixed(2) ?? '?'}
+                  {oppDisplayPoints?.toFixed(2) ?? '?'}
                 </div>
               </button>
             </div>
@@ -1532,11 +1557,11 @@ function formatScoringKeyLabel(key) {
 }
 
 function TeamScoreBreakdown({ teamName, playerIds, week, onClose }) {
-  const { weeklyStats, scoringSettings, players } = useSleeperBase();
+  const { weeklyStats, activeScoringSettings, players } = useSleeperBase();
 
   const { rows, total } = useMemo(() => {
     if (!weeklyStats) return { rows: [], total: 0 };
-    const settings = { ...DEFAULT_SCORING, ...scoringSettings };
+    const settings = { ...DEFAULT_SCORING, ...activeScoringSettings };
     const totals = new Map();
     let exactTotal = 0;
 
@@ -1637,7 +1662,7 @@ function TeamScoreBreakdown({ teamName, playerIds, week, onClose }) {
       rows,
       total: Math.round(exactTotal * 100) / 100,
     };
-  }, [weeklyStats, scoringSettings, playerIds, week, players]);
+  }, [weeklyStats, activeScoringSettings, playerIds, week, players]);
 
   useBodyScrollLock();
 

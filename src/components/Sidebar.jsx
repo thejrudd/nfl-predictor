@@ -18,7 +18,6 @@ export default function Sidebar({
   onInstall,
   favoriteTeam,
   onMyTeam,
-  onScoringSettings,
 }) {
   const progress = totalTeams > 0 ? (predictionCount / totalTeams) * 100 : 0;
   const { isConnected, disconnect } = useSleeperLeague();
@@ -137,13 +136,8 @@ export default function Sidebar({
             <SidebarAction label="Randomize Predictions" onClick={onRandom} />
           </>
         )}
-        {(activeTab === 'companion' || activeTab === 'trade') && (
-          <>
-            <SidebarAction label="Scoring Settings" onClick={onScoringSettings} />
-            {isConnected && (
-              <SidebarAction label="Disconnect Sleeper" onClick={disconnect} />
-            )}
-          </>
+        {(activeTab === 'companion' || activeTab === 'trade') && isConnected && (
+          <SidebarAction label="Disconnect Sleeper" onClick={disconnect} />
         )}
         {isInstallable && !isInstalled && (
           <SidebarAction label="Install App" onClick={onInstall} />
@@ -215,7 +209,7 @@ export default function Sidebar({
           className="px-5 py-3 text-xs"
           style={{ color: 'var(--color-label-tertiary)' }}
         >
-          v7.0.5
+          v7.0.6
         </div>
       </div>
     </aside>

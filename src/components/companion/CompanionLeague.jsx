@@ -244,7 +244,7 @@ function LeagueRosterView({ onTradePlayer, onViewPlayer = null, selectedRosterId
     players, loadPlayers,
     weeklyStats, seasonStats, loadSeasonStats,
     statsLoading,
-    scoringSettings,
+    activeScoringSettings,
   } = useSleeperBase();
   const { darkMode } = useTheme();
   const isCompactPhone = useMediaQuery(COMPACT_PHONE_QUERY);
@@ -280,8 +280,8 @@ function LeagueRosterView({ onTradePlayer, onViewPlayer = null, selectedRosterId
   }, [seasonStats, statsLoading, loadSeasonStats]);
 
   const positionalRanks = useMemo(
-    () => computePositionalRanks(seasonStats, players, scoringSettings),
-    [seasonStats, players, scoringSettings],
+    () => computePositionalRanks(seasonStats, players, activeScoringSettings),
+    [seasonStats, players, activeScoringSettings],
   );
 
   const selectedRoster = useMemo(
@@ -298,8 +298,8 @@ function LeagueRosterView({ onTradePlayer, onViewPlayer = null, selectedRosterId
       if (!p) return null;
       const stats = seasonStats?.[id] ?? null;
       const weekly = weeklyStats?.[id] ?? [];
-      const pts = stats ? calcPointsFromTotals(stats, scoringSettings, p.position) : null;
-      const avgPPG = getAvgPPG(weekly, scoringSettings, p.position);
+      const pts = stats ? calcPointsFromTotals(stats, activeScoringSettings, p.position) : null;
+      const avgPPG = getAvgPPG(weekly, activeScoringSettings, p.position);
       const rank = positionalRanks[id] ?? null;
       const isReserve = selectedRoster.reserve?.includes(id);
       return {
@@ -315,7 +315,7 @@ function LeagueRosterView({ onTradePlayer, onViewPlayer = null, selectedRosterId
         teamTheme: teamRowTheme(p.team || '', darkMode),
       };
     }).filter(Boolean);
-  }, [selectedRoster, players, seasonStats, weeklyStats, scoringSettings, positionalRanks, darkMode]);
+  }, [selectedRoster, players, seasonStats, weeklyStats, activeScoringSettings, positionalRanks, darkMode]);
 
   const nameColPx = useMemo(() => measureMaxNameWidth(rosterPlayers), [rosterPlayers]);
   const layout = useMemo(() => getLeagueLayout(isCompactPhone, nameColPx), [isCompactPhone, nameColPx]);

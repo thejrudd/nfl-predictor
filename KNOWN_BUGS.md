@@ -179,3 +179,4 @@ Open bugs are listed first, fixed bugs below. Add new entries at the bottom of e
 | Companion → Matchup could render side panels before advanced matchup data was ready, causing a piecemeal load and disruptive loading flashes when switching weeks | v6.3 |
 | Matchup weather lookups could repeatedly request invalid Open-Meteo endpoints for the selected date, producing console 400s and unnecessary weather fetch batches | v6.3 |
 | Statistics team card nickname text cut off vertically (e.g. Vikings 'k' clipped) due to `leading-none` collapsing line-height below Barlow Condensed descenders | v7.0.5 |
+| Companion → Matchup drilldown displayed raw Sleeper stat keys (`idp_int_ret_yd`, `idp_sack_yd`, `idp_fr_yd`) instead of human-readable labels for IDP yardage stats — missing from `STAT_LABELS` in `PlayerMatchupBreakdown.jsx` | v7.0.6 |

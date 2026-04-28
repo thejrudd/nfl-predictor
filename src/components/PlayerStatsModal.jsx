@@ -19,7 +19,7 @@ import {
 } from '../utils/fantasyStatContributions';
 import { getTeamPalette } from '../data/teamColors';
 import { useTheme } from '../context/ThemeContext';
-import useBodyScrollLock from '../hooks/useBodyScrollLock';
+import Modal from './Modal';
 
 function hexLuminance(hex) {
   const r = parseInt(hex.slice(1, 3), 16) / 255;
@@ -89,8 +89,6 @@ export default function PlayerStatsModal({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [headshotError, setHeadshotError] = useState(false);
-
-  useBodyScrollLock();
 
   useEffect(() => {
     let cancelled = false;
@@ -177,16 +175,11 @@ export default function PlayerStatsModal({
   }, [playerMeta?.position, playerMeta?.sleeperId, sleeperSeasonStats, scoringSettings]);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.5)' }}
-      onClick={onClose}
+    <Modal
+      onClose={onClose}
+      containerClassName="max-w-3xl"
+      containerStyle={{ border: '1px solid var(--color-separator)' }}
     >
-      <div
-        className="w-full max-w-3xl overflow-hidden rounded-2xl"
-        style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-separator)' }}
-        onClick={(event) => event.stopPropagation()}
-      >
         <div
           className="relative px-5 py-5 sm:px-6"
           style={{
@@ -324,7 +317,6 @@ export default function PlayerStatsModal({
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

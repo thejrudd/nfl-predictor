@@ -14,7 +14,7 @@ import { computePositionalRanks, computePositionalAvgPPG, computePositionalValue
 import { parseSearchQuery, matchesFilter } from '../../utils/parseSearchQuery';
 import { TEAM_COLORS } from '../../data/teamColors';
 import { useTheme } from '../../context/ThemeContext';
-import useBodyScrollLock from '../../hooks/useBodyScrollLock';
+import Modal from '../Modal';
 
 const POSITION_ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DL', 'LB', 'DB', 'DEF', 'Other'];
 const POSITION_FILTER_CHIPS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'K', 'DL', 'LB', 'DB', 'DEF'];
@@ -169,8 +169,6 @@ export default function TradeRosterPicker({
   const trimmedSearch = deferredSearch.trim();
   const showSearchGuide = isAllMode && !trimmedSearch && posFilter === 'ALL';
   const enrichedPlayerCacheRef = useRef(new Map());
-
-  useBodyScrollLock();
 
   // Positional ranks across all rostered players
   const rankMap = useMemo(
@@ -598,12 +596,11 @@ export default function TradeRosterPicker({
   }, [activeRosterId, currentTotal, darkMode, handleSelect, shouldVirtualize]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.5)' }}
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="flex flex-col rounded-2xl overflow-hidden w-full"
-        style={{ background: 'var(--color-bg)', maxWidth: 520, height: '72vh', maxHeight: 640 }}
-        onClick={e => e.stopPropagation()}>
+    <Modal
+      onClose={onClose}
+      containerClassName="flex flex-col"
+      containerStyle={{ background: 'var(--color-bg)', maxWidth: 520, height: '72vh', maxHeight: 640 }}
+    >
 
         {/* Header + search + position chips */}
         <div className="px-4 pt-4 pb-3 shrink-0" style={{ borderBottom: '1px solid var(--color-separator)' }}>
@@ -719,8 +716,7 @@ export default function TradeRosterPicker({
             </>
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
