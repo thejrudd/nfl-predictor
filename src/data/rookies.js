@@ -7,6 +7,7 @@ const NFL_TOP_150 = 'https://www.nfl.com/news/daniel-jeremiah-s-top-150-prospect
 const NFL_DRAFT_ORDER = 'https://www.nfl.com/news/2026-nfl-draft-order-for-all-seven-rounds';
 const PFF_BOARD = 'https://www.pff.com/news/draft-2026-nfl-draft-profiles';
 const ESPN_REID_BOARD = 'https://www.espn.com/nfl/draft2026/story?id=47027232';
+const NFLVERSE_DRAFT_PICKS = 'https://github.com/nflverse/nflverse-data/releases/download/draft_picks/draft_picks.csv';
 
 const BASE_SOURCES = {
   prospects: NFL_TRACKER,
@@ -882,6 +883,24 @@ const EXTRA_COMBINE_INVITEES_2026 = [
   }),
 ];
 
+const EXTRA_DRAFTED_PLAYERS_2026 = [
+  rookie(503, 'CJ Williams', 'WR', 'Stanford', null, {
+    sources: { ...BASE_SOURCES, draftedOnly: NFLVERSE_DRAFT_PICKS },
+  }),
+  rookie(504, 'Gabriel Rubio', 'DL', 'Notre Dame', null, {
+    sources: { ...BASE_SOURCES, draftedOnly: NFLVERSE_DRAFT_PICKS },
+  }),
+  rookie(505, 'Gavin Gerhardt', 'OL', 'Cincinnati', null, {
+    sources: { ...BASE_SOURCES, draftedOnly: NFLVERSE_DRAFT_PICKS },
+  }),
+  rookie(506, 'Parker Hughes', 'LB', 'Middle Tenn. St.', null, {
+    sources: { ...BASE_SOURCES, draftedOnly: NFLVERSE_DRAFT_PICKS },
+  }),
+  rookie(507, 'Michael Dansby', 'DB', 'Arizona', null, {
+    sources: { ...BASE_SOURCES, draftedOnly: NFLVERSE_DRAFT_PICKS },
+  }),
+];
+
 function prospectKey(name) {
   return name.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
@@ -947,7 +966,11 @@ function applyProductionData(players, productionById) {
 export const ROOKIES_2026 = applyCombineData(
   applyProductionData(
     projectProspects(
-      mergeProspects(RICH_ROOKIES_2026, [...ESPN_ROOKIES_2026, ...EXTRA_COMBINE_INVITEES_2026]),
+      mergeProspects(RICH_ROOKIES_2026, [
+        ...ESPN_ROOKIES_2026,
+        ...EXTRA_COMBINE_INVITEES_2026,
+        ...EXTRA_DRAFTED_PLAYERS_2026,
+      ]),
     ),
     ROOKIE_PRODUCTION_2026,
   ),

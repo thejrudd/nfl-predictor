@@ -207,12 +207,9 @@ function addStat(target, field, value) {
   target[field] = (target[field] ?? 0) + value;
 }
 
-function seasonKey(season) {
-  return `${season?.year ?? ''}:${season?.team ?? ''}`;
-}
-
 function gameKey(game) {
-  return `${game?.year ?? ''}:${game?.week ?? ''}:${game?.gameId ?? ''}:${game?.team ?? ''}`;
+  if (game?.gameId != null) return `${game.gameId}:${game?.team ?? ''}`;
+  return `${game?.year ?? ''}:${game?.week ?? ''}:${game?.team ?? ''}:${game?.opponent ?? ''}`;
 }
 
 function sortPlayerData(playerData) {
@@ -221,16 +218,42 @@ function sortPlayerData(playerData) {
   return playerData;
 }
 
-function mergePlayerData(existingPlayerData, incomingPlayerData) {
-  const seasons = new Map((existingPlayerData?.seasons ?? []).map((season) => [seasonKey(season), season]));
-  for (const season of incomingPlayerData?.seasons ?? []) seasons.set(seasonKey(season), season);
+function resultOutcome(result) {
+  if (typeof result !== 'string') return null;
+  if (result.startsWith('W ')) return 'wins';
+  if (result.startsWith('L ')) return 'losses';
+  return null;
+}
 
+function rebuildSeasonsFromGames(games = []) {
+  const seasons = new Map();
+
+  for (const game of games) {
+    const key = `${game.year ?? ''}:${game.team ?? ''}`;
+    const season = seasons.get(key) ?? {
+      year: game.year,
+      team: game.team,
+      record: { wins: 0, losses: 0 },
+      stats: {},
+    };
+    const outcome = resultOutcome(game.result);
+    if (outcome) season.record[outcome] += 1;
+    for (const [field, value] of Object.entries(game.stats ?? {})) {
+      if (value != null) addStat(season.stats, field, value);
+    }
+    seasons.set(key, season);
+  }
+
+  return [...seasons.values()];
+}
+
+function mergePlayerData(existingPlayerData, incomingPlayerData) {
   const games = new Map((existingPlayerData?.games ?? []).map((game) => [gameKey(game), game]));
   for (const game of incomingPlayerData?.games ?? []) games.set(gameKey(game), game);
 
   return sortPlayerData({
-    seasons: [...seasons.values()],
     games: [...games.values()],
+    seasons: rebuildSeasonsFromGames([...games.values()]),
   });
 }
 
@@ -323,8 +346,8 @@ async function main() {
             ?? {
               gameId: row.gameId,
               year,
-              week: row.week,
-              seasonType: row.seasonType,
+              week: row.week ?? game?.week,
+              seasonType: row.seasonType ?? game?.seasonType,
               team: row.team,
               opponent: game?.homeTeam === row.team ? game?.awayTeam : game?.homeTeam,
               result: teamResult(game, row.team),

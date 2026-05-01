@@ -23,6 +23,13 @@ const CONFERENCES = [
 const TEAM_CARD_SHADOW = '0 10px 24px rgba(12,15,20,0.10), 0 3px 8px rgba(12,15,20,0.08)';
 const TEAM_LABEL_STYLE = { letterSpacing: '0.16em' };
 const REVERSED_GRADIENT_TEAMS = new Set(['dal', 'gb', 'jax', 'la', 'lar', 'lv', 'no', 'nyg', 'nyj', 'pit', 'wsh']);
+const cardTextSize = (base, text, { min, offset = 0, longAt, compactAt }) => {
+  const length = String(text || '').replace(/\s+/g, '').length;
+  let size = base + offset;
+  if (length >= longAt) size -= 2;
+  else if (length >= compactAt) size -= 1;
+  return Math.max(min, size);
+};
 
 // 2025 season champions (Super Bowl LX played February 2026)
 const SEASON_2025_CHAMPIONS = {
@@ -116,10 +123,12 @@ const PlayerBrowser = ({
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         const width = node.getBoundingClientRect().width || 0;
-        const columns = window.innerWidth >= 640 ? 4 : 2;
+        const isDesktopGrid = window.innerWidth >= 640;
+        const columns = isDesktopGrid ? 4 : 2;
         const gap = 12 * (columns - 1);
-        const cardWidth = columns > 0 ? (width - gap) / columns : width;
-        const next = Math.max(11, Math.min(15, Math.round(cardWidth * 0.1)));
+        const sectionPadding = isDesktopGrid ? 40 : 32;
+        const cardWidth = columns > 0 ? (width - sectionPadding - gap) / columns : width;
+        const next = Math.max(9, Math.min(15, Math.floor(cardWidth * 0.07)));
         setCardFontSize(Number.isFinite(next) ? next : 14);
       });
     };
@@ -564,6 +573,8 @@ const TeamCard = ({ team, onClick, darkMode = false, fontSize = 14 }) => {
   const muted = textOverride?.subtitleColor ?? (onBase === '#FFFFFF' ? 'rgba(255,255,255,0.72)' : 'rgba(12,15,20,0.64)');
   const city = team.city || String(team.name || '').split(' ').slice(0, -1).join(' ');
   const nickname = team.nickname || String(team.name || '').split(' ').slice(-1)[0] || team.name;
+  const cityFontSize = cardTextSize(fontSize, city, { min: 7, offset: -2, longAt: 8, compactAt: 6 });
+  const nicknameFontSize = cardTextSize(fontSize, nickname, { min: 13, offset: 5, longAt: 9, compactAt: 8 });
 
   const isSuperBowl = SEASON_2025_CHAMPIONS.superBowl === teamKey;
   const isConf = !isSuperBowl && Object.values(SEASON_2025_CHAMPIONS.conference).includes(teamKey);
@@ -574,9 +585,9 @@ const TeamCard = ({ team, onClick, darkMode = false, fontSize = 14 }) => {
   return (
     <button
       onClick={onClick}
-      className="group relative w-full overflow-hidden rounded-2xl text-left transition-transform duration-150 active:scale-[0.98]"
+      className="group relative w-full overflow-hidden rounded-xl text-left transition-transform duration-150 active:scale-[0.98] sm:rounded-2xl"
       style={{
-        minHeight: '112px',
+        minHeight: 'clamp(74px, 20vw, 112px)',
         border: '1px solid var(--color-separator)',
         boxShadow: TEAM_CARD_SHADOW,
         background: 'var(--color-bg-secondary)',
@@ -591,24 +602,24 @@ const TeamCard = ({ team, onClick, darkMode = false, fontSize = 14 }) => {
             : 'linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(12,15,20,0.12) 100%)',
         }}
       />
-      <div className="relative flex h-full items-center gap-3 p-3 sm:p-3.5">
+      <div className="relative flex h-full items-center gap-1.5 p-2 sm:gap-3 sm:p-3.5">
         <img
           src={`https://a.espncdn.com/i/teamlogos/nfl/500/${team.id.toLowerCase()}.png`}
           alt={team.name}
-          className="h-14 w-14 shrink-0 object-contain sm:h-16 sm:w-16"
+          className="h-10 w-10 shrink-0 object-contain sm:h-16 sm:w-16"
           style={{ filter: 'drop-shadow(0 6px 12px rgba(0,0,0,0.22))' }}
           onError={(e) => { e.target.style.display = 'none'; }}
         />
         <div className="min-w-0 flex-1">
-          <div className="truncate font-semibold uppercase" style={{ ...TEAM_LABEL_STYLE, color: muted, fontSize: `${Math.max(9, fontSize - 3)}px` }}>
+          <div className="whitespace-nowrap font-semibold uppercase" style={{ ...TEAM_LABEL_STYLE, color: muted, fontSize: `${cityFontSize}px` }}>
             {city}
           </div>
           <div
-            className="truncate font-display"
+            className="whitespace-nowrap font-display"
             style={{
               color: titleColor,
-              fontSize: `${Math.max(18, fontSize + 6)}px`,
-              lineHeight: 1.1,
+              fontSize: `${nicknameFontSize}px`,
+              lineHeight: 1,
             }}
           >
             {nickname}

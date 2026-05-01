@@ -7,18 +7,6 @@ New features requested or planned should be added here.
 
 ## Planned Versions
 
-### v7.0.7 - Post-Draft nflverse Enrichment
-
-After the draft concludes, build `scripts/scout-nflverse-update.mjs` to fetch  
-`https://raw.githubusercontent.com/leesharpe/nfldata/master/data/draft_picks.csv`,  
-normalize player names, match against `src/data/rookies.js`, and output a JSON patch  
-with verified `draftRound`, `draftPick`, `draftOverall`, `draftTeam`, and `draftTeamName`  
-ready to paste into `rookies.js`. Mirrors the existing `scout-espn-ids.mjs` pattern.
-
-Fields available from nflverse: `season`, `team`, `round`, `pick` (overall), `pfr_name`,  
-`category` (QB/RB/WR/TE/OL/DL/LB/DB), `position` (specific). CORS-safe browser fetch  
-from `raw.githubusercontent.com`.
-
 ### v7.1 - Trade Module Decomposition
 
 Split the monolithic `CompanionTrade.jsx` (4,800+ lines) and `opportunityEngine.js` (3,000+ lines) into focused, single-responsibility modules to reduce per-edit token cost and improve maintainability.

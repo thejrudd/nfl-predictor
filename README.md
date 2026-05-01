@@ -86,23 +86,23 @@ npm run validate:routing
 | PWA | vite-plugin-pwa + Workbox |
 | Production serving | nginx (Docker) |
 
-## What's New in v7.0.6
+## What's New in v7.0.7
 
-- **Scoring override** - Companion → Scoring lets you browse all linked season leagues and apply any season's scoring rules as a temporary overlay. A sticky amber banner appears across all Companion views when active; hold to compare against your own scoring, tap X to clear.
-- **Live override recalculation** - Rankings, Waiver, Matchup, and Heatmap all recalculate in real time using the override scoring. Matchup totals are re-derived from raw weekly stats when an override is active.
-- **Frozen navigation headers** - NavBar, all sub-navigation tab bars, and the Scoring Override Banner are now pinned at the top of the page. Content scrolls underneath so headers never leave the viewport.
-- **Scout tab bar frozen** - "Prospects / Picks / Results" now freezes at the top like every other sub-nav.
-- **Scout prospect profile smooth sticky** - Desktop profile panel converted from JS-driven scroll tracking (bouncy) to native CSS sticky — no lag.
+- **Post-draft nflverse enrichment** - Scout now has a helper that imports the public nflverse draft-picks feed and writes verified round, pick, team, position, and college data into the static draft results layer.
+- **Verified draft data refreshed** - `src/data/draftResults.js` now carries the post-draft results that Scout merges over the curated rookie board at runtime.
+- **College production importer hardened** - CFBD production imports have stronger name matching, clearer missing-production reporting, and a guard against accidentally deleting generated stat fields.
+- **Scout statistics cleanup** - Prospect stat modals now separate season production, game summaries, and week-by-week logs with plainer empty states.
+- **Matchup scoring fix** - Companion → Matchup drilldowns now use the shared scoring engine, including position bonuses and adjustment rows, so drilldown totals match displayed player totals.
 
 For the full version history, see [CHANGELOG.md](CHANGELOG.md).
 
 ## Roadmap
 
-- **v7.0.7 - Post-Draft nflverse Enrichment** - Patch Scout with verified draft-slot enrichment from nflverse after the draft concludes.
 - **v7.1 - Trade Module Decomposition** - Split the largest Trade components and engines into focused modules for lower maintenance cost.
 - **v7.2 - Statistics / Fantasy Drilldown Unification** - One canonical player-analysis destination with mode-aware drilldowns across Statistics and Companion.
 - **v7.3 - Scout Rookie Projection Layer** - Add next-season rookie projections that work for standard and IDP-focused draft prep without overloading the current Scout board.
-- **v7.4 - Trade Agent & Upgrades UX Redesign** - Redesign the Trade Agent and Trade Upgrades modules with improved UX.
+- **v8.0 - ESPN League Integration** - Planned major integration track.
+- **v9.0 - Live Fantasy Scoring** - Planned live scoring track.
 - **Week-by-Week View** *(blocked on 2026 schedule data)* — Browse the full schedule by week with predictions reflected
 
 ## Project Structure

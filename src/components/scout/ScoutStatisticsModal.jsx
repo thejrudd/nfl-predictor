@@ -58,6 +58,56 @@ function formatRecord(record) {
   return `${record.wins}-${record.losses}`;
 }
 
+function resultOutcome(result) {
+  if (typeof result !== 'string') return null;
+  if (result.startsWith('W ')) return 'wins';
+  if (result.startsWith('L ')) return 'losses';
+  return null;
+}
+
+function addStats(target, stats = {}) {
+  for (const [key, value] of Object.entries(stats)) {
+    if (value == null) continue;
+    target[key] = (target[key] ?? 0) + value;
+  }
+}
+
+function buildGameLogSeasons(games = []) {
+  const bySeason = new Map();
+
+  for (const game of games) {
+    const key = `${game.year ?? 'Unknown'}-${game.team ?? 'Unknown'}`;
+    const season = bySeason.get(key) ?? {
+      year: game.year ?? 'Unknown',
+      team: game.team ?? 'Unknown',
+      importedGames: 0,
+      record: { wins: 0, losses: 0 },
+      stats: {},
+      isGameLogSummary: true,
+    };
+    const outcome = resultOutcome(game.result);
+    if (outcome) season.record[outcome] += 1;
+    season.importedGames += 1;
+    addStats(season.stats, game.stats);
+    bySeason.set(key, season);
+  }
+
+  return [...bySeason.values()].sort((a, b) => {
+    if (a.year !== b.year) return Number(a.year) - Number(b.year);
+    return String(a.team).localeCompare(String(b.team));
+  });
+}
+
+function formatSeasonSecondary(season) {
+  if (season.isGameLogSummary) {
+    const games = season.importedGames ?? 0;
+    const gameText = `${games} game${games === 1 ? '' : 's'} shown`;
+    const record = formatRecord(season.record);
+    return record === '—' ? gameText : `${gameText} · W-L ${record}`;
+  }
+  return season.record ? `Record ${formatRecord(season.record)}` : 'Record unavailable';
+}
+
 function StatPills({ stats, limit = 6 }) {
   const entries = orderedStatEntries(stats).slice(0, limit);
   if (!entries.length) return <span className="scout-stats-empty-inline">No stats</span>;
@@ -74,48 +124,49 @@ function StatPills({ stats, limit = 6 }) {
   );
 }
 
-function buildFallbackSeasons(player) {
+function formatProductionYears(seasons = []) {
+  if (!seasons.length) return 'Latest';
+  const sorted = [...new Set(seasons)].sort((a, b) => a - b);
+  if (sorted.length === 1) return String(sorted[0]);
+  return `${sorted[0]}-${sorted[sorted.length - 1]}`;
+}
+
+function formatProductionTeams(teams = [], fallbackTeam) {
+  const uniqueTeams = [...new Set(teams.filter(Boolean))];
+  if (!uniqueTeams.length) return fallbackTeam;
+  return uniqueTeams.join(' / ');
+}
+
+function buildProductionRows(player) {
   if (!player?.collegeStats) return [];
 
   const production = ROOKIE_PRODUCTION_2026[player.id];
-  const seasons = production?.cfbd?.seasons?.length ? production.cfbd.seasons : [null];
-  const teams = production?.cfbd?.teams?.length ? production.cfbd.teams : [player.college];
 
-  return seasons.map((year, index) => ({
-    year: year ?? 'Latest',
-    team: teams[index] ?? teams[0] ?? player.college,
+  return [{
+    year: formatProductionYears(production?.cfbd?.seasons),
+    team: formatProductionTeams(production?.cfbd?.teams, player.college),
     record: null,
     stats: player.collegeStats,
     source: production?.source ?? player.sources?.collegeProduction ?? null,
-    isFallback: true,
-  }));
+    isProductionSummary: true,
+  }];
 }
 
-function isPriorityWeeklyLogTier(player) {
-  return player?.tier === 'Elite' || player?.tier === 'Starter';
+function seasonProductionMessage() {
+  return 'Career college totals from available season data.';
 }
 
-function seasonFallbackMessage(player) {
-  if (isPriorityWeeklyLogTier(player)) {
-    return 'Showing bundled season production. Weekly logs for Elite and Starter prospects are imported selectively through the CFBD workflow.';
-  }
-  return 'Showing bundled season production. Weekly logs are prioritized for Elite and Starter prospects, so this profile may only carry season totals by default.';
-}
-
-function emptyWeeklyLogMessage(player) {
-  if (isPriorityWeeklyLogTier(player)) {
-    return 'Weekly college logs are not bundled for this profile yet. Run the selective CFBD game-log importer to add game-by-game rows with opponent and score.';
-  }
-  return 'Weekly college logs are bundled selectively for Elite and Starter prospects. This profile is currently using season totals only.';
+function emptyWeeklyLogMessage() {
+  return 'Game-by-game stats are not available for this player yet.';
 }
 
 export default function ScoutStatisticsModal({ player, onClose }) {
   useBodyScrollLock();
 
   const data = player ? ROOKIE_GAME_LOGS_2026[player.id] : null;
-  const seasons = data?.seasons?.length ? data.seasons : buildFallbackSeasons(player);
   const games = data?.games ?? [];
-  const hasSeasonFallback = seasons.some(season => season.isFallback);
+  const gameLogSeasons = buildGameLogSeasons(games);
+  const productionRows = buildProductionRows(player);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -158,21 +209,45 @@ export default function ScoutStatisticsModal({ player, onClose }) {
         </div>
 
         <div className="scout-stats-modal-body">
-          {seasons.length > 0 ? (
+          {productionRows.length > 0 ? (
             <section className="scout-stats-section">
-              <div className="scout-stats-section-title">Season by Season</div>
-              {hasSeasonFallback && (
-                <p className="scout-stats-section-note">
-                  {seasonFallbackMessage(player)}
-                </p>
-              )}
+              <div className="scout-stats-section-title">Season Production</div>
+              <p className="scout-stats-section-note">
+                {seasonProductionMessage()}
+              </p>
               <div className="scout-stats-season-list">
-                {seasons.map(season => (
+                {productionRows.map(season => (
                   <div key={`${season.year}-${season.team}`} className="scout-stats-season-row">
                     <div>
                       <div className="scout-stats-season-primary">{season.year} · {season.team}</div>
                       <div className="scout-stats-season-secondary">
-                        {season.record ? `Record ${formatRecord(season.record)}` : 'Record unavailable'}
+                        Season totals
+                      </div>
+                    </div>
+                    <StatPills stats={season.stats} limit={99} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : (
+            <div className="scout-empty">
+              {emptyWeeklyLogMessage()}
+            </div>
+          )}
+
+          {gameLogSeasons.length > 0 && (
+            <section className="scout-stats-section">
+              <div className="scout-stats-section-title">Game Summary</div>
+              <p className="scout-stats-section-note">
+                Game-by-game coverage may be incomplete.
+              </p>
+              <div className="scout-stats-season-list">
+                {gameLogSeasons.map(season => (
+                  <div key={`${season.year}-${season.team}`} className="scout-stats-season-row">
+                    <div>
+                      <div className="scout-stats-season-primary">{season.year} · {season.team}</div>
+                      <div className="scout-stats-season-secondary">
+                        {formatSeasonSecondary(season)}
                       </div>
                     </div>
                     <StatPills stats={season.stats} />
@@ -180,10 +255,6 @@ export default function ScoutStatisticsModal({ player, onClose }) {
                 ))}
               </div>
             </section>
-          ) : (
-            <div className="scout-empty">
-              {emptyWeeklyLogMessage(player)}
-            </div>
           )}
 
           {games.length > 0 ? (
@@ -193,20 +264,20 @@ export default function ScoutStatisticsModal({ player, onClose }) {
                 {games.map(game => (
                   <div key={`${game.year}-${game.week}-${game.team}-${game.opponent}`} className="scout-stats-game-row">
                     <div className="scout-stats-game-meta">
-                      <span>Week {game.week}</span>
+                      <span>{game.week != null ? `Week ${game.week}` : 'Week unavailable'}</span>
                       <strong>{game.team} {game.result ?? ''} {game.opponent}</strong>
-                      <span>{game.year} · {game.seasonType}</span>
+                      <span>{[game.year, game.seasonType].filter(Boolean).join(' · ') || 'Season unavailable'}</span>
                     </div>
                     <StatPills stats={game.stats} limit={5} />
                   </div>
                 ))}
               </div>
             </section>
-          ) : seasons.length > 0 && (
+          ) : productionRows.length > 0 && (
             <section className="scout-stats-section">
               <div className="scout-stats-section-title">Week by Week</div>
               <div className="scout-empty">
-                {emptyWeeklyLogMessage(player)}
+                {emptyWeeklyLogMessage()}
               </div>
             </section>
           )}

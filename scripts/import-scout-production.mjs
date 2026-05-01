@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -24,6 +24,29 @@ const DEFAULT_CATEGORIES = [
   'puntReturns',
   'kickReturns',
 ];
+
+const PROSPECT_NAME_ALIASES = {
+  'bobby jamison travis': ['Quientrail Jamison-Travis', 'Quientrail Bobby Jamison-Travis'],
+  'chip trayanum': ['DeaMonte Trayanum', 'DeaMonte Chip Trayanum', 'DeaMonte Larue Trayanum'],
+  'dj rogers': ["D'Andre Rogers", 'D.J. Rogers'],
+  'jam miller': ['Jamarion Miller'],
+  'jaydn ott': ['Jadyn Ott'],
+  'jordon simmons': ['Jordan Simmons'],
+  'kc concepcion': ['Kevin Concepcion', 'K.C. Concepcion'],
+  'lt overton': ['Lebbeus Overton', 'Lebbeus Thomas Overton', 'L.T. Overton'],
+  'mike washington jr': ['Michael Washington Jr.', 'Michael Washington', 'Mike Washington'],
+  'red murdock': ['Khalil Murdock', 'Khalil Elijah Murdock'],
+  'erick hunter': ['Eric Hunter'],
+  'reggie virgil': ['Reginald Virgil'],
+  'shad banks jr': ['Shadrach Banks Jr.', 'Shadrach Banks', 'Shad Banks'],
+};
+
+const LIKELY_EXTERNAL_PRODUCTION_COLLEGES = new Set([
+  'Culver-Stockton',
+  'John Carroll',
+  'Minnesota St. Moorhead',
+  'Upper Iowa',
+]);
 
 const CATEGORY_STAT_MAP = {
   passing: {
@@ -319,6 +342,7 @@ Options:
   --category NAME       CFBD category. Can be repeated. Default: ${DEFAULT_CATEGORIES.join(',')}
   --dry-run             Fetch and summarize without writing the generated file.
   --output PATH         Output file path. Default: src/data/rookieProduction.generated.js
+  --allow-stat-loss     Allow overwriting the generated file even if existing generated fields would be removed.
   --help                Show this help.
 `);
 }
@@ -336,6 +360,7 @@ function parseArgs(argv) {
     seasonType: DEFAULT_SEASON_TYPE,
     categories: [],
     dryRun: false,
+    allowStatLoss: false,
     output: outputPath,
   };
 
@@ -358,6 +383,8 @@ function parseArgs(argv) {
       i += 1;
     } else if (arg === '--dry-run') {
       args.dryRun = true;
+    } else if (arg === '--allow-stat-loss') {
+      args.allowStatLoss = true;
     } else if (arg === '--output') {
       const value = argv[i + 1];
       if (!value) throw new Error('--output requires a file path');
@@ -400,6 +427,17 @@ export function normalizeProspectName(name) {
     .replace(/\s+/g, ' ');
 }
 
+function normalizeProspectNameWithoutSuffix(name) {
+  return normalizeProspectName(name)
+    .replace(/\b(jr|sr|ii|iii|iv|v)\b/g, '')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+function compactProspectName(name) {
+  return normalizeProspectNameWithoutSuffix(name).replace(/\s+/g, '');
+}
+
 function normalizeTeamName(team) {
   return String(team ?? '')
     .normalize('NFKD')
@@ -424,6 +462,14 @@ function nameOnlyKey(name) {
   return normalizeProspectName(name);
 }
 
+function nameNoSuffixKey(name) {
+  return normalizeProspectNameWithoutSuffix(name);
+}
+
+function nameCompactKey(name) {
+  return compactProspectName(name);
+}
+
 function numericStat(value) {
   const num = Number(value);
   return Number.isFinite(num) ? num : null;
@@ -445,6 +491,13 @@ async function loadRookies() {
   const moduleUrl = `${pathToFileURL(rookiesPath).href}?t=${Date.now()}`;
   const mod = await import(moduleUrl);
   return mod.ROOKIES_2026;
+}
+
+async function loadExistingProduction(output) {
+  if (!existsSync(output)) return null;
+  const moduleUrl = `${pathToFileURL(output).href}?t=${Date.now()}`;
+  const mod = await import(moduleUrl);
+  return mod.ROOKIE_PRODUCTION_2026 ?? null;
 }
 
 async function fetchPlayerSeasonStats({ apiKey, year, seasonType, category }) {
@@ -483,6 +536,8 @@ function addRow(productionByKey, row) {
   const existing = productionByKey.get(key) ?? {
     player,
     normalizedName: nameOnlyKey(player),
+    normalizedNameNoSuffix: nameNoSuffixKey(player),
+    compactName: nameCompactKey(player),
     team,
     normalizedTeam: normalizeTeamName(team),
     seasons: new Set(),
@@ -500,25 +555,53 @@ function buildRookieIndexes(rookies) {
   const trackedRookies = rookies.filter((rookie) => rookie.positionGroup);
   const byNameTeam = new Map();
   const byName = new Map();
+  const byNameNoSuffix = new Map();
+  const byCompactName = new Map();
 
-  for (const rookie of trackedRookies) {
-    byNameTeam.set(productionKey(rookie.name, rookie.college), rookie);
-
-    const key = nameOnlyKey(rookie.name);
-    const matches = byName.get(key) ?? [];
-    matches.push(rookie);
-    byName.set(key, matches);
+  function add(map, key, rookie) {
+    if (!key) return;
+    const matches = map.get(key) ?? [];
+    if (!matches.some((match) => match.id === rookie.id)) matches.push(rookie);
+    map.set(key, matches);
   }
 
-  return { trackedRookies, byNameTeam, byName };
+  for (const rookie of trackedRookies) {
+    add(byNameTeam, productionKey(rookie.name, rookie.college), rookie);
+    add(byName, nameOnlyKey(rookie.name), rookie);
+    add(byNameNoSuffix, nameNoSuffixKey(rookie.name), rookie);
+    add(byCompactName, nameCompactKey(rookie.name), rookie);
+
+    for (const alias of PROSPECT_NAME_ALIASES[nameOnlyKey(rookie.name)] ?? []) {
+      add(byNameTeam, productionKey(alias, rookie.college), rookie);
+      add(byName, nameOnlyKey(alias), rookie);
+      add(byNameNoSuffix, nameNoSuffixKey(alias), rookie);
+      add(byCompactName, nameCompactKey(alias), rookie);
+    }
+  }
+
+  return { trackedRookies, byNameTeam, byName, byNameNoSuffix, byCompactName };
+}
+
+function onlyUniqueMatch(matches) {
+  return matches.length === 1 ? matches[0] : null;
 }
 
 function findRookieMatch(entry, indexes) {
-  const exact = indexes.byNameTeam.get(`${entry.normalizedName}|${entry.normalizedTeam}`);
-  if (exact) return exact;
+  const exact = indexes.byNameTeam.get(`${entry.normalizedName}|${entry.normalizedTeam}`) ?? [];
+  if (exact.length === 1) return exact[0];
 
   const nameMatches = indexes.byName.get(entry.normalizedName) ?? [];
-  if (nameMatches.length === 1) return nameMatches[0];
+  const nameMatch = onlyUniqueMatch(nameMatches);
+  if (nameMatch) return nameMatch;
+
+  const noSuffixMatches = indexes.byNameNoSuffix.get(entry.normalizedNameNoSuffix) ?? [];
+  const noSuffixMatch = onlyUniqueMatch(noSuffixMatches);
+  if (noSuffixMatch) return noSuffixMatch;
+
+  const compactMatches = indexes.byCompactName.get(entry.compactName) ?? [];
+  const compactMatch = onlyUniqueMatch(compactMatches);
+  if (compactMatch) return compactMatch;
+
   return null;
 }
 
@@ -544,11 +627,65 @@ export const ROOKIE_PRODUCTION_2026 = ${body};
 `;
 }
 
+function findGeneratedStatLoss(existingProduction, nextProduction) {
+  if (!existingProduction) return [];
+
+  const losses = [];
+  for (const [playerId, existingEntry] of Object.entries(existingProduction)) {
+    const existingStats = existingEntry?.collegeStats ?? {};
+    const nextStats = nextProduction[playerId]?.collegeStats ?? {};
+
+    for (const [field, value] of Object.entries(existingStats)) {
+      if (value == null) continue;
+      if (nextStats[field] == null) {
+        losses.push({ playerId, field });
+      }
+    }
+  }
+
+  return losses;
+}
+
+function isLikelyNoStatMissing(item) {
+  return (
+    ['OL', 'ST'].includes(item.positionGroup)
+    || String(item.college ?? '').includes('/IPP')
+    || LIKELY_EXTERNAL_PRODUCTION_COLLEGES.has(item.college)
+  );
+}
+
+function lastNameKey(name) {
+  const parts = nameNoSuffixKey(name).split(' ').filter(Boolean);
+  return parts.at(-1) ?? '';
+}
+
+function firstInitialKey(name) {
+  return nameNoSuffixKey(name).charAt(0);
+}
+
+function findUnmatchedCandidates(item, unmatched) {
+  const lastName = lastNameKey(item.name);
+  const firstInitial = firstInitialKey(item.name);
+  if (!lastName || !firstInitial) return [];
+
+  return unmatched
+    .filter((entry) => (
+      lastNameKey(entry.player) === lastName
+      && firstInitialKey(entry.player) === firstInitial
+    ))
+    .slice(0, 5);
+}
+
 function summarize({ matched, unmatched, missing, output, dryRun }) {
+  const likelyNoStatMissing = missing.filter(isLikelyNoStatMissing);
+  const actionableMissing = missing.filter((item) => !isLikelyNoStatMissing(item));
+
   console.log(`Scout production import ${dryRun ? 'dry run' : 'complete'}`);
   console.log(`Matched prospects: ${matched.length}`);
   console.log(`Unmatched production rows: ${unmatched.length}`);
   console.log(`Prospects missing production: ${missing.length}`);
+  console.log(`Actionable missing production: ${actionableMissing.length}`);
+  console.log(`Likely no-stat or external-source production missing: ${likelyNoStatMissing.length}`);
   console.log(`Output path: ${output}`);
 
   if (unmatched.length) {
@@ -558,9 +695,33 @@ function summarize({ matched, unmatched, missing, output, dryRun }) {
     }
   }
 
-  if (missing.length) {
-    console.log('\nProspects missing production:');
-    for (const item of missing.slice(0, 20)) {
+  if (actionableMissing.length) {
+    console.log('\nActionable missing production:');
+    for (const item of actionableMissing.slice(0, 40)) {
+      console.log(`- ${item.name} (${item.position}, ${item.college})`);
+    }
+
+    const candidateGroups = actionableMissing
+      .map((item) => ({
+        item,
+        candidates: findUnmatchedCandidates(item, unmatched),
+      }))
+      .filter((group) => group.candidates.length);
+
+    if (candidateGroups.length) {
+      console.log('\nPotential unmatched rows for actionable misses:');
+      for (const group of candidateGroups) {
+        console.log(`- ${group.item.name} (${group.item.college})`);
+        for (const candidate of group.candidates) {
+          console.log(`  - ${candidate.player} (${candidate.team || 'unknown team'})`);
+        }
+      }
+    }
+  }
+
+  if (likelyNoStatMissing.length) {
+    console.log('\nLikely no-stat or external-source production misses (OL/ST/IPP/small school):');
+    for (const item of likelyNoStatMissing.slice(0, 20)) {
       console.log(`- ${item.name} (${item.position}, ${item.college})`);
     }
   }
@@ -656,6 +817,20 @@ async function main() {
   });
 
   if (!args.dryRun) {
+    const existingProduction = await loadExistingProduction(args.output);
+    const losses = findGeneratedStatLoss(existingProduction, generated);
+    if (losses.length && !args.allowStatLoss) {
+      const examples = losses
+        .slice(0, 20)
+        .map((loss) => `- ${loss.playerId}.${loss.field}`)
+        .join('\n');
+      throw new Error(
+        `Refusing to write ${args.output} because ${losses.length} existing generated stat fields would be removed.\n`
+        + `${examples}\n`
+        + 'Rerun with the missing years/categories, or pass --allow-stat-loss if this removal is intentional.',
+      );
+    }
+
     writeFileSync(args.output, output);
   }
 

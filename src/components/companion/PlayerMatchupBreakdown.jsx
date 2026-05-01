@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useSleeperBase } from '../../context/SleeperContext';
 import { useTheme } from '../../context/ThemeContext';
-import { DEFAULT_SCORING, STAT_TO_SCORING_KEY } from '../../utils/scoringEngine';
+import { calcPoints, DEFAULT_SCORING, STAT_TO_SCORING_KEY } from '../../utils/scoringEngine';
 import { formatWeather } from '../../api/weatherApi';
 import { getTeamPalette } from '../../data/teamColors.js';
 import useBodyScrollLock from '../../hooks/useBodyScrollLock';
@@ -202,6 +202,98 @@ export const STAT_LABELS = {
   yds_allow_550p:    '550+ Yards Allowed',
 };
 
+const POINT_EPSILON = 0.005;
+
+function roundPoints(value) {
+  return Math.round(Number(value) * 100) / 100;
+}
+
+function addBreakdownRow(rows, { statKey, label, statVal, pts }) {
+  if (!Number.isFinite(pts) || Math.abs(pts) < POINT_EPSILON) return;
+  rows.push({
+    statKey,
+    label,
+    statVal,
+    pts: roundPoints(pts),
+  });
+}
+
+function buildFantasyBreakdownRows(weekEntry, settings, position, authoritativeTotal) {
+  const rows = [];
+  const seen = new Set();
+
+  for (const [statKey, scoringKey] of Object.entries(STAT_TO_SCORING_KEY)) {
+    if (seen.has(scoringKey)) continue;
+    const statVal = weekEntry[statKey];
+    if (!statVal) continue;
+    const multiplier = settings[scoringKey] ?? 0;
+    if (multiplier === 0) continue;
+    seen.add(scoringKey);
+    addBreakdownRow(rows, {
+      statKey,
+      label: STAT_LABELS[statKey] ?? STAT_LABELS[scoringKey] ?? statKey,
+      statVal,
+      pts: Number(statVal) * multiplier,
+    });
+  }
+
+  if (position && weekEntry.rec) {
+    const rec = Number(weekEntry.rec);
+    if (position === 'TE' && settings.bonus_rec_te) {
+      addBreakdownRow(rows, { statKey: 'bonus_rec_te', label: 'TE Reception Bonus', statVal: rec, pts: rec * settings.bonus_rec_te });
+    }
+    if (position === 'RB' && settings.bonus_rec_rb) {
+      addBreakdownRow(rows, { statKey: 'bonus_rec_rb', label: 'RB Reception Bonus', statVal: rec, pts: rec * settings.bonus_rec_rb });
+    }
+    if (position === 'WR' && settings.bonus_rec_wr) {
+      addBreakdownRow(rows, { statKey: 'bonus_rec_wr', label: 'WR Reception Bonus', statVal: rec, pts: rec * settings.bonus_rec_wr });
+    }
+  }
+
+  if (position === 'RB' && weekEntry.rush_att && settings.bonus_rush_att) {
+    const rushAtt = Number(weekEntry.rush_att);
+    addBreakdownRow(rows, { statKey: 'bonus_rush_att', label: 'Carry Bonus', statVal: rushAtt, pts: rushAtt * settings.bonus_rush_att });
+  }
+
+  if (position === 'QB' && settings.bonus_fd_qb) {
+    const firstDowns = Number(weekEntry.pass_fd ?? 0) + Number(weekEntry.rush_fd ?? 0);
+    addBreakdownRow(rows, { statKey: 'bonus_fd_qb', label: 'QB First Down Bonus', statVal: firstDowns, pts: firstDowns * settings.bonus_fd_qb });
+  }
+  if (position === 'RB' && settings.bonus_fd_rb) {
+    const firstDowns = Number(weekEntry.rush_fd ?? 0) + Number(weekEntry.rec_fd ?? 0);
+    addBreakdownRow(rows, { statKey: 'bonus_fd_rb', label: 'RB First Down Bonus', statVal: firstDowns, pts: firstDowns * settings.bonus_fd_rb });
+  }
+  if (position === 'WR' && weekEntry.rec_fd && settings.bonus_fd_wr) {
+    const firstDowns = Number(weekEntry.rec_fd);
+    addBreakdownRow(rows, { statKey: 'bonus_fd_wr', label: 'WR First Down Bonus', statVal: firstDowns, pts: firstDowns * settings.bonus_fd_wr });
+  }
+  if (position === 'TE' && weekEntry.rec_fd && settings.bonus_fd_te) {
+    const firstDowns = Number(weekEntry.rec_fd);
+    addBreakdownRow(rows, { statKey: 'bonus_fd_te', label: 'TE First Down Bonus', statVal: firstDowns, pts: firstDowns * settings.bonus_fd_te });
+  }
+
+  const rowTotal = roundPoints(rows.reduce((sum, row) => sum + row.pts, 0));
+  const adjustment = roundPoints(authoritativeTotal - rowTotal);
+
+  if (rows.length === 0 && Math.abs(authoritativeTotal) >= POINT_EPSILON) {
+    addBreakdownRow(rows, {
+      statKey: 'sleeper_points_total',
+      label: 'Sleeper Scoring Total',
+      statVal: null,
+      pts: authoritativeTotal,
+    });
+  } else if (Math.abs(adjustment) >= 0.01) {
+    addBreakdownRow(rows, {
+      statKey: 'scoring_adjustment',
+      label: 'Scoring Adjustment',
+      statVal: null,
+      pts: adjustment,
+    });
+  }
+
+  return rows.sort((a, b) => b.pts - a.pts);
+}
+
 function ProjectionMath({ baseAvg, factors, projected, projMin, projMax, oppTeam, locationStr, weatherStr, defLabel }) {
   function fc(f) {
     if (f > 1.02) return '#22c55e';
@@ -397,27 +489,16 @@ export default function PlayerMatchupBreakdown({ playerId, week, projection, enr
   const heroOnBgMuted = heroOnBg === '#FFFFFF' ? 'rgba(255,255,255,0.65)' : 'rgba(12,15,20,0.60)';
   const weekEntry = weeklyStats?.[playerId]?.find(w => w.week === week) ?? null;
 
-  const breakdown = useMemo(() => {
-    if (!weekEntry) return [];
+  const { breakdown, total } = useMemo(() => {
+    if (!weekEntry) return { breakdown: [], total: 0 };
     const settings = { ...DEFAULT_SCORING, ...activeScoringSettings };
-    const seen = new Set();
-
-    return Object.entries(STAT_TO_SCORING_KEY)
-      .flatMap(([statKey, scoringKey]) => {
-        if (seen.has(scoringKey)) return [];
-        const statVal = weekEntry[statKey];
-        if (!statVal) return [];
-        const multiplier = settings[scoringKey] ?? 0;
-        if (multiplier === 0) return [];
-        seen.add(scoringKey);
-        const label = STAT_LABELS[statKey] ?? STAT_LABELS[scoringKey] ?? statKey;
-        const pts = Math.round(statVal * multiplier * 100) / 100;
-        return [{ label, statKey, statVal, multiplier, pts }];
-      })
-      .sort((a, b) => b.pts - a.pts);
-  }, [weekEntry, activeScoringSettings]);
-
-  const total = Math.round(breakdown.reduce((s, r) => s + r.pts, 0) * 100) / 100;
+    const position = player?.position ?? enrichedPlayer?.position ?? null;
+    const nextTotal = calcPoints(weekEntry, settings, position);
+    return {
+      breakdown: buildFantasyBreakdownRows(weekEntry, settings, position, nextTotal),
+      total: nextTotal,
+    };
+  }, [weekEntry, activeScoringSettings, player?.position, enrichedPlayer?.position]);
   const projectedScore = projection?.projected ?? null;
   const diff = projectedScore !== null ? Math.round((total - projectedScore) * 10) / 10 : null;
   const metProjection = diff !== null ? diff >= 0 : null;
@@ -741,7 +822,7 @@ export default function PlayerMatchupBreakdown({ playerId, week, projection, enr
                   >
                     <span className="flex-1 text-sm" style={{ color: 'var(--color-label)' }}>{row.label}</span>
                     <span className="w-14 text-right text-sm tabular-nums" style={{ color: 'var(--color-label-secondary)' }}>
-                      {Number.isInteger(row.statVal) ? row.statVal : row.statVal.toFixed(1)}
+                      {row.statVal == null ? '—' : Number.isInteger(row.statVal) ? row.statVal : row.statVal.toFixed(1)}
                     </span>
                     <span
                       className="w-16 text-right text-sm font-semibold tabular-nums"

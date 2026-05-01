@@ -92,7 +92,7 @@ function LeagueContextHeader({
   const years = seasonOptions?.length ? seasonOptions : [String(league?.season ?? season)];
 
   return (
-    <div className={className ?? 'flex items-center gap-2 mb-3 px-4'}>
+    <div className={className ?? 'flex items-center gap-2 mt-3 mb-3 px-4'}>
       <div className="flex-1 min-w-0">
         <span className="text-xs font-semibold truncate" style={{ color: 'var(--color-label-secondary)' }}>
           {league?.name ?? 'League'}
@@ -533,7 +533,7 @@ function AppInner() {
 
         {/* Companion sub-navigation */}
         {activeTab === 'companion' && hasLeague && (
-          <div className="season-subnav" style={{ position: 'relative' }}>
+          <div className="season-subnav league-subnav" style={{ position: 'relative' }}>
             <CompanionSubNav activeView={companionView} onViewChange={navigateCompanionView} />
             {/* Mobile: league header frozen below tabs */}
             <div className="lg:hidden">
@@ -560,7 +560,7 @@ function AppInner() {
         )}
 
         {activeTab === 'trade' && hasLeague && (
-          <div className="season-subnav" style={{ position: 'relative' }}>
+          <div className="season-subnav league-subnav" style={{ position: 'relative' }}>
             <TradeSubNav activeView={tradeView} onViewChange={navigateTradeView} onViewIntent={prewarmTradeView} />
             {/* Mobile: league header frozen below tabs */}
             <div className="lg:hidden">

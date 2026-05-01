@@ -961,3 +961,17 @@ All notable changes, oldest first. Add new entries at the bottom.
 - **Scout prospect profile smooth sticky** — Desktop prospect profile panel converted from JS-driven `position: fixed` + scroll-event tracking (which caused a visible one-frame bounce) to native CSS `position: sticky`, eliminating the lag entirely.
 - **IDP yardage stat labels fixed** — Companion → Matchup player drilldown now shows human-readable labels for IDP yardage stats (`idp_int_ret_yd`, `idp_sack_yd`, `idp_fr_yd`) instead of raw Sleeper stat keys.
 - **Trade modal consistency** — TradePickPicker and TradeRosterPicker modals converted to the shared Modal component for consistent backdrop, scroll lock, and centering.
+
+---
+
+## v7.0.7 - Post-Draft nflverse Enrichment
+*2026-05-01*
+
+- **Verified draft results layer** - Added `scripts/scout-nflverse-update.mjs` to import the public nflverse `draft_picks.csv`, normalize Scout prospect matches, and write verified post-draft slot data into `src/data/draftResults.js`.
+- **Draft results data refreshed** - Rebuilt `draftResults.js` from the post-draft source so Scout can merge round, pick, overall, NFL team, player, position, and college data over the curated rookie board at runtime.
+- **Scout docs updated** - Documented the nflverse post-draft enrichment workflow and clarified that `rookies.js` remains the curated prospect identity source while verified draft-team data belongs in `draftResults.js`.
+- **College production import safety** - Strengthened the CFBD season-production importer with broader name matching, alias handling, actionable missing-production reports, and a guard that blocks accidental generated-stat loss unless `--allow-stat-loss` is explicitly passed.
+- **Scout statistics modal cleanup** - Split season production, game summaries, and week-by-week logs into clearer sections, with career college totals shown from available generated production and incomplete game-log coverage labeled plainly.
+- **Scout list and panel polish** - Removed the cramped production column from prospect rows, tightened Scout scrollbars, adjusted mobile league subnav spacing, and kept prospect rows focused on identity, draft status, tier, and actions.
+- **Statistics team cards resize more safely** - Team browser cards now use responsive text sizing and smaller compact layouts so long city/nickname combinations avoid clipping on narrow cards.
+- **Matchup drilldown scoring alignment** - Companion → Matchup player drilldowns now derive totals through the shared `calcPoints()` engine, include position-specific bonus rows and fallback scoring adjustments, and stay aligned with displayed matchup row totals.

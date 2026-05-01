@@ -189,7 +189,7 @@ CFBD_API_KEY=... node scripts/import-scout-production.mjs --year 2024,2025 --dry
 CFBD_API_KEY=... node scripts/import-scout-game-logs.mjs --year 2023,2024,2025
 ```
 
-The script fetches `/stats/player/season` for offensive, defensive, turnover, kicking, punting, and return categories by default using `Authorization: Bearer <key>`, normalizes player names and college/team names, matches rows to records in `ROOKIES_2026`, and writes `src/data/rookieProduction.generated.js`. The generated file is a static data artifact consumed by `src/data/rookies.js`; it contains no secrets and does not mutate curated rookie records.
+The script fetches `/stats/player/season` for offensive, defensive, turnover, kicking, punting, and return categories by default using `Authorization: Bearer <key>`, normalizes player names and college/team names, matches rows to records in `ROOKIES_2026`, and writes `src/data/rookieProduction.generated.js`. Within one import, stats are additive across requested years and matched teams. Before a real write, the importer compares the new artifact to the existing generated file and refuses to overwrite if any existing generated player/stat field would disappear; use `--allow-stat-loss` only when a removal is intentional. The generated file is a static data artifact consumed by `src/data/rookies.js`; it contains no secrets and does not mutate curated rookie records.
 
 `rookies.js` merges generated `collegeStats` conservatively: curated non-null stat fields win and generated values fill missing fields. Scout renders fantasy production for QB/RB/WR/TE, defensive production for DL/LB/DB, and kicking/punting/return production for ST. Offensive linemen usually do not receive meaningful individual CFBD player-season production; keep OL cards tolerant of missing stats unless a separate verified source is added for starts, snaps, pressures, or sacks allowed.
 
@@ -221,6 +221,19 @@ Generated modal shape:
 ```
 
 If generated logs are missing for a player, the modal renders an empty state instead of making a browser request.
+
+## Post-Draft nflverse Enrichment
+
+After the NFL Draft concludes, run the nflverse update helper to replace temporary/user-reported draft results with the verified public draft feed.
+
+```bash
+node scripts/scout-nflverse-update.mjs
+node scripts/scout-nflverse-update.mjs --write
+```
+
+The script reads `https://github.com/nflverse/nflverse-data/releases/download/draft_picks/draft_picks.csv`, filters the configured season, normalizes player names, and matches rows against `ROOKIES_2026`. The default run is a dry run that reports matched, unmatched, and ambiguous rows. `--write` updates `src/data/draftResults.js`, which Scout merges over the curated rookie board at runtime. Prefer fixing unmatched or ambiguous rows before writing; `--allow-partial` is only for deliberate partial imports after review.
+
+`rookies.js` should remain the curated prospect identity board. Verified post-draft slot/team data belongs in `draftResults.js` unless a hand-curated player identity field also needs correction.
 
 ---
 

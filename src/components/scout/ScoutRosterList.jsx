@@ -9,7 +9,6 @@ import {
   combineStatusColor,
   getCombineStatusDescription,
   getTierDescription,
-  getCollegeProductionSummary,
 } from './scoutUtils';
 import { nflLogoUrl, collegeLogoUrl } from './scoutTeamLogos';
 import { buildCollegeRowGradient, getCollegePalette, getCollegeForegrounds } from '../../data/collegeColors';
@@ -17,14 +16,6 @@ import { buildCollegeRowGradient, getCollegePalette, getCollegeForegrounds } fro
 function isDarkMode() {
   if (typeof document === 'undefined') return false;
   return document.documentElement.classList.contains('dark');
-}
-
-function CollegeStatSummary({ player }) {
-  const summary = getCollegeProductionSummary(player);
-  if (summary) return <span className="scout-row-stat-text">{summary}</span>;
-  return player.nflGrade != null
-    ? <span className="scout-row-stat-text">NFL {player.nflGrade.toFixed(2)}</span>
-    : <span className="scout-row-no-stats">—</span>;
 }
 
 function CompareButton({ player, compareAId, onCompare }) {
@@ -106,8 +97,8 @@ function RosterRow({ player, isSelected, compareAId, onSelectPlayer, onCompare, 
     : null;
   // Per-side foregrounds: --scout-row-fg-left covers elements over the
   // secondary half of the gradient (rank, name, college, combine chip);
-  // --scout-row-fg-right covers elements over the primary half (stats,
-  // selection metadata). --scout-row-fg keeps the left value as a default
+  // --scout-row-fg-right covers elements over the primary half (selection
+  // metadata). --scout-row-fg keeps the left value as a default
   // for any inherited text we haven't tagged explicitly.
   const teamFgs = useTeamColors ? getCollegeForegrounds(player.college, dark) : null;
 
@@ -179,14 +170,6 @@ function RosterRow({ player, isSelected, compareAId, onSelectPlayer, onCompare, 
         </div>
       </div>
 
-      {/* Production — hidden on compact phones */}
-      <div className="scout-row-stats">
-        <CollegeStatSummary player={player} />
-        {player.combine?.fortyYard != null && (
-          <div className="scout-row-forty">{player.combine.fortyYard.toFixed(2)}s 40</div>
-        )}
-      </div>
-
       {/* Tier badge — shown at sm+ */}
       <span
         className="scout-tier-badge"
@@ -217,7 +200,6 @@ export default function ScoutRosterList({ players, selectedPlayerId, compareAId,
         <span className="scout-list-header-rank">#</span>
         <span style={{ width: 40, flexShrink: 0 }} />
         <span className="scout-list-header-label">Prospect</span>
-        <span className="scout-list-header-prod scout-row-stats">Production</span>
         <span style={{ width: 28, flexShrink: 0 }} aria-hidden="true" />
       </div>
 
