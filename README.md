@@ -19,6 +19,7 @@ An interactive web app for the 2026 NFL season — with full Sleeper fantasy lea
 - **Fantasy Matchup View** — Head-to-head starter comparison with week-by-week points, projections, positional rankings, weather context, and game location
 - **Player Projections** — Min/max/projected ranges using a recent-weighted blend of form and season average, factoring opponent strength, home/away, weather, and snap % trend
 - **Heatmap** — 32-team grid of fantasy points allowed or scored per position per week; three scope modes, Vegas spread/O/U overlay, location filter, and per-cell player drilldowns
+- **Trade Agent & Upgrades** — Build trades with roster shelves, draft picks, value context, drag-and-drop actions, and guided upgrade suggestions
 - **Scout (Alpha)** — Rookie scouting hub with 2026 prospects, all-position filters, draft-status handling, combine metrics, and side-by-side prospect comparison
 - **Scoring Breakdowns** — Drill into any player or full team score to see a stat-by-stat fantasy point breakdown
 - **Favorite Team Theming** — Pick your favorite NFL team to theme the app; accent color applies across nav, progress bar, and filter toggles
@@ -86,21 +87,20 @@ npm run validate:routing
 | PWA | vite-plugin-pwa + Workbox |
 | Production serving | nginx (Docker) |
 
-## What's New in v7.0.7
+## What's New in v7.1.0
 
-- **Post-draft nflverse enrichment** - Scout now has a helper that imports the public nflverse draft-picks feed and writes verified round, pick, team, position, and college data into the static draft results layer.
-- **Verified draft data refreshed** - `src/data/draftResults.js` now carries the post-draft results that Scout merges over the curated rookie board at runtime.
-- **College production importer hardened** - CFBD production imports have stronger name matching, clearer missing-production reporting, and a guard against accidentally deleting generated stat fields.
-- **Scout statistics cleanup** - Prospect stat modals now separate season production, game summaries, and week-by-week logs with plainer empty states.
-- **Matchup scoring fix** - Companion → Matchup drilldowns now use the shared scoring engine, including position bonuses and adjustment rows, so drilldown totals match displayed player totals.
+- **Trade Agent redesign** - Side-by-side trade plates now pair with roster shelves, pick access, clearer partner selection, drag-and-drop actions, and stronger value context.
+- **Upgrades flow rebuilt** - Upgrade targets, outgoing-package suggestions, bargaining-table results, and apply-to-Agent handoff now feel like one cohesive workflow.
+- **Trade cards and modals polished** - Shared modal centering, card sizing, team/player contrast, and compact guide copy reduce clipping and repeated instructional text.
+- **Trade engine tuned** - Pick-inclusive ideas, package depth checks, upgrade values, and explanations were adjusted so generated proposals better match roster context.
 
 For the full version history, see [CHANGELOG.md](CHANGELOG.md).
 
 ## Roadmap
 
-- **v7.1 - Trade Module Decomposition** - Split the largest Trade components and engines into focused modules for lower maintenance cost.
 - **v7.2 - Statistics / Fantasy Drilldown Unification** - One canonical player-analysis destination with mode-aware drilldowns across Statistics and Companion.
 - **v7.3 - Scout Rookie Projection Layer** - Add next-season rookie projections that work for standard and IDP-focused draft prep without overloading the current Scout board.
+- **v7.4 - Trade Module Decomposition** - Split the largest Trade components and engines into focused modules for lower maintenance cost.
 - **v8.0 - ESPN League Integration** - Planned major integration track.
 - **v9.0 - Live Fantasy Scoring** - Planned live scoring track.
 - **Week-by-Week View** *(blocked on 2026 schedule data)* — Browse the full schedule by week with predictions reflected

@@ -975,3 +975,13 @@ All notable changes, oldest first. Add new entries at the bottom.
 - **Scout list and panel polish** - Removed the cramped production column from prospect rows, tightened Scout scrollbars, adjusted mobile league subnav spacing, and kept prospect rows focused on identity, draft status, tier, and actions.
 - **Statistics team cards resize more safely** - Team browser cards now use responsive text sizing and smaller compact layouts so long city/nickname combinations avoid clipping on narrow cards.
 - **Matchup drilldown scoring alignment** - Companion → Matchup player drilldowns now derive totals through the shared `calcPoints()` engine, include position-specific bonus rows and fallback scoring adjustments, and stay aligned with displayed matchup row totals.
+
+---
+
+## v7.1.0 - Trade Agent & Upgrades UX Redesign
+*2026-05-02*
+
+- **Trade Agent redesigned** - Reworked the core trade-building surface with clearer side-by-side plates, roster shelves, pick access, partner selection, drag-and-drop actions, and stronger value context.
+- **Trade Upgrades rebuilt** - Added a more cohesive upgrade workflow with target selection, outgoing-package suggestions, bargaining-table results, and smoother apply-to-Agent handoff.
+- **Trade cards and modals polished** - Improved shared modal centering, proposal-card sizing, player/team contrast, compact guide copy, and responsive treatment across Trade surfaces.
+- **Trade engine tuned** - Adjusted pick-inclusive proposal selection, package-depth checks, upgrade valuation, and explanation wording so suggestions better reflect roster context.
