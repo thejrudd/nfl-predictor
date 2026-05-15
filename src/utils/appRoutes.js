@@ -16,8 +16,10 @@ function getDefaultActiveTab() {
 const PREDICTIONS_VIEWS = new Set(['predictions', 'standings', 'playoffs']);
 const COMPANION_VIEWS = new Set(['roster', 'rankings', 'matchup', 'waiver', 'league', 'heatmap', 'defense', 'scoring']);
 const TRADE_VIEWS = new Set(['agent', 'intelligence', 'upgrade']);
-const STATISTICS_VIEWS = new Set(['browser', 'team', 'player']);
+const STATISTICS_VIEWS = new Set(['browser', 'team', 'player', 'schedule', 'game']);
 const STATISTICS_MODES = new Set(['game', 'fantasy', 'visual']);
+const STATISTICS_SCHEDULE_MODES = new Set(['week', 'team']);
+const STATISTICS_SCHEDULE_FILTERS = new Set(['international', 'primetime', 'holiday']);
 const SCOUT_VIEWS = new Set(['prospects', 'picks', 'results']);
 
 function normalizeCompanionView(view) {
@@ -35,6 +37,11 @@ const DEFAULT_ROUTE = {
   statisticsPlayerId: null,
   statisticsPlayerSlug: null,
   statisticsMode: 'game',
+  statisticsGameId: null,
+  statisticsScheduleMode: null,
+  statisticsScheduleWeek: null,
+  statisticsScheduleTeamId: null,
+  statisticsScheduleFilter: null,
   companionView: 'roster',
   rankingsPosition: null,
   rankingsRosterId: null,
@@ -182,6 +189,35 @@ export function normalizeAppRoute(route = {}) {
     const statisticsPlayerId = normalizePlayerId(route.statisticsPlayerId);
     const statisticsPlayerSlug = sanitizeSlug(route.statisticsPlayerSlug);
     const statisticsMode = normalizeStatisticsMode(route.statisticsMode);
+    const statisticsGameId = normalizePlayerId(route.statisticsGameId);
+    const legacyScheduleFilter = normalizeLowerToken(route.statisticsScheduleMode, STATISTICS_SCHEDULE_FILTERS);
+    const explicitScheduleFilter = normalizeLowerToken(route.statisticsScheduleFilter, STATISTICS_SCHEDULE_FILTERS);
+    const statisticsScheduleMode = normalizeLowerToken(route.statisticsScheduleMode, STATISTICS_SCHEDULE_MODES)
+      ?? (legacyScheduleFilter || explicitScheduleFilter ? 'week' : null);
+    const statisticsScheduleWeek = normalizeWeek(route.statisticsScheduleWeek);
+    const statisticsScheduleTeamId = normalizeTeamId(route.statisticsScheduleTeamId);
+    const statisticsScheduleFilter = explicitScheduleFilter ?? legacyScheduleFilter;
+
+    if (statisticsView === 'schedule') {
+      return {
+        ...DEFAULT_ROUTE,
+        activeTab: 'statistics',
+        statisticsView: 'schedule',
+        statisticsScheduleMode,
+        statisticsScheduleWeek,
+        statisticsScheduleTeamId,
+        statisticsScheduleFilter,
+      };
+    }
+
+    if (statisticsView === 'game' && statisticsGameId) {
+      return {
+        ...DEFAULT_ROUTE,
+        activeTab: 'statistics',
+        statisticsView: 'game',
+        statisticsGameId,
+      };
+    }
 
     if (statisticsView === 'player' && statisticsPlayerId) {
       return {
@@ -329,6 +365,23 @@ export function parseAppRoute(pathname = '/', search = '') {
           statisticsMode: parseQueryValue(searchParams, 'mode'),
         });
       }
+      if (statisticsSubview === 'schedule') {
+        return normalizeAppRoute({
+          activeTab: 'statistics',
+          statisticsView: 'schedule',
+          statisticsScheduleMode: parseQueryValue(searchParams, 'mode'),
+          statisticsScheduleWeek: parseQueryValue(searchParams, 'week'),
+          statisticsScheduleTeamId: parseQueryValue(searchParams, 'team'),
+          statisticsScheduleFilter: parseQueryValue(searchParams, 'filter'),
+        });
+      }
+      if (statisticsSubview === 'game') {
+        return normalizeAppRoute({
+          activeTab: 'statistics',
+          statisticsView: 'game',
+          statisticsGameId: statisticsParam,
+        });
+      }
       return normalizeAppRoute({ activeTab: 'statistics', statisticsView: 'browser' });
     }
     case 'companion':
@@ -393,6 +446,17 @@ export function buildAppPath(route) {
 
   switch (normalized.activeTab) {
     case 'statistics':
+      if (normalized.statisticsView === 'schedule') {
+        return `/statistics/schedule${buildQueryString([
+          ['mode', normalized.statisticsScheduleMode],
+          ['week', normalized.statisticsScheduleMode === 'week' ? normalized.statisticsScheduleWeek : null],
+          ['team', normalized.statisticsScheduleMode === 'team' ? normalized.statisticsScheduleTeamId : null],
+          ['filter', normalized.statisticsScheduleFilter],
+        ])}`;
+      }
+      if (normalized.statisticsView === 'game' && normalized.statisticsGameId) {
+        return `/statistics/game/${encodeURIComponent(normalized.statisticsGameId)}`;
+      }
       if (normalized.statisticsView === 'team' && normalized.statisticsTeamId) {
         return `/statistics/team/${encodeURIComponent(normalized.statisticsTeamId.toLowerCase())}`;
       }
@@ -496,6 +560,11 @@ export function isSameAppRoute(a, b) {
     && left.statisticsPlayerId === right.statisticsPlayerId
     && left.statisticsPlayerSlug === right.statisticsPlayerSlug
     && left.statisticsMode === right.statisticsMode
+    && left.statisticsGameId === right.statisticsGameId
+    && left.statisticsScheduleMode === right.statisticsScheduleMode
+    && left.statisticsScheduleWeek === right.statisticsScheduleWeek
+    && left.statisticsScheduleTeamId === right.statisticsScheduleTeamId
+    && left.statisticsScheduleFilter === right.statisticsScheduleFilter
     && left.companionView === right.companionView
     && left.rankingsPosition === right.rankingsPosition
     && left.rankingsRosterId === right.rankingsRosterId

@@ -1,110 +1,226 @@
-import { useEffect } from 'react';
+import Modal from './Modal';
 
 const GUIDE_CONTENT = {
-  predictions: {
-    title: 'HOW TO PREDICT',
+  predictions_picks: {
+    title: 'PICKS',
     steps: [
       {
-        title: 'Pick a Team',
-        description: 'Tap any team from the division cards to open the prediction editor for that team.',
+        title: 'Pick a mode',
+        description: 'Predict Record edits wins and division wins by team. Advanced Mode opens a team schedule for game-by-game W/L/T picks.',
       },
       {
-        title: 'Set the Record',
-        description: 'Use the record controls to set wins, losses, and ties — or toggle individual game outcomes for more precision.',
+        title: 'Balance the season',
+        description: 'Quick records keep division records possible; saved game picks sync the opponent result automatically.',
       },
       {
-        title: 'Auto-Sync',
-        description: "Predictions sync with opponents automatically. If you pick Team A to beat Team B, Team B's schedule updates with that loss.",
+        title: 'Watch progress',
+        description: 'The sidebar and mobile header track completed teams and games. Standings and Playoffs update from the records you enter.',
       },
       {
-        title: 'Track Progress',
-        description: 'The progress bar shows how many of the 32 teams you\'ve predicted so far.',
-      },
-      {
-        title: 'Stay Valid',
-        description: 'A green "Valid" badge appears when the league balances — exactly 272 total wins across all teams.',
-      },
-      {
-        title: 'View Results',
-        description: 'Switch to the Standings or Playoffs tabs to see projected division rankings and the playoff bracket.',
-      },
-      {
-        title: 'Save & Share',
-        description: 'Export your predictions as a JSON file to save them, or import a previously saved file to restore your picks.',
-      },
-    ],
-  },
-  statistics: {
-    title: 'HOW TO USE STATISTICS',
-    steps: [
-      {
-        title: 'Browse by Division',
-        description: 'Teams are organized by conference and division. Scroll through to find any team in the league.',
-      },
-      {
-        title: 'Open a Team Page',
-        description: 'Tap any team card to view their projected starters, full roster, and franchise history.',
-      },
-      {
-        title: 'Projected Starters',
-        description: 'Use the Offense, Defense, and Special Teams tabs to scan likely starters by unit.',
-      },
-      {
-        title: 'Full Roster',
-        description: 'Scroll down to see the complete roster organized by position group. Tap any group to expand it.',
-      },
-      {
-        title: 'Player Profiles',
-        description: 'Tap any player to view their detailed profile, including position, experience, and headshot.',
-      },
-    ],
-  },
-  scout: {
-    title: 'HOW TO USE SCOUT',
-    steps: [
-      {
-        title: 'Start with Projected Pick',
-        description: 'Scout defaults to Projected Pick so the list opens in a draft-order view rather than a pure talent-board view.',
-      },
-      {
-        title: 'Filter the Class',
-        description: 'Use the position chips to focus on a single position group or to limit to Offense or Defense. Combine Data keeps only prospects with verified drill results, not measured-only players.',
-      },
-      {
-        title: 'Understand the Labels',
-        description: 'Projected Pick is the current pre-draft order, Prospect Rank is the overall board placement, and combine labels like Tested or Measured Only show how much verified event data is loaded.',
-      },
-      {
-        title: 'Read the Tiers',
-        description: 'Elite marks blue-chip prospects, Starter marks players with a realistic NFL starting path, and Rotational marks role-player or depth contributors.',
-      },
-      {
-        title: 'Open a Prospect Card',
-        description: 'Tap any player to see projected pick, prospect rank, scouting tier, college production, and combine results in one place.',
-      },
-      {
-        title: 'Compare Players',
-        description: 'Use the compare control on any row to stack two prospects side by side across draft, production, and combine data.',
+        title: 'Save your work',
+        description: 'Use Actions to export predictions as JSON, import a saved file, randomize picks, or reset the season.',
       },
     ],
   },
 
-  // ── Companion — per sub-tab ───────────────────────────────────────────────
+  predictions_standings: {
+    title: 'STANDINGS',
+    steps: [
+      {
+        title: 'Read the divisions',
+        description: 'Teams are ranked inside each division from your current predictions, with record and division record shown together.',
+      },
+      {
+        title: 'Fix a ranking',
+        description: 'Return to Picks to change a team record or game picks. Standings recalculate immediately.',
+      },
+      {
+        title: 'Set playoff context',
+        description: 'Division winners and wild cards feed the Playoffs tab once predicted records exist.',
+      },
+    ],
+  },
+
+  predictions_playoffs: {
+    title: 'PLAYOFFS',
+    steps: [
+      {
+        title: 'Build from records',
+        description: 'Predict records in Picks first; the bracket uses the live AFC/NFC seeds from those records.',
+      },
+      {
+        title: 'Pick winners',
+        description: 'Tap a team in each matchup to advance them. Changing an earlier pick clears dependent later-round picks.',
+      },
+      {
+        title: 'Finish the bracket',
+        description: 'Choose conference champions, then select a Super Bowl winner from the final matchup.',
+      },
+    ],
+  },
+
+  statistics_browser: {
+    title: 'STATISTICS',
+    steps: [
+      {
+        title: 'Find a player or team',
+        description: 'Search by player, position, team, city, conference, or division; use position chips to narrow player results.',
+      },
+      {
+        title: 'Open teams',
+        description: 'Team cards are grouped by conference and division, then open roster, starters, franchise history, and schedule access.',
+      },
+      {
+        title: 'Open players',
+        description: 'Player rows and search results open profiles with game stats, fantasy views, visuals, and trade actions when available.',
+      },
+    ],
+  },
+
+  statistics_schedule: {
+    title: 'SCHEDULE',
+    steps: [
+      {
+        title: 'Choose view',
+        description: "View by Week shows the league slate. View by Team shows one team's full schedule and bye.",
+      },
+      {
+        title: 'Filter the slate',
+        description: 'Use week chips, the team selector, and All/International/PrimeTime/Holiday filters to narrow games.',
+      },
+      {
+        title: 'Open game stats',
+        description: 'Final games with ESPN data show a Game Stats action that opens the box-score page.',
+      },
+    ],
+  },
+
+  statistics_team: {
+    title: 'TEAM PAGE',
+    steps: [
+      {
+        title: 'Scan the team',
+        description: 'The hero shows team identity, history, and a View Schedule action when schedule data is loaded.',
+      },
+      {
+        title: 'Check starters',
+        description: 'Use Offense, Defense, and Special Teams to switch projected starter groups.',
+      },
+      {
+        title: 'Browse roster',
+        description: 'Expand position groups in Full Roster, then tap a player to open their profile.',
+      },
+    ],
+  },
+
+  statistics_player: {
+    title: 'PLAYER PAGE',
+    steps: [
+      {
+        title: 'Use hero actions',
+        description: 'Open career highlights, view the team schedule, compare the player, or build a trade when a Sleeper match exists.',
+      },
+      {
+        title: 'Switch stat modes',
+        description: 'Game Stats uses ESPN data. Fantasy Values and Visual unlock when linked Sleeper scoring and player data are available.',
+      },
+      {
+        title: 'Expand seasons',
+        description: 'Open a season or Career row to load details, game logs, honors, and fantasy scoring for that year.',
+      },
+    ],
+  },
+
+  statistics_game: {
+    title: 'GAME STATS',
+    steps: [
+      {
+        title: 'Read the matchup',
+        description: 'The hero shows teams, kickoff or status, and the final score when available.',
+      },
+      {
+        title: 'Compare box score',
+        description: 'Team Stats lists ESPN summary categories side by side for the away and home teams.',
+      },
+      {
+        title: 'Go back',
+        description: 'Use Back to Schedule to return to the schedule filters that led here.',
+      },
+    ],
+  },
+
+  scout_prospects: {
+    title: 'PROSPECTS',
+    steps: [
+      {
+        title: 'Shape the board',
+        description: 'Sort by projected pick, prospect rank, grade, dynasty ADP, combine drills, or production.',
+      },
+      {
+        title: 'Filter prospects',
+        description: 'Use position chips, Combine Data, Team Colors, and search to narrow the class.',
+      },
+      {
+        title: 'Open reports',
+        description: 'Tap a prospect for draft slot, production, combine, and profile details. Use compare on two players to view them side by side.',
+      },
+      {
+        title: 'View statistics',
+        description: 'From a prospect profile, open college statistics when production data is available.',
+      },
+    ],
+  },
+
+  scout_picks: {
+    title: 'DRAFT PICKS',
+    steps: [
+      {
+        title: 'Track slots',
+        description: 'Picks shows the live or fallback 2026 draft order grouped by round.',
+      },
+      {
+        title: 'Filter the board',
+        description: 'Use Remaining, All, round chips, and the team filter to focus the list.',
+      },
+      {
+        title: 'Open team picks',
+        description: 'Tap a pick row to see every pick currently held by that team.',
+      },
+    ],
+  },
+
+  scout_results: {
+    title: 'DRAFT RESULTS',
+    steps: [
+      {
+        title: 'Follow selections',
+        description: 'Results fills from the live feed or static results and links matched prospects back to their reports.',
+      },
+      {
+        title: 'Filter results',
+        description: 'Use position chips and team filters to isolate the picks you care about.',
+      },
+      {
+        title: 'Change order',
+        description: 'Top Picks shows draft order; Most Recent puts the newest selections first during the draft.',
+      },
+    ],
+  },
 
   companion_roster: {
     title: 'ROSTER',
     steps: [
       {
-        title: 'Your Lineup',
-        description: 'Active starters are listed at the top by position slot, bench below. Season totals, avg PPG, and positional rank are shown for each player.',
+        title: 'Read your roster',
+        description: 'Players are grouped by position with season points, average per game, status, and positional context under your scoring.',
       },
       {
-        title: 'Player Drilldown',
-        description: 'Tap any player to open their weekly breakdown, projected range for the current week, and matchup context.',
+        title: 'Open players',
+        description: 'Tap a row for the quick preview on mobile or the full Statistics profile on larger screens.',
       },
       {
-        title: 'Trade from Here',
-        description: 'Tap the Trade button on any player row to open Agent with that player pre-loaded on your side.',
+        title: 'Start trades',
+        description: 'Use Trade on a player to open Agent with that player loaded on your side.',
       },
     ],
   },
@@ -113,16 +229,20 @@ const GUIDE_CONTENT = {
     title: 'RANKINGS',
     steps: [
       {
-        title: 'League-Wide Rankings',
-        description: 'All rostered players in your league ranked by season fantasy points under your scoring settings.',
+        title: 'Rank the league',
+        description: 'Rankings uses your league scoring to sort all fantasy-relevant players with true overall or positional ranks.',
       },
       {
-        title: 'Filter & Search',
-        description: 'Use the position chips to filter by position group, or search by name. Players on a roster are highlighted.',
+        title: 'Filter and sort',
+        description: 'Use position chips, fantasy team filters, search, rank scope, and stat sorts to reshape the list.',
       },
       {
-        title: 'Weekly Breakdown',
-        description: 'Tap any player to view their week-by-week scoring history.',
+        title: 'Read values',
+        description: 'Toggle sortable stat categories between Fantasy Value and Game Stats when both are available.',
+      },
+      {
+        title: 'Open players',
+        description: 'Tap a row for a preview or full Statistics profile.',
       },
     ],
   },
@@ -131,20 +251,16 @@ const GUIDE_CONTENT = {
     title: 'MATCHUP',
     steps: [
       {
-        title: 'Side-by-Side Starters',
-        description: 'Your lineup vs. your opponent\'s — each position slot shown side by side with actual points scored and a projected range for this week.',
+        title: 'Choose the week',
+        description: 'Use the week control to load a matchup week, then Show Bench when you want full roster context.',
       },
       {
-        title: 'Projections',
-        description: 'Projection = season average × location factor × opponent strength × weather × snap trend. The range (floor–ceiling) reflects 25th–75th percentile of the player\'s scoring history, adjusted for the same matchup factors.',
+        title: 'Read the score',
+        description: 'The header compares your side and opponent; tap either score panel for a lineup scoring breakdown.',
       },
       {
-        title: 'Matchup Difficulty',
-        description: 'Each card shows a difficulty badge (Easy → Difficult) based on how many fantasy points the opposing defense has allowed to that position this season, percentile-ranked against all 32 teams.',
-      },
-      {
-        title: 'Player Drilldown',
-        description: 'Tap any player card for a detailed breakdown: positional rank, opponent context, points allowed by the defense to this position, and a line-by-line scoring summary.',
+        title: 'Inspect players',
+        description: 'Tap a starter or bench row for projection, matchup difficulty, weekly stats, and a path to the full profile.',
       },
     ],
   },
@@ -153,16 +269,20 @@ const GUIDE_CONTENT = {
     title: 'WAIVER',
     steps: [
       {
-        title: 'Available Players',
-        description: 'Players not currently on any roster in your league, ranked by projected value under your scoring settings.',
+        title: 'Find free agents',
+        description: 'Waiver lists players not rostered in your league and ranks them by recent form, season output, or projection.',
       },
       {
-        title: 'Filter & Search',
-        description: 'Filter by position or search by name. Ownership percentage is shown for players rostered in other leagues.',
+        title: 'Narrow results',
+        description: 'Use position chips and search; projected sorting adds upcoming opponent and schedule context where available.',
       },
       {
-        title: 'Player Drilldown',
-        description: 'Tap any player to view their season stats, recent form, and projected range for the current week.',
+        title: 'Read signals',
+        description: 'Hot/cold tags, projected points, season points, and four-week average help prioritize adds.',
+      },
+      {
+        title: 'Open players',
+        description: 'Tap a row for preview or full profile when ESPN data is matched.',
       },
     ],
   },
@@ -171,38 +291,82 @@ const GUIDE_CONTENT = {
     title: 'LEAGUE',
     steps: [
       {
-        title: 'All Rosters',
-        description: 'Every team in your league with their full roster, sorted by KTC value. Your team is pinned at the top.',
+        title: 'Switch views',
+        description: 'Rosters shows each manager and their players. Draft Picks shows current pick ownership across future years.',
       },
       {
-        title: 'Roster Drilldown',
-        description: 'Tap any team to expand their depth chart with season stats and weekly splits for each player.',
+        title: 'Browse managers',
+        description: "Select an owner to inspect their roster, player stats, and status by position.",
       },
       {
-        title: 'Trade from Here',
-        description: 'Tap the Trade button on any opponent\'s player to open Agent with that player pre-loaded on their side.',
+        title: 'Use trade shortcuts',
+        description: 'Trade buttons load your players as give assets and opponent players as get assets in Agent.',
+      },
+      {
+        title: 'Read picks',
+        description: 'In Draft Picks, the matrix marks own, acquired, and traded-away picks by year and round.',
+      },
+    ],
+  },
+
+  companion_heatmap: {
+    title: 'HEATMAP',
+    steps: [
+      {
+        title: 'Choose the lens',
+        description: 'Phase switches offense allowed vs defense production; position and stat controls decide what each cell measures.',
+      },
+      {
+        title: 'Filter context',
+        description: 'Location, color scope, favorite-team colors, spread, and over/under controls change how the grid is interpreted.',
+      },
+      {
+        title: 'Sort the grid',
+        description: 'Click week, average, or team headers to reorder; team sorting can group alphabetically, by conference, or by division.',
+      },
+      {
+        title: 'Drill into cells',
+        description: 'Tap a populated cell to see weekly contributors, then open a player profile when a match is available.',
       },
     ],
   },
 
   companion_defense: {
-    title: 'HEATMAP',
+    title: 'DEFENSE',
     steps: [
       {
-        title: 'What You\'re Seeing',
-        description: 'A week-by-week grid of every NFL team\'s performance. Each cell is one team\'s stat for one week.',
+        title: 'Pick what is allowed',
+        description: 'Choose Game Stats or Fantasy Value, then select QB/RB/WR/TE and the stat category.',
       },
       {
-        title: 'Offense Phase',
-        description: 'Shows points (or yards) allowed to each offensive position — useful for spotting favorable matchups. Green = more allowed (easier for your player), red = stingier. Filter by position to focus on QB, RB, WR, TE, or K.',
+        title: 'Rank defenses',
+        description: 'Sort by defense name, total allowed, or per-game allowed to find favorable or difficult matchups.',
       },
       {
-        title: 'Defense Phase',
-        description: 'Shows IDP production per team per week. Green = more production. Filter by defensive position group (DL, LB, DB) and stat.',
+        title: 'Search and inspect',
+        description: 'Search teams to narrow the list; tap a defense for weekly breakdown and player contributors.',
+      },
+    ],
+  },
+
+  companion_scoring: {
+    title: 'SCORING',
+    steps: [
+      {
+        title: 'Sync rules',
+        description: 'Use Sync from your current league to refresh Sleeper scoring settings.',
       },
       {
-        title: 'Drilldown',
-        description: 'Tap any cell to see which players drove that week\'s total. Tap a player\'s name to jump to their profile.',
+        title: 'Choose visibility',
+        description: 'Active shows only non-zero fields; All shows every supported scoring key.',
+      },
+      {
+        title: 'Preview leagues',
+        description: 'Browse prior or linked leagues to preview another scoring system, then Reset to return to the selected league.',
+      },
+      {
+        title: 'Understand impact',
+        description: 'Companion rankings, projections, matchup values, and trade adjustments use the active scoring rules.',
       },
     ],
   },
@@ -211,20 +375,20 @@ const GUIDE_CONTENT = {
     title: 'AGENT',
     steps: [
       {
-        title: 'Build The Deal',
-        description: 'Choose a trade partner, then add players or picks to either side. On desktop you can use the roster shelf; on mobile use the add buttons or Search All Rostered Players.',
+        title: 'Build the deal',
+        description: 'Choose a partner, then add players or picks to either side with the shelf, add buttons, or Search All Rostered Players.',
       },
       {
-        title: 'Read The Scoreboard',
-        description: 'The scoreboard totals each side, shows who the deal favors, and marks a trade as near even when the gap is small.',
+        title: 'Read the value',
+        description: 'The scoreboard totals both sides, names who the deal favors, and marks close offers as fair.',
       },
       {
-        title: 'Use League Values',
-        description: 'Player values start with KeepTradeCut and are adjusted for your league format and scoring. Draft pick values use the picks each manager actually owns.',
+        title: 'Balance it',
+        description: 'Suggest Adjustment proposes adds, removes, or swaps; Value Trends shows recent KTC movement for players in the offer.',
       },
       {
-        title: 'Adjust And Review',
-        description: 'Use Suggest Adjustment to find adds, removes, or swaps that can balance the offer. Open Value Trends to see recent market movement for players in the deal.',
+        title: 'Check assumptions',
+        description: 'The value note explains format, superflex/1QB, and league-adjusted scoring/pick context.',
       },
     ],
   },
@@ -233,153 +397,161 @@ const GUIDE_CONTENT = {
     title: 'INTELLIGENCE',
     steps: [
       {
-        title: 'Choose a Partner',
-        description: 'Use the manager rail to pick a trade partner. Intelligence builds ideas around your roster, their roster, and movable picks.',
+        title: 'Choose a partner',
+        description: 'Pick a manager so ideas can use your roster, their roster, and available picks.',
       },
       {
-        title: 'Set The Lens',
-        description: 'Fix Needs looks for lineup help. Use Surplus looks for ways to move depth or strength for players and picks.',
+        title: 'Set the lens',
+        description: 'Fix Needs targets lineup help; Use Surplus looks for ways to convert depth into players or picks.',
       },
       {
-        title: 'Sort And Filter',
-        description: 'Sort by fit, upgrade, or cost, then use player and pick filters to shape the packages. Reset Filters restores the full list.',
+        title: 'Filter ideas',
+        description: 'Sort and filter packages by fit, upgrade, cost, players, and picks.',
       },
       {
-        title: 'Apply And Edit',
-        description: 'Review the Give/Get totals and Why It Helps notes, then tap Apply to send any idea into Agent for final tuning.',
+        title: 'Apply a package',
+        description: 'Review give/get totals and Why It Helps, then Apply to move the idea into Agent for final edits.',
       },
     ],
   },
 
   trade_upgrade: {
-    title: 'UPGRADE FINDER',
+    title: 'UPGRADES',
     steps: [
       {
-        title: 'Pick The Target',
-        description: 'Choose the player you want to upgrade into. The target card shows their value, rank, and scoring context before you search.',
+        title: 'Pick a target',
+        description: 'Choose the player you want to acquire; the target card shows value, rank, and scoring context.',
       },
       {
-        title: 'Choose Your Movers',
-        description: 'Select players you are willing to give up, then use position chips and sort controls to reshape the suggested list. Package Size controls whether the search can combine up to three assets.',
+        title: 'Choose movers',
+        description: 'Select players you are willing to move, and decide whether packages can combine multiple assets.',
       },
       {
-        title: 'Set Picks And Posture',
-        description: 'Use My Picks and Picks Back to decide whether draft picks can balance the deal. Trade Posture shifts the search from buy-low ideas to stronger offers.',
+        title: 'Set picks and posture',
+        description: 'Allow your picks, picks back, and posture to control how aggressive the search should be.',
       },
       {
-        title: 'Review Upgrade Paths',
-        description: 'Find Upgrades scans the league and groups results by manager. Sort the paths, read why each side benefits, then Apply a package to Agent for final review.',
-      },
-    ],
-  },
-
-  companion_scoring: {
-    title: 'SCORING SETTINGS',
-    steps: [
-      {
-        title: 'Your League\'s Rules',
-        description: 'Scoring settings are imported directly from Sleeper when you connect. All projections, rankings, and trade values in Companion use these rules.',
-      },
-      {
-        title: 'Active vs. All',
-        description: 'Active shows only fields your league has set to a non-zero value. All reveals every supported scoring field, including those at 0.',
-      },
-      {
-        title: 'Sync',
-        description: 'Tap Sync to re-import the latest settings from your Sleeper league at any time.',
+        title: 'Review paths',
+        description: 'Find Upgrades groups offers by manager; sort the paths and Apply one to Agent.',
       },
     ],
   },
 
   compare: {
-    title: 'HOW TO USE COMPARE',
+    title: 'COMPARE',
     steps: [
       {
-        title: 'Select Two Players',
-        description: 'Tap either player slot to open the search sheet. Type any name, nickname, position, team, city, conference, or division — the search covers all 32 NFL rosters. Examples: "Lamar", "Bills RB", "AFC East receivers", "slot WRs in Dallas". Tap a result to lock that player into the slot.',
+        title: 'Select players',
+        description: 'Open player slots and search all NFL rosters to choose the comparison.',
       },
       {
-        title: 'Stats Panel',
-        description: 'Side-by-side stat table for the selected season, grouped by category. A gold ▲ marks the better value in each row. Toggle Advanced to reveal deeper metrics like QBR, yards after catch, and more.',
+        title: 'Compare stats',
+        description: 'Switch years or Career, then toggle deeper stat rows when advanced data is available.',
       },
       {
-        title: 'Year Navigation',
-        description: 'Use the year pills to switch between seasons or Career totals. Each player\'s data loads independently.',
+        title: 'Compare fantasy',
+        description: 'A connected Sleeper league unlocks fantasy scoring under that league season and scoring format.',
       },
       {
-        title: 'Fantasy Panel',
-        description: 'Requires a connected Sleeper league. Shows season total points, avg PPG, last 4-week average, positional rank, and projected floor/ceiling — all under your league\'s scoring rules.',
-      },
-      {
-        title: 'Trade Panel',
-        description: 'Shows league-adjusted trade values, recent value trends, and quick context for both players. Build Full Trade opens Agent with the players loaded when one is on your roster.',
+        title: 'Open profiles',
+        description: 'Player cards can jump to Statistics, and trade actions can load matched players into Agent.',
       },
     ],
   },
 };
 
-const Guide = ({ onClose, activeTab = 'predictions', companionView = 'roster', tradeView = 'agent' }) => {
-  const key = activeTab === 'companion'
-    ? `companion_${companionView}`
-    : activeTab === 'trade'
-      ? (tradeView === 'compare'
-        ? 'compare'
-        : tradeView === 'intelligence'
-          ? 'trade_intelligence'
-          : tradeView === 'upgrade'
-            ? 'trade_upgrade'
-            : 'trade_agent')
-      : activeTab;
-  const content = GUIDE_CONTENT[key] ?? GUIDE_CONTENT[activeTab] ?? GUIDE_CONTENT.predictions;
+function getGuideKey({
+  activeTab,
+  seasonView,
+  statisticsView,
+  companionView,
+  tradeView,
+  scoutView,
+}) {
+  if (activeTab === 'predictions') {
+    return seasonView === 'predictions' ? 'predictions_picks' : `predictions_${seasonView}`;
+  }
+  if (activeTab === 'statistics') return `statistics_${statisticsView}`;
+  if (activeTab === 'companion') return `companion_${companionView}`;
+  if (activeTab === 'trade') return `trade_${tradeView}`;
+  if (activeTab === 'scout') return `scout_${scoutView}`;
+  return activeTab;
+}
 
-  const handleBackdropClick = (e) => {
-    if (e.target === e.currentTarget) onClose();
-  };
-
-  useEffect(() => {
-    const handleEscape = (e) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', handleEscape);
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = '';
-    };
-  }, [onClose]);
+const Guide = ({
+  onClose,
+  activeTab = 'predictions',
+  seasonView = 'predictions',
+  statisticsView = 'browser',
+  companionView = 'roster',
+  tradeView = 'agent',
+  scoutView = 'prospects',
+}) => {
+  const key = getGuideKey({
+    activeTab,
+    seasonView,
+    statisticsView,
+    companionView,
+    tradeView,
+    scoutView,
+  });
+  const content = GUIDE_CONTENT[key] ?? GUIDE_CONTENT[activeTab] ?? GUIDE_CONTENT.predictions_picks;
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-      onClick={handleBackdropClick}
+    <Modal
+      onClose={onClose}
+      ariaLabel={`${content.title} guide`}
+      containerClassName="max-w-2xl flex max-h-[90vh] flex-col"
+      containerStyle={{ border: '1px solid var(--color-separator)' }}
     >
-      <div className="modal-panel bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex items-center justify-between">
-          <h2 className="text-2xl font-display tracking-wide">{content.title}</h2>
-          <button
-            onClick={onClose}
-            className="text-white hover:text-gray-200 text-3xl leading-none"
-            aria-label="Close guide"
-          >
-            &times;
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
-          {content.steps.map((step, i) => (
-            <div key={i} className="flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold">
-                {i + 1}
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white">{step.title}</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">{step.description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+      <div
+        className="flex items-center justify-between gap-4 p-5 sm:p-6"
+        style={{
+          background: 'var(--color-bg-tertiary)',
+          borderBottom: '1px solid var(--color-separator)',
+        }}
+      >
+        <h2
+          className="font-display text-2xl tracking-wide"
+          style={{ color: 'var(--color-label)' }}
+        >
+          {content.title}
+        </h2>
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex h-10 w-10 items-center justify-center rounded-full text-3xl leading-none transition-opacity hover:opacity-70"
+          style={{ color: 'var(--color-label-secondary)' }}
+          aria-label="Close guide"
+        >
+          &times;
+        </button>
       </div>
-    </div>
+
+      <div className="flex-1 space-y-5 overflow-y-auto p-5 sm:p-6">
+        {content.steps.map((step, index) => (
+          <div key={step.title} className="flex gap-4">
+            <div
+              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold"
+              style={{
+                background: 'var(--color-signature)',
+                color: 'var(--color-signature-fg)',
+              }}
+            >
+              {index + 1}
+            </div>
+            <div>
+              <h3 className="font-semibold" style={{ color: 'var(--color-label)' }}>
+                {step.title}
+              </h3>
+              <p className="mt-0.5 text-sm" style={{ color: 'var(--color-label-secondary)' }}>
+                {step.description}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Modal>
   );
 };
 

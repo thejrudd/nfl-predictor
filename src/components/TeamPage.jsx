@@ -86,7 +86,7 @@ const STARTER_SECTIONS = [
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function TeamPage({ team, onBack, onSelectPlayer }) {
+export default function TeamPage({ team, onBack, onSelectPlayer, onViewSchedule }) {
   const { darkMode } = useTheme();
 
   const [roster, setRoster]       = useState(null);
@@ -211,69 +211,94 @@ export default function TeamPage({ team, onBack, onSelectPlayer }) {
         </div>
 
         <div className="p-6 relative">
-          {/* Team identity */}
-          <div className="flex items-center gap-4 mb-5">
-            <img
-              src={`https://a.espncdn.com/i/teamlogos/nfl/500/${teamKey}.png`}
-              alt={team.name}
-              className="w-16 h-16 object-contain shrink-0"
-              onError={e => { e.target.style.display = 'none'; }}
-            />
-            <div>
-              <h1
-                className="font-display font-bold leading-none"
-                style={{ fontSize: '26px', letterSpacing: '0.06em', color: heroOnBg }}
-              >
-                {team.name.toUpperCase()}
-              </h1>
-              {history && (
-                <p style={{ fontSize: '13px', color: heroMuted, marginTop: '3px' }}>
-                  {history.city}, {history.state} · Est. {history.founded} · {history.stadium}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Championship pods */}
-          {history && (
-            <div className="flex flex-wrap gap-3 mb-4">
-              <ChampPod
-                count={history.superBowls}
-                label={history.superBowls === 1 ? 'Super Bowl' : 'Super Bowls'}
-                note={history.superBowlYears.length > 0 ? history.superBowlYears.join(', ') : null}
-                icon="🏆"
-                onBg={heroOnBg}
-                muted={heroMuted}
-                podBg={podBg}
-              />
-              <ChampPod
-                count={history.conferenceGameAppearances}
-                label={history.conferenceGameAppearances === 1 ? 'Conf. Game App' : 'Conf. Game Apps'}
-                icon="🏅"
-                onBg={heroOnBg}
-                muted={heroMuted}
-                podBg={podBg}
-              />
-              <ChampPod
-                count={history.divisionTitles}
-                label={history.divisionTitles === 1 ? 'Div. Title' : 'Div. Titles'}
-                icon="📋"
-                onBg={heroOnBg}
-                muted={heroMuted}
-                podBg={podBg}
-              />
-              {history.superBowlAppearances > history.superBowls && (
-                <ChampPod
-                  count={history.superBowlAppearances}
-                  label={history.superBowlAppearances === 1 ? 'SB Appearance' : 'SB Appearances'}
-                  icon="🎖️"
-                  onBg={heroOnBg}
-                  muted={heroMuted}
-                  podBg={podBg}
+          <div className="statistics-team-hero__layout">
+            <div className="statistics-team-hero__main">
+              {/* Team identity */}
+              <div className="flex items-center gap-4 min-w-0">
+                <img
+                  src={`https://a.espncdn.com/i/teamlogos/nfl/500/${teamKey}.png`}
+                  alt={team.name}
+                  className="w-16 h-16 object-contain shrink-0"
+                  onError={e => { e.target.style.display = 'none'; }}
                 />
+                <div className="min-w-0">
+                  <h1
+                    className="font-display font-bold leading-none"
+                    style={{ fontSize: '26px', letterSpacing: '0.06em', color: heroOnBg }}
+                  >
+                    {team.name.toUpperCase()}
+                  </h1>
+                  {history && (
+                    <p style={{ fontSize: '13px', color: heroMuted, marginTop: '3px' }}>
+                      {history.city}, {history.state} · Est. {history.founded} · {history.stadium}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Championship pods */}
+              {history && (
+                <div className="flex flex-wrap gap-3">
+                  <ChampPod
+                    count={history.superBowls}
+                    label={history.superBowls === 1 ? 'Super Bowl' : 'Super Bowls'}
+                    note={history.superBowlYears.length > 0 ? history.superBowlYears.join(', ') : null}
+                    icon="🏆"
+                    onBg={heroOnBg}
+                    muted={heroMuted}
+                    podBg={podBg}
+                  />
+                  <ChampPod
+                    count={history.conferenceGameAppearances}
+                    label={history.conferenceGameAppearances === 1 ? 'Conf. Game App' : 'Conf. Game Apps'}
+                    icon="🏅"
+                    onBg={heroOnBg}
+                    muted={heroMuted}
+                    podBg={podBg}
+                  />
+                  <ChampPod
+                    count={history.divisionTitles}
+                    label={history.divisionTitles === 1 ? 'Div. Title' : 'Div. Titles'}
+                    icon="📋"
+                    onBg={heroOnBg}
+                    muted={heroMuted}
+                    podBg={podBg}
+                  />
+                  {history.superBowlAppearances > history.superBowls && (
+                    <ChampPod
+                      count={history.superBowlAppearances}
+                      label={history.superBowlAppearances === 1 ? 'SB Appearance' : 'SB Appearances'}
+                      icon="🎖️"
+                      onBg={heroOnBg}
+                      muted={heroMuted}
+                      podBg={podBg}
+                    />
+                  )}
+                </div>
               )}
             </div>
-          )}
+
+            {onViewSchedule && (
+              <div className="statistics-team-hero__action-wrap">
+                <button
+                  type="button"
+                  onClick={onViewSchedule}
+                  className="statistics-team-hero__schedule-button"
+                  style={{
+                    border: `1px solid ${heroMuted}`,
+                    background: podBg,
+                    color: heroOnBg,
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" strokeWidth="1.8" />
+                    <path d="M8 3v4M16 3v4M4 10h16M8 14h2M13 14h3M8 17h2M13 17h3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                  View Schedule
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

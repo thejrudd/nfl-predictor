@@ -7,12 +7,6 @@ New features requested or planned should be added here.
 
 ## Planned Versions
 
-### v7.5 - Scout Rookie Projection Layer
-
-Tabled Scout enhancements that build on the post-draft rookie data foundation without expanding v7.0 scope.
-
-- **Next-season fantasy projection layer for rookies** - Add a fantasy-facing projection surface for the upcoming NFL season so Scout can serve both standard rookie boards and IDP-aware formats without overloading the current prospect filters. Scope should cover offensive and IDP leagues, projection source-of-truth, display hierarchy, and how projections interact with draft status and college production.
-
 ### v8.0 - ESPN League Integration
 ### v9.0 - Live Fantasy Scoring
 
@@ -30,6 +24,10 @@ Tabled Scout enhancements that build on the post-draft rookie data foundation wi
 
 ## Backlog (Unversioned)
 
+### Scout
+
+- **Next-season fantasy projection layer for rookies** - Add a fantasy-facing projection surface for the upcoming NFL season so Scout can serve both standard rookie boards and IDP-aware formats without overloading the current prospect filters. Scope should cover offensive and IDP leagues, projection source-of-truth, display hierarchy, and how projections interact with draft status and college production.
+
 ### Deferred / Tabled
 
 - **Companion Roster draft-market lens (tabled)** - Revisit ADP or draft-market roster values after identifying a reliable, legally usable data source with broad offensive coverage, configurable league format support, and a clear plan for IDP or missing-player estimates. The Fantasy Football Calculator attempt was removed because API coverage left many rostered players blank.
@@ -45,7 +43,7 @@ Tabled Scout enhancements that build on the post-draft rookie data foundation wi
 
 ### Season Predictions (Unblocked When Data Available)
 
-- **Week-by-Week View** *(blocked on 2026 schedule data)* - Browse the full schedule by week: all matchups for a given week with current predictions reflected. Navigate between weeks via prev/next controls. When the NFL releases the 2026 schedule, update the schedule data source and implement this view. Read-only at launch (reflects existing team-level picks); interactive game picking from the week view is a future enhancement.
+- **Interactive week-by-week picks** - Extend the schedule surface with a week-first prediction flow so users can pick games directly from the full weekly slate instead of entering game picks only through a team drilldown.
 
 ### Fantasy Companion
 

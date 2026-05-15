@@ -9,6 +9,7 @@ Full token table and dark-mode values: **`docs/Design Tokens.md`**
 - `font-size: 16px` on all inputs (prevents iOS auto-zoom)
 - Safe area insets: `env(safe-area-inset-bottom)` on fixed bottom bars
 - Motion: spring-curve easing `cubic-bezier(0.32, 0.72, 0, 1)`
+- Important user-facing content must fit without truncation. Names, dates, venues, stats, scores, labels, and controls should wrap, reflow, resize, or drop lower-priority chrome before using ellipsis. Ellipsis is only acceptable for nonessential decorative metadata.
 - Roster player names are priority content: do not truncate or ellipsize them. Let names wrap when needed, and drop lower-priority row chrome before hiding identity text.
 - Horizontal scroll cues must cover the same rendered width as the scroll rail they describe. For full-bleed mobile tab rails, wrap the cue around the full-bleed shell, not an inset parent, so tab text cannot peek through beside the arrow. Add or preserve Playwright geometry checks that compare the cue edge to the rail's actual rendered edge.
 

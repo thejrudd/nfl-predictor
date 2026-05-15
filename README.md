@@ -6,14 +6,15 @@ An interactive web app for the 2026 NFL season — with full Sleeper fantasy lea
 
 ## Features
 
-- **Game-by-Game Predictions** — Pick W/L/T for all 272 regular season games with automatic opponent syncing; picks stay in sync league-wide
-- **Real-Time Validation** — Enforces league-wide balance (272 total wins), division constraints, and pairwise game limits
+- **Game-by-Game Predictions** — Predict records or drill into each team's full schedule with automatic opponent syncing; picks stay in sync league-wide
+- **Prediction Constraints** — Keeps win/loss/tie totals, division records, and synced opponent picks within possible NFL bounds
 - **Division Standings** — Auto-generated standings sorted by wins, division record, and strength of schedule
 - **Playoff Seeding** — AFC and NFC brackets with division winners and wild card spots
 - **Shareable Infographic** — Build a custom bento-grid graphic with up to 11 insight sections. Drag and resize sections, add your name/handle, and export as an image
-- **Team Search & Filter** — Search teams by name or abbreviation and filter by conference from the predictions view
+- **Team Search & Filters** — Search teams, players, and schedule views across the Statistics and Companion surfaces
 - **Player Browser** — Browse all 32 rosters by conference, division, and position; search players by name across the league
 - **Player Profiles** — Full profile pages with headshot, career stats, game log, and Pro Bowl / All-Pro honors
+- **Statistics Schedule** — Browse the NFL schedule by week or team with international, PrimeTime, and holiday filters
 - **Sleeper League Integration** — Connect your Sleeper account, import a league, and sync custom scoring settings
 - **League Browser** — Browse any league member's full roster with stats and weekly breakdowns; view a league-wide draft capital grid showing pick ownership by round and year
 - **Fantasy Matchup View** — Head-to-head starter comparison with week-by-week points, projections, positional rankings, weather context, and game location
@@ -87,23 +88,22 @@ npm run validate:routing
 | PWA | vite-plugin-pwa + Workbox |
 | Production serving | nginx (Docker) |
 
-## What's New in v7.4
+## What's New in v7.5
 
-- **Statistics Visual** - Player pages now include a Visual mode that charts weekly stat production against matchup context, with raw and fantasy-value views.
-- **Companion Defense** - A new Defense tab ranks NFL defenses by season-to-date stats or fantasy points allowed to QB/RB/WR/TE, with team search, sortable totals, per-game views, and weekly contribution details.
-- **Heatmap D/ST support** - The Heatmap defense phase now handles D/ST-only leagues, hides irrelevant stat filters, and shows detailed D/ST fantasy scoring breakdowns.
-- **Rankings filters** - Companion Rankings can filter by fantasy team and switch between overall and positional rank scopes.
-- **Trade handoff polish** - Statistics Build Trade now selects the target player's fantasy roster when available, and Trade Agent selected assets use cleaner metadata labels.
+- **Predictor redesign** - Predictions now center on record-first picks, an Advanced Mode team drilldown, editorial standings, and a manual playoff bracket.
+- **2026 schedule data** - The app now bundles the regular-season schedule with ESPN event ids, kickoff metadata, broadcasters, venues, and ordered opponents.
+- **Statistics Schedule** - Statistics includes week and team schedule views with international, PrimeTime, and holiday filters.
+- **Prediction fixes** - Choose Record now blocks impossible overall/division combinations, balances division records, and propagates forced undefeated/winless picks to opponents.
+- **Statistics Visual fixes** - Future empty seasons stay hidden, Visual works without a connected fantasy league, and the visual opens against the latest stat-bearing season.
 
 For the full version history, see [CHANGELOG.md](CHANGELOG.md).
 
 ## Roadmap
 
-- **v7.5 - Scout Rookie Projection Layer** - Add next-season rookie projections that work for standard and IDP-focused draft prep without overloading the current Scout board.
-- **Trade follow-through** - Continue polishing Trade drilldowns, remaining explanation copy, and proposal-card readability after the v7.3 module split.
 - **v8.0 - ESPN League Integration** - Planned major integration track.
 - **v9.0 - Live Fantasy Scoring** - Planned live scoring track.
-- **Week-by-Week View** *(blocked on 2026 schedule data)* — Browse the full schedule by week with predictions reflected
+- **Scout Rookie Projection Layer** - Add next-season rookie projections that work for standard and IDP-focused draft prep without overloading the current Scout board.
+- **Trade follow-through** - Continue polishing Trade drilldowns, remaining explanation copy, and proposal-card readability after the v7.3 module split.
 
 ## Project Structure
 
@@ -115,6 +115,7 @@ src/
 │   ├── NavBar.jsx                 # Mobile sticky top nav bar
 │   ├── BottomTabBar.jsx           # Mobile bottom tab bar (Season / Companion)
 │   ├── SeasonSubNav.jsx           # Season sub-view tabs (Predictions / Standings / Playoffs)
+│   ├── StatisticsSubNav.jsx       # Statistics sub-view tabs (Stats / Schedule)
 │   ├── CompanionSubNav.jsx        # Companion sub-view tabs
 │   ├── ActionSheet.jsx            # iOS-style bottom sheet for overflow menu
 │   ├── FavoriteTeamPicker.jsx     # Full-screen team color theme picker
@@ -130,6 +131,10 @@ src/
 │   ├── PlayerBrowser.jsx          # Team/roster browser with position filter and search
 │   ├── PlayerProfile.jsx          # Player profile page with hero card, stats, and game log
 │   ├── PlayerStatTable.jsx        # Accordion stat table with standard/advanced toggle
+│   ├── StatisticsSchedule.jsx     # NFL schedule browser by week/team/special slate
+│   ├── StatisticsGame.jsx         # Game-level box score route for final games
+│   ├── predictions/
+│   │   └── PredictionsRedesign.jsx # Record-first predictions, advanced team picks, standings, playoffs
 │   ├── TeamList.jsx               # Division cards with team rows and tooltips
 │   ├── TeamDetail.jsx             # Modal for editing team predictions
 │   ├── StandingsTable.jsx         # Division standings view

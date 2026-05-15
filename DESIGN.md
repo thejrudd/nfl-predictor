@@ -180,6 +180,7 @@ The aesthetic is dense but ordered: information-first, with typography doing the
 2. **Condensed for headlines, geometric for body.** Barlow Condensed carries the broadcast voice; Figtree handles readable UI.
 3. **One breakpoint.** Everything below 1024px is mobile-first; everything at or above 1024px is the desktop shell. No intermediate complexity.
 4. **Dark mode is native.** The `.dark` class on `<html>` swaps all design tokens. No third-party library.
+5. **Important content must fit.** User-facing names, dates, venues, stats, scores, labels, and controls should wrap or reflow before they truncate. Ellipsis is reserved for low-priority decorative metadata only, never for information a user needs to act on or compare.
 
 ---
 

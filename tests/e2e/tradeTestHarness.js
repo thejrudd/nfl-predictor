@@ -50,6 +50,14 @@ export async function installTradeFixtures(page, overrides = {}) {
       return json(route, fixtureLeaguesBySeason[season] ?? []);
     }
     if (path === `/v1/league/${TEST_LEAGUE_ID}`) return json(route, fixtureLeague);
+    const leaguePathMatch = path.match(/^\/v1\/league\/([^/]+)$/);
+    if (leaguePathMatch) {
+      const leagueId = decodeURIComponent(leaguePathMatch[1]);
+      const seasonLeagues = Object.values(fixtureLeaguesBySeason ?? {}).flatMap((seasonItems) => seasonItems ?? []);
+      const matchingLeague = [fixtureLeague, ...seasonLeagues]
+        .find((item) => String(item?.league_id) === leagueId);
+      return json(route, matchingLeague ?? {});
+    }
     if (path === `/v1/league/${TEST_LEAGUE_ID}/rosters`) return json(route, fixtureRosters);
     if (path === `/v1/league/${TEST_LEAGUE_ID}/users`) return json(route, fixtureLeagueUsers);
     if (path === `/v1/league/${TEST_LEAGUE_ID}/traded_picks`) return json(route, fixtureTradedPicks);

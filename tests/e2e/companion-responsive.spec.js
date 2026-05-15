@@ -65,6 +65,38 @@ test('Companion horizontal affordances appear when rails overflow', async ({ pag
   await expect(page.locator('[data-scroll-cue="right"]').first()).toBeVisible();
 });
 
+test('Companion scoring preview Hold keeps Rankings scroll position fixed', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/companion/scoring');
+
+  await page.getByRole('button', { name: /browse leagues/i }).click();
+  await page.getByRole('button', { name: new RegExp(`${TEST_SEASON} Season`, 'i') }).click();
+  await page.getByRole('button', { name: /Half PPR Preview League/i }).click();
+  await expect(page.getByText('Active')).toBeVisible();
+
+  await page.goto('/companion/rankings');
+  const rows = page.locator('.companion-player-row');
+  await expect.poll(async () => rows.count()).toBeGreaterThan(10);
+
+  const contentArea = page.locator('.content-area');
+  const beforeScrollTop = await contentArea.evaluate((element) => {
+    const maxScrollTop = Math.max(0, element.scrollHeight - element.clientHeight);
+    element.scrollTop = Math.min(480, maxScrollTop);
+    return element.scrollTop;
+  });
+  expect(beforeScrollTop).toBeGreaterThan(80);
+
+  const holdButton = page.getByRole('button', { name: "Hold to preview your league's scoring" });
+  const box = await holdButton.boundingBox();
+  expect(box).not.toBeNull();
+
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await expectContentScrollNear(contentArea, beforeScrollTop);
+  await page.mouse.up();
+  await expectContentScrollNear(contentArea, beforeScrollTop);
+});
+
 test('Heatmap mobile keeps filters collapsed above the grid', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto('/companion/heatmap');
@@ -212,6 +244,17 @@ async function expectRightCueCoversScrollableEdge(page, railSelector, cueSelecto
   expect(geometry.cueWidth, 'right cue should be wide enough to mask tab text behind it').toBeGreaterThanOrEqual(54);
 }
 
+async function expectContentScrollNear(contentArea, expectedScrollTop) {
+  await expect.poll(
+    async () => contentArea.evaluate((element) => element.scrollTop),
+    { message: 'Companion content scroll position should stay fixed while toggling scoring preview' },
+  ).toBeGreaterThanOrEqual(expectedScrollTop - 2);
+  await expect.poll(
+    async () => contentArea.evaluate((element) => element.scrollTop),
+    { message: 'Companion content scroll position should stay fixed while toggling scoring preview' },
+  ).toBeLessThanOrEqual(expectedScrollTop + 2);
+}
+
 function responsiveFixtureOverrides() {
   const responsiveLeague = {
     ...league,
@@ -221,6 +264,16 @@ function responsiveFixtureOverrides() {
       ...league.settings,
       draft_rounds: 8,
       last_scored_leg: 6,
+    },
+  };
+  const previewLeague = {
+    ...responsiveLeague,
+    league_id: 'league-half-ppr-preview',
+    name: 'GridShift Half PPR Preview League',
+    scoring_settings: {
+      ...responsiveLeague.scoring_settings,
+      rec: 0.5,
+      pass_td: 6,
     },
   };
   const responsiveUsers = [
@@ -255,12 +308,12 @@ function responsiveFixtureOverrides() {
   };
   const responsiveLeaguesBySeason = {
     ...leaguesBySeason,
-    [TEST_SEASON]: [responsiveLeague],
+    [TEST_SEASON]: [responsiveLeague, previewLeague],
   };
   const responsiveState = {
     ...persistedSleeperState(),
     league: responsiveLeague,
-    leagues: [responsiveLeague],
+    leagues: [responsiveLeague, previewLeague],
     rosters: responsiveRosters,
     leagueUsers: responsiveUsers,
     leaguesBySeason: responsiveLeaguesBySeason,

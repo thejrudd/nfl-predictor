@@ -4,7 +4,10 @@ export default function Sidebar({
   activeTab,
   onTabChange,
   predictionCount,
+  completedTeamCount = predictionCount,
   totalTeams,
+  pickedGameCount = 0,
+  totalGames = 0,
   isSeasonComplete,
   darkMode,
   onToggleDarkMode,
@@ -21,7 +24,6 @@ export default function Sidebar({
   collapsed,
   onToggleCollapse,
 }) {
-  const progress = totalTeams > 0 ? (predictionCount / totalTeams) * 100 : 0;
   const { isConnected, disconnect } = useSleeperLeague();
 
   return (
@@ -78,35 +80,18 @@ export default function Sidebar({
 
       {/* Progress bar — only visible on Predictions tab */}
       <div className="sidebar-progress" style={{ visibility: activeTab === 'predictions' ? 'visible' : 'hidden' }}>
-        <div className="flex items-center justify-between mb-1.5">
-          <span
-            className="text-xs font-semibold uppercase tracking-widest"
-            style={{ color: 'var(--color-label-tertiary)', letterSpacing: '0.08em' }}
-          >
-            Season
-          </span>
-          <span
-            className="text-xs font-bold tabular-nums"
-            style={{
-              color: isSeasonComplete ? 'var(--color-accent-green)' : 'var(--color-label-secondary)',
-            }}
-          >
-            {predictionCount}/{totalTeams}
-            {isSeasonComplete && ' ✓'}
-          </span>
-        </div>
-        <div
-          className="h-0.5 rounded-full overflow-hidden"
-          style={{ background: 'var(--color-fill)' }}
-        >
-          <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{
-              width: `${progress}%`,
-              background: isSeasonComplete ? 'var(--color-accent-green)' : 'var(--color-signature)',
-            }}
-          />
-        </div>
+        <SidebarProgressBar
+          label="Teams"
+          value={completedTeamCount}
+          total={totalTeams}
+          complete={isSeasonComplete}
+        />
+        <SidebarProgressBar
+          label="Games"
+          value={pickedGameCount}
+          total={totalGames}
+          complete={totalGames > 0 && pickedGameCount >= totalGames}
+        />
       </div>
 
       {/* Main navigation */}
@@ -273,6 +258,17 @@ export default function Sidebar({
           </span>
         </button>
         <a
+          href="https://ko-fi.com/gridshift"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="sidebar-action-item"
+          aria-label="Support GridShift on Ko-fi"
+          style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+        >
+          <SupportIcon />
+          Support GridShift
+        </a>
+        <a
           href="https://github.com/thejrudd/nfl-predictor"
           target="_blank"
           rel="noopener noreferrer"
@@ -284,10 +280,55 @@ export default function Sidebar({
           className="px-5 py-3 text-xs"
           style={{ color: 'var(--color-label-tertiary)' }}
         >
-          v7.4
+          v7.5
         </div>
       </div>
     </aside>
+  );
+}
+
+function formatProgressValue(value) {
+  const rounded = Math.round((Number(value) || 0) * 10) / 10;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+}
+
+function SidebarProgressBar({ label, value, total, complete }) {
+  const safeTotal = Math.max(0, Number(total) || 0);
+  const safeValue = Math.min(safeTotal, Math.max(0, Number(value) || 0));
+  const progress = safeTotal > 0 ? (safeValue / safeTotal) * 100 : 0;
+
+  return (
+    <div className="sidebar-progress-metric" aria-label={`${label} progress`}>
+      <div className="flex items-center justify-between mb-1.5">
+        <span
+          className="text-xs font-semibold uppercase tracking-widest"
+          style={{ color: 'var(--color-label-tertiary)', letterSpacing: '0.08em' }}
+        >
+          {label}
+        </span>
+        <span
+          className="text-xs font-bold tabular-nums"
+          style={{
+            color: complete ? 'var(--color-accent-green)' : 'var(--color-label-secondary)',
+          }}
+        >
+          {formatProgressValue(safeValue)}/{formatProgressValue(safeTotal)}
+          {complete && ' ✓'}
+        </span>
+      </div>
+      <div
+        className="h-0.5 rounded-full overflow-hidden"
+        style={{ background: 'var(--color-fill)' }}
+      >
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{
+            width: `${progress}%`,
+            background: complete ? 'var(--color-accent-green)' : 'var(--color-signature)',
+          }}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -356,6 +397,17 @@ function SidebarAction({ label, onClick, disabled, destructive }) {
     >
       {label}
     </button>
+  );
+}
+
+function SupportIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 8.5h11v4.25a5.25 5.25 0 0 1-5.25 5.25H9.25A5.25 5.25 0 0 1 4 12.75V8.5z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M15 10h2.25a2.75 2.75 0 0 1 0 5.5H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M7.5 6.25c0-.9.75-1.2.75-2.1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M11 6.25c0-.9.75-1.2.75-2.1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
   );
 }
 

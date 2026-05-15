@@ -1,11 +1,20 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useSleeperLeague } from '../../context/SleeperContext';
 
-export default function ScoringOverrideBanner() {
+export default function ScoringOverrideBanner({ preserveContentScrollDuringUpdate = null }) {
   const {
     scoringOverride, clearScoringOverride,
     scoringOverridePaused, setScoringOverridePaused,
   } = useSleeperLeague();
+
+  const setPausedWithScrollPreserved = useCallback((paused) => {
+    const update = () => setScoringOverridePaused(paused);
+    if (preserveContentScrollDuringUpdate) {
+      preserveContentScrollDuringUpdate(update);
+      return;
+    }
+    update();
+  }, [preserveContentScrollDuringUpdate, setScoringOverridePaused]);
 
   if (!scoringOverride) return null;
 
@@ -41,13 +50,14 @@ export default function ScoringOverrideBanner() {
 
       {/* Hold to compare */}
       <HoldButton
-        onHoldStart={() => setScoringOverridePaused(true)}
-        onHoldEnd={() => setScoringOverridePaused(false)}
+        onHoldStart={() => setPausedWithScrollPreserved(true)}
+        onHoldEnd={() => setPausedWithScrollPreserved(false)}
         paused={scoringOverridePaused}
       />
 
       {/* Reset / X */}
       <button
+        type="button"
         onClick={clearScoringOverride}
         className="flex items-center justify-center w-7 h-7 rounded-lg transition-opacity active:opacity-70"
         aria-label="Clear scoring override"
@@ -95,7 +105,8 @@ function HoldButton({ onHoldStart, onHoldEnd, paused }) {
 
   return (
     <button
-      onMouseDown={start}
+      type="button"
+      onMouseDown={(e) => { e.preventDefault(); start(); }}
       onMouseUp={end}
       onTouchStart={(e) => { e.preventDefault(); start(); }}
       onTouchEnd={end}

@@ -39,6 +39,13 @@ const validatedPaths = [
   expectRoundTrip({ activeTab: 'statistics', statisticsView: 'browser' }, '/statistics'),
   expectRoundTrip({ activeTab: 'statistics', statisticsView: 'team', statisticsTeamId: 'KC' }, '/statistics/team/kc'),
   expectRoundTrip({ activeTab: 'statistics', statisticsView: 'player', statisticsPlayerId: '3139477', statisticsPlayerSlug: 'josh-allen' }, '/statistics/player/3139477/josh-allen'),
+  expectRoundTrip({ activeTab: 'statistics', statisticsView: 'schedule' }, '/statistics/schedule'),
+  expectRoundTrip({ activeTab: 'statistics', statisticsView: 'schedule', statisticsScheduleMode: 'week', statisticsScheduleWeek: 1 }, '/statistics/schedule?mode=week&week=1'),
+  expectRoundTrip({ activeTab: 'statistics', statisticsView: 'schedule', statisticsScheduleMode: 'team', statisticsScheduleTeamId: 'KC' }, '/statistics/schedule?mode=team&team=KC'),
+  expectRoundTrip({ activeTab: 'statistics', statisticsView: 'schedule', statisticsScheduleMode: 'week', statisticsScheduleFilter: 'international' }, '/statistics/schedule?mode=week&filter=international'),
+  expectRoundTrip({ activeTab: 'statistics', statisticsView: 'schedule', statisticsScheduleMode: 'week', statisticsScheduleFilter: 'primetime' }, '/statistics/schedule?mode=week&filter=primetime'),
+  expectRoundTrip({ activeTab: 'statistics', statisticsView: 'schedule', statisticsScheduleMode: 'team', statisticsScheduleTeamId: 'KC', statisticsScheduleFilter: 'holiday' }, '/statistics/schedule?mode=team&team=KC&filter=holiday'),
+  expectRoundTrip({ activeTab: 'statistics', statisticsView: 'game', statisticsGameId: '401872656' }, '/statistics/game/401872656'),
   expectRoundTrip({ activeTab: 'companion', companionView: 'roster' }, '/companion/roster'),
   expectRoundTrip({ activeTab: 'companion', companionView: 'rankings', rankingsPosition: 'QB' }, '/companion/rankings?pos=QB'),
   expectRoundTrip({ activeTab: 'companion', companionView: 'heatmap' }, '/companion/heatmap'),
@@ -61,6 +68,18 @@ const validatedPaths = [
 
 const legacyDefenseSackPath = buildAppPath(parseAppRoute('/companion/defense', '?stat=pass_sack'));
 assert(legacyDefenseSackPath === '/companion/defense', `Expected legacy QB sack defense stat to normalize away, got ${legacyDefenseSackPath}`);
+
+const legacyScheduleSpecialPath = buildAppPath(parseAppRoute('/statistics/schedule', '?mode=holiday'));
+assert(
+  legacyScheduleSpecialPath === '/statistics/schedule?mode=week&filter=holiday',
+  `Expected legacy schedule special mode to become a filter, got ${legacyScheduleSpecialPath}`,
+);
+
+const scheduleFilterOnlyPath = buildAppPath(parseAppRoute('/statistics/schedule', '?filter=primetime'));
+assert(
+  scheduleFilterOnlyPath === '/statistics/schedule?mode=week&filter=primetime',
+  `Expected filter-only schedule route to default to week view, got ${scheduleFilterOnlyPath}`,
+);
 
 console.log('Routing validation passed.');
 for (const path of validatedPaths) console.log(`- ${path}`);

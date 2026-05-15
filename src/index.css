@@ -320,6 +320,8 @@ body {
 .sidebar-progress {
   padding: 10px 18px;
   border-bottom: 1px solid var(--color-separator);
+  display: grid;
+  gap: 10px;
 }
 
 .sidebar-nav {
@@ -1721,17 +1723,6 @@ body {
   line-height: 1;
 }
 
-.statistics-player-hero__team-logo {
-  width: 38px;
-  height: 38px;
-  padding: 4px;
-  border: 1px solid var(--statistics-hero-logo-border, var(--color-separator));
-  border-radius: 999px;
-  background: var(--statistics-hero-logo-bg, var(--color-fill-secondary));
-  object-fit: contain;
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.18));
-}
-
 .statistics-player-hero__meta {
   display: flex;
   align-items: center;
@@ -1963,9 +1954,988 @@ body {
     justify-content: center;
   }
 
-  .statistics-player-hero__team-logo {
-    width: 34px;
-    height: 34px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Statistics team hero
+   ───────────────────────────────────────────────────────────── */
+
+.statistics-team-hero__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  min-width: 0;
+}
+
+.statistics-team-hero__main {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.statistics-team-hero__action-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+.statistics-team-hero__schedule-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  width: fit-content;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+  transition: opacity 150ms cubic-bezier(0.32, 0.72, 0, 1), transform 150ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.statistics-team-hero__schedule-button:active {
+  opacity: 0.72;
+  transform: scale(0.98);
+}
+
+@media (min-width: 640px) {
+  .statistics-team-hero__layout {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .statistics-team-hero__action-wrap {
+    align-self: center;
+    justify-content: flex-end;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Statistics schedule
+   ───────────────────────────────────────────────────────────── */
+
+.statistics-schedule {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.statistics-schedule-toolbar,
+.statistics-schedule-panel {
+  border: 1px solid var(--color-separator);
+  border-radius: 8px;
+  background: var(--color-bg-secondary);
+}
+
+.statistics-schedule-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px;
+}
+
+.statistics-schedule-toolbar-copy {
+  min-width: 0;
+}
+
+.statistics-schedule-eyebrow {
+  color: var(--color-label-tertiary);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.statistics-schedule-toolbar h1,
+.statistics-schedule-section-header h2,
+.statistics-game-hero h1 {
+  color: var(--color-label);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.statistics-schedule-toolbar h1 {
+  margin-top: 4px;
+  font-size: clamp(24px, 6vw, 34px);
+}
+
+.statistics-schedule-toolbar-copy > span,
+.statistics-schedule-section-header > span {
+  display: inline-flex;
+  margin-top: 5px;
+  color: var(--color-label-secondary);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.statistics-schedule-controls {
+  display: grid;
+  gap: 4px;
+  width: min(100%, 400px);
+  min-width: 280px;
+}
+
+.statistics-schedule-mode-toggle {
+  display: grid;
+  padding: 4px;
+  border-radius: 8px;
+  background: var(--color-fill);
+}
+
+.statistics-schedule-mode-toggle {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.statistics-schedule-mode-button {
+  min-height: 34px;
+  min-width: 0;
+  padding: 0 8px;
+  border-radius: 6px;
+  color: var(--color-label-secondary);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1;
+  overflow-wrap: anywhere;
+  transition: background 160ms cubic-bezier(0.32, 0.72, 0, 1), color 160ms cubic-bezier(0.32, 0.72, 0, 1);
+  white-space: normal;
+}
+
+.statistics-schedule-mode-button.is-active {
+  background: var(--color-signature);
+  color: var(--color-signature-fg);
+}
+
+.statistics-schedule-view {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.statistics-schedule-filter-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--color-separator);
+  border-radius: 8px;
+  background: var(--color-bg-secondary);
+}
+
+.statistics-schedule-team-panel > .statistics-schedule-filter-rail {
+  border-width: 0 0 1px;
+  border-radius: 0;
+  background: var(--color-fill);
+}
+
+.statistics-schedule-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  min-width: 0;
+  padding: 0 10px;
+  border: 1px solid var(--color-separator);
+  border-radius: 999px;
+  background: var(--color-fill);
+  color: var(--color-label-secondary);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+  transition: background 160ms cubic-bezier(0.32, 0.72, 0, 1), border-color 160ms cubic-bezier(0.32, 0.72, 0, 1), color 160ms cubic-bezier(0.32, 0.72, 0, 1);
+  white-space: normal;
+}
+
+.statistics-schedule-filter-chip.is-active {
+  border-color: var(--color-signature);
+  background: var(--color-signature);
+  color: var(--color-signature-fg);
+}
+
+.statistics-schedule-filter-chip:disabled {
+  cursor: not-allowed;
+  border-color: var(--color-separator);
+  background: var(--color-fill);
+  color: var(--color-label-tertiary);
+  opacity: 0.42;
+}
+
+.statistics-schedule-week-scrubber {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  margin: 0 -16px;
+  padding: 0 16px 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.statistics-schedule-week-scrubber::-webkit-scrollbar {
+  display: none;
+}
+
+.statistics-schedule-week-chip {
+  display: inline-flex;
+  min-width: 76px;
+  min-height: 48px;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 7px 10px;
+  border: 1px solid var(--color-separator);
+  border-radius: 8px;
+  background: var(--color-bg-secondary);
+  color: var(--color-label-secondary);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.statistics-schedule-week-chip span:first-child {
+  font-size: 12px;
+  letter-spacing: 0.10em;
+}
+
+.statistics-schedule-week-chip span:last-child {
+  color: var(--color-label-tertiary);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.statistics-schedule-week-chip.is-active {
+  border-color: var(--color-label);
+  background: var(--color-label);
+  color: var(--color-bg);
+}
+
+.statistics-schedule-week-chip.is-active span:last-child {
+  color: color-mix(in srgb, var(--color-bg) 72%, transparent);
+}
+
+.statistics-schedule-panel {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.statistics-schedule-section-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--color-separator);
+}
+
+.statistics-schedule-section-header h2 {
+  margin-top: 4px;
+  font-size: 24px;
+}
+
+.statistics-schedule-groups,
+.statistics-schedule-row-list {
+  display: grid;
+  min-width: 0;
+}
+
+.statistics-schedule-kickoff-group + .statistics-schedule-kickoff-group {
+  border-top: 1px solid var(--color-separator);
+}
+
+.statistics-schedule-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 34px;
+  padding: 0 12px;
+  background: var(--color-fill);
+  color: var(--color-label-secondary);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.statistics-schedule-game-row,
+.statistics-schedule-team-row {
+  display: grid;
+  grid-template-columns: minmax(74px, 0.34fr) minmax(0, 1fr);
+  grid-template-areas:
+    "meta matchup"
+    "detail detail";
+  align-items: center;
+  align-content: center;
+  gap: 8px 12px;
+  min-height: 92px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-separator);
+  overflow: visible;
+  background: var(--statistics-schedule-row-bg, var(--color-bg-secondary));
+  color: var(--statistics-schedule-row-fg, var(--color-label));
+  box-shadow: inset 3px 0 0 var(--statistics-schedule-row-accent, var(--color-separator));
+}
+
+.statistics-schedule-game-row:last-child,
+.statistics-schedule-team-row:last-child {
+  border-bottom: 0;
+}
+
+.statistics-schedule-game-row:hover,
+.statistics-schedule-team-row:hover {
+  background: var(--statistics-schedule-row-hover-bg, var(--color-bg-tertiary));
+}
+
+.statistics-schedule-row-meta {
+  grid-area: meta;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+  color: var(--statistics-schedule-row-muted, var(--color-label-tertiary));
+  font-size: 10px;
+  font-weight: 850;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.statistics-schedule-row-meta strong {
+  color: var(--statistics-schedule-row-fg, var(--color-label-secondary));
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.statistics-schedule-matchup {
+  grid-area: matchup;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.statistics-schedule-at {
+  flex: 0 0 auto;
+  color: var(--statistics-schedule-row-muted, var(--color-label-tertiary));
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.statistics-schedule-row-detail {
+  grid-area: detail;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 8px;
+  min-width: 0;
+  overflow: visible;
+  color: var(--statistics-schedule-row-muted, var(--color-label-tertiary));
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.statistics-schedule-row-detail > span:not(.statistics-schedule-broadcast):not(.statistics-schedule-result-badge):not(.statistics-schedule-pill) {
+  min-width: 0;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.statistics-schedule-network {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--statistics-schedule-row-fg, var(--color-label-secondary));
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.statistics-schedule-network--netflix {
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.statistics-schedule-broadcast {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  flex: 0 0 auto;
+}
+
+.statistics-schedule-broadcast-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 22px;
+  padding: 0 2px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.statistics-schedule-broadcast-logo img {
+  display: block;
+  width: auto;
+  max-width: 46px;
+  height: 16px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px color-mix(in srgb, var(--statistics-schedule-row-fg, var(--color-label)) 34%, transparent));
+}
+
+.statistics-schedule-broadcast-logo span:not([hidden]) {
+  color: var(--statistics-schedule-row-fg, var(--color-label-secondary));
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.statistics-schedule-result-badge,
+.statistics-schedule-game-stats-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 7px;
+  border: 1px solid var(--color-separator);
+  border-radius: 6px;
+  background: var(--color-fill);
+  color: var(--color-label-secondary);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.statistics-schedule-result-badge.is-win {
+  border-color: color-mix(in srgb, var(--color-accent-green) 46%, var(--color-separator));
+  color: var(--color-accent-green);
+}
+
+.statistics-schedule-result-badge.is-loss {
+  border-color: color-mix(in srgb, var(--color-accent-red) 46%, var(--color-separator));
+  color: var(--color-accent-red);
+}
+
+.statistics-schedule-result-badge.is-tie {
+  border-color: color-mix(in srgb, var(--color-signature) 58%, var(--color-separator));
+  color: var(--color-label);
+}
+
+.statistics-schedule-game-stats-button {
+  color: var(--color-label);
+  transition: background 160ms cubic-bezier(0.32, 0.72, 0, 1), color 160ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.statistics-schedule-game-stats-button:hover {
+  background: var(--color-label);
+  color: var(--color-bg);
+}
+
+.statistics-schedule-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 19px;
+  padding: 0 7px;
+  flex: 0 0 auto;
+  border: 1px solid var(--statistics-schedule-row-subtle, var(--color-separator));
+  border-radius: 999px;
+  background: var(--statistics-schedule-row-subtle, transparent);
+  color: var(--statistics-schedule-row-fg, var(--color-label-secondary));
+  font-size: 10px;
+  font-weight: 850;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.statistics-schedule-team-identity {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.statistics-schedule-team-identity--compact {
+  gap: 7px;
+}
+
+.statistics-schedule-team-logo {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 5px color-mix(in srgb, var(--color-label) 16%, transparent));
+}
+
+.statistics-schedule-team-identity--compact .statistics-schedule-team-logo {
+  width: 30px;
+  height: 30px;
+}
+
+.statistics-schedule-team-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1;
+}
+
+.statistics-schedule-team-code {
+  color: var(--statistics-schedule-row-fg, var(--color-label));
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.statistics-schedule-team-name {
+  overflow: visible;
+  color: var(--statistics-schedule-row-muted, var(--color-label-secondary));
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.15;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.statistics-schedule-team-identity--compact .statistics-schedule-team-code {
+  font-size: 15px;
+}
+
+.statistics-schedule-team-picker {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+}
+
+.statistics-schedule-team-picker-group h3 {
+  margin-bottom: 8px;
+  color: var(--color-label-tertiary);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.statistics-schedule-team-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.statistics-schedule-team-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  min-height: 50px;
+  padding: 9px 10px;
+  border: 1px solid var(--color-separator);
+  border-left: 3px solid var(--statistics-schedule-row-accent, var(--color-separator));
+  border-radius: 8px;
+  background: var(--color-bg-secondary);
+  color: var(--color-label-secondary);
+  text-align: left;
+}
+
+.statistics-schedule-team-option > span {
+  overflow: visible;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: right;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.statistics-schedule-team-option:hover {
+  background: var(--color-bg-tertiary);
+}
+
+.statistics-schedule-team-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--color-separator);
+  box-shadow: inset 3px 0 0 var(--statistics-schedule-row-accent, var(--color-separator));
+}
+
+.statistics-schedule-team-header-identity {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  min-width: 0;
+}
+
+.statistics-schedule-team-header-meta {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 14px;
+  border-left: 1px solid var(--color-separator);
+}
+
+.statistics-schedule-team-header-meta span {
+  color: var(--color-label-tertiary);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.statistics-schedule-team-header-meta strong {
+  color: var(--color-label-secondary);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.statistics-schedule-team-select {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.statistics-schedule-team-select span {
+  color: var(--color-label-tertiary);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+
+.statistics-schedule-team-select select {
+  min-height: 40px;
+  width: 100%;
+  border: 1px solid var(--color-separator);
+  border-radius: 8px;
+  background: var(--color-bg-tertiary);
+  color: var(--color-label);
+  font-size: 16px;
+  font-weight: 750;
+}
+
+.statistics-schedule-team-row.is-bye {
+  opacity: 0.76;
+}
+
+.statistics-schedule-bye-copy {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.statistics-schedule-bye-copy span:last-child {
+  overflow: visible;
+  color: var(--color-label-secondary);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.statistics-schedule-inline-empty {
+  padding: 28px 18px;
+  text-align: center;
+}
+
+.statistics-schedule-inline-empty h3 {
+  margin-top: 6px;
+  color: var(--color-label);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.statistics-schedule-inline-empty p:last-child {
+  max-width: 440px;
+  margin: 8px auto 0;
+  color: var(--color-label-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@media (min-width: 720px) {
+  .statistics-schedule-game-row,
+  .statistics-schedule-team-row {
+    grid-template-columns: 94px minmax(0, 1fr);
+    grid-template-areas:
+      "meta matchup"
+      "detail detail";
+    min-height: 92px;
+  }
+
+  .statistics-schedule-row-detail {
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .statistics-schedule-team-picker-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .statistics-schedule-team-header {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 0.42fr);
+    align-items: center;
+  }
+}
+
+@media (min-width: 1280px) {
+  .statistics-schedule-game-row,
+  .statistics-schedule-team-row {
+    grid-template-columns: 94px minmax(220px, 0.85fr) minmax(360px, 1.15fr);
+    grid-template-areas: "meta matchup detail";
+    min-height: 86px;
+  }
+
+  .statistics-schedule-row-detail {
+    justify-content: flex-end;
+    text-align: right;
+  }
+}
+
+@media (min-width: 1024px) {
+  .statistics-schedule-week-scrubber {
+    margin: 0;
+    padding-inline: 0;
+  }
+}
+
+@media (max-width: 639px) {
+  .statistics-schedule-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .statistics-schedule-mode-toggle {
+    width: 100%;
+  }
+
+  .statistics-schedule-controls {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .statistics-schedule-team-header-meta {
+    width: 100%;
+    padding-left: 0;
+    padding-top: 10px;
+    border-left: 0;
+    border-top: 1px solid var(--color-separator);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Statistics game
+   ───────────────────────────────────────────────────────────── */
+
+.statistics-game {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.statistics-game-back-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--color-separator);
+  border-radius: 8px;
+  background: var(--color-fill);
+  color: var(--color-label-secondary);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.statistics-game-hero,
+.statistics-game-panel {
+  overflow: hidden;
+  border: 1px solid var(--color-separator);
+  border-radius: 8px;
+  background: var(--color-bg-secondary);
+}
+
+.statistics-game-hero {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+  box-shadow: inset 3px 0 0 var(--statistics-game-accent, var(--color-separator));
+}
+
+.statistics-game-hero h1 {
+  margin-top: 5px;
+  font-size: clamp(28px, 7vw, 42px);
+}
+
+.statistics-game-hero-meta > span {
+  display: inline-flex;
+  margin-top: 5px;
+  color: var(--color-label-secondary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.statistics-game-scoreboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.statistics-game-scoreboard-divider {
+  color: var(--color-label-tertiary);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.10em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.statistics-game-team-block {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--color-separator);
+  border-radius: 8px;
+  background: var(--color-fill);
+}
+
+.statistics-game-team-block img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+}
+
+.statistics-game-team-block div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.statistics-game-team-block span {
+  color: var(--color-label-tertiary);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  line-height: 1;
+}
+
+.statistics-game-team-block strong {
+  overflow: hidden;
+  color: var(--color-label);
+  font-size: 15px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statistics-game-team-block b {
+  color: var(--color-label);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 32px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.statistics-game-team-stats {
+  display: grid;
+  min-width: 0;
+}
+
+.statistics-game-team-stats-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(64px, 0.32fr) minmax(64px, 0.32fr);
+  gap: 10px;
+  min-height: 38px;
+  align-items: center;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--color-separator);
+  color: var(--color-label-secondary);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.statistics-game-team-stats-row:last-child {
+  border-bottom: 0;
+}
+
+.statistics-game-team-stats-row.is-header {
+  min-height: 34px;
+  background: var(--color-fill);
+  color: var(--color-label-tertiary);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+
+.statistics-game-team-stats-row strong {
+  color: var(--color-label);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+@media (min-width: 720px) {
+  .statistics-game-hero {
+    grid-template-columns: minmax(0, 0.48fr) minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .statistics-game-scoreboard {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+
+  .statistics-game-team-block--right {
+    grid-template-columns: auto minmax(0, 1fr) auto;
   }
 }
 
@@ -7281,5 +8251,1853 @@ body {
 
   .trade-scoreboard__team-name {
     max-width: 42vw !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Predictions Redesign — week-by-week Broadcast Editorial surface
+   ───────────────────────────────────────────────────────────── */
+
+.predictions-redesign {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 14px;
+  padding: 0 16px 88px;
+}
+
+@media (min-width: 1024px) {
+  .predictions-redesign {
+    padding: 0 0 28px;
+  }
+}
+
+.predictions-eyebrow {
+  margin: 0;
+  color: var(--color-label-tertiary);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.predictions-section-header {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.predictions-section-header h2,
+.predictions-playoff-picture-rail h3,
+.predictions-conference-bracket h3 {
+  margin: 0;
+  color: var(--color-label);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  line-height: 0.96;
+  text-transform: uppercase;
+}
+
+.predictions-section-header h2 {
+  font-size: clamp(30px, 5vw, 44px);
+}
+
+.predictions-control-bar {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.predictions-segmented-control {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.predictions-segment {
+  min-height: 32px;
+  padding: 7px 12px;
+  border: 1px solid var(--color-separator);
+  border-radius: 8px;
+  background: var(--color-fill);
+  color: var(--color-label-secondary);
+  font-family: var(--font-body, 'Figtree', sans-serif);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: none;
+  white-space: nowrap;
+  transition: background 150ms cubic-bezier(0.32, 0.72, 0, 1), border-color 150ms cubic-bezier(0.32, 0.72, 0, 1), color 150ms cubic-bezier(0.32, 0.72, 0, 1), opacity 150ms;
+}
+
+.predictions-segment.is-active {
+  border-color: var(--color-signature);
+  background: var(--color-signature);
+  color: var(--color-signature-fg);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.12);
+}
+
+.predictions-fast-pick-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-label-tertiary);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.predictions-fast-pick-toggle input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.predictions-toggle-track {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--color-fill);
+  transition: background 160ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.predictions-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--color-bg-secondary);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-label) 24%, transparent);
+  transition: transform 160ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.predictions-fast-pick-toggle input:checked + .predictions-toggle-track {
+  background: var(--color-signature);
+}
+
+.predictions-fast-pick-toggle input:checked + .predictions-toggle-track .predictions-toggle-thumb {
+  transform: translateX(16px);
+  background: var(--color-signature-fg);
+}
+
+.predictions-week-scrubber {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  margin: 0 -16px 14px;
+  padding: 0 16px 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.predictions-week-scrubber::-webkit-scrollbar {
+  display: none;
+}
+
+.predictions-week-chip {
+  display: inline-flex;
+  min-width: 58px;
+  min-height: 48px;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-label-secondary);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.predictions-week-chip span:first-child {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+.predictions-week-chip-count {
+  color: var(--color-label-tertiary);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.predictions-week-chip.is-active {
+  background: var(--color-label);
+  color: var(--color-bg);
+}
+
+.predictions-week-chip.is-active .predictions-week-chip-count {
+  color: color-mix(in srgb, var(--color-bg) 72%, transparent);
+}
+
+.predictions-week-layout {
+  display: grid;
+  min-width: 0;
+  gap: 16px;
+}
+
+@media (min-width: 1180px) {
+  .predictions-week-layout {
+    grid-template-columns: minmax(0, 1fr) 312px;
+    align-items: start;
+  }
+}
+
+.predictions-week-main,
+.predictions-standings-view,
+.predictions-playoffs-view,
+.predictions-playoff-picture-rail {
+  min-width: 0;
+  border: 1px solid var(--color-separator);
+  border-radius: 8px;
+  background: var(--color-bg-secondary);
+}
+
+.predictions-week-main,
+.predictions-standings-view,
+.predictions-playoffs-view {
+  overflow: hidden;
+}
+
+.predictions-week-main > .predictions-section-header,
+.predictions-standings-view > .predictions-section-header,
+.predictions-playoffs-view > .predictions-section-header {
+  padding: 18px;
+  border-bottom: 1px solid var(--color-separator);
+}
+
+.predictions-game-grid {
+  display: flex;
+  flex-direction: column;
+}
+
+.predictions-game-card {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) 138px;
+  align-items: center;
+  min-height: 68px;
+  border-bottom: 1px solid var(--color-separator);
+  background: var(--color-bg-secondary);
+}
+
+.predictions-game-card:hover {
+  background: var(--color-bg-tertiary);
+}
+
+.predictions-game-card-meta,
+.predictions-game-card-actions {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  color: var(--color-label-tertiary);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.predictions-game-card-meta span,
+.predictions-game-card-actions span {
+  overflow-wrap: anywhere;
+}
+
+.predictions-game-matchup {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 0;
+}
+
+.predictions-winner-button {
+  min-width: 0;
+  min-height: 42px;
+  padding: 7px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-label);
+  text-align: left;
+  transition:
+    background 160ms cubic-bezier(0.32, 0.72, 0, 1),
+    border-color 160ms cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 160ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.predictions-winner-button:hover {
+  background: var(--color-fill-secondary);
+}
+
+.predictions-winner-button.is-picked {
+  border-color: var(--color-signature);
+  background: color-mix(in srgb, var(--color-signature) 14%, var(--color-bg-secondary));
+}
+
+.predictions-game-matchup:has(.is-picked) .predictions-winner-button:not(.is-picked) {
+  opacity: 0.48;
+}
+
+.predictions-game-at {
+  color: var(--color-label-tertiary);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.predictions-team-identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.predictions-team-identity--compact {
+  gap: 7px;
+}
+
+.predictions-seed-badge {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--color-signature);
+  color: var(--color-signature-fg);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.predictions-team-logo {
+  width: clamp(30px, 5vw, 44px);
+  height: clamp(30px, 5vw, 44px);
+  flex: 0 0 auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 5px color-mix(in srgb, var(--color-label) 18%, transparent));
+}
+
+.predictions-team-identity--compact .predictions-team-logo {
+  width: 28px;
+  height: 28px;
+}
+
+.predictions-team-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1;
+}
+
+.predictions-team-code {
+  color: var(--color-label);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.predictions-team-name {
+  color: var(--color-label-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.predictions-team-identity--compact .predictions-team-code {
+  font-size: 15px;
+}
+
+.predictions-tie-button,
+.predictions-advanced-override-button {
+  width: fit-content;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--color-separator);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-label-secondary);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.predictions-tie-button.is-picked {
+  border-color: var(--color-accent-orange);
+  background: var(--color-accent-orange);
+  color: var(--color-bg-secondary);
+}
+
+.predictions-game-network {
+  color: var(--color-label-secondary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.04em;
+}
+
+.predictions-game-venue {
+  color: var(--color-label-quaternary);
+}
+
+.predictions-playoff-picture-rail {
+  display: none;
+  overflow: hidden;
+  position: sticky;
+  top: 0;
+}
+
+@media (min-width: 1180px) {
+  .predictions-playoff-picture-rail {
+    display: block;
+  }
+}
+
+.predictions-playoff-picture-rail > header {
+  padding: 16px;
+  border-bottom: 1px solid var(--color-separator);
+}
+
+.predictions-playoff-picture-rail h3 {
+  margin-top: 5px;
+  font-size: 24px;
+}
+
+.predictions-rail-empty {
+  display: flex;
+  min-height: 180px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  padding: 18px 16px;
+  border-bottom: 1px solid var(--color-separator);
+  color: var(--color-label-secondary);
+}
+
+.predictions-rail-empty span {
+  max-width: 210px;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.predictions-rail-conference {
+  padding: 14px 16px;
+}
+
+.predictions-rail-conference + .predictions-rail-conference {
+  border-top: 1px solid var(--color-separator);
+}
+
+.predictions-rail-conference h4,
+.predictions-division-header {
+  margin: 0 0 10px;
+  color: var(--color-label);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.predictions-rail-conference ol {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.predictions-rail-conference li {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--color-label-secondary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.predictions-by-team-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.predictions-team-pick-row {
+  border: 1px solid var(--color-separator);
+  border-radius: 8px;
+  background: var(--color-bg-secondary);
+  overflow: hidden;
+}
+
+.predictions-team-pick-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-separator);
+}
+
+.predictions-team-schedule-strip {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 10px 14px;
+  scrollbar-width: none;
+}
+
+.predictions-team-schedule-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.predictions-team-game-pill {
+  display: inline-flex;
+  min-width: 146px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid var(--color-separator);
+  border-radius: 8px;
+  background: var(--color-bg-tertiary);
+  color: var(--color-label-secondary);
+}
+
+.predictions-team-game-pill > span:first-child,
+.predictions-team-game-pill strong {
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.predictions-team-game-pill.is-win {
+  border-color: var(--color-signature);
+  background: color-mix(in srgb, var(--color-signature) 14%, var(--color-bg-secondary));
+}
+
+.predictions-team-game-pill.is-loss {
+  opacity: 0.58;
+}
+
+.predictions-team-game-pill.is-tie {
+  border-color: var(--color-accent-orange);
+}
+
+.predictions-empty-state {
+  display: flex;
+  min-height: 210px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 28px;
+  color: var(--color-label-secondary);
+  text-align: center;
+}
+
+.predictions-empty-state h3 {
+  margin: 0;
+  color: var(--color-label);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.predictions-empty-state p:last-child {
+  max-width: 460px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.predictions-empty-state span {
+  color: var(--color-label);
+  font-weight: 900;
+}
+
+.predictions-standings-grid,
+.predictions-playoffs-layout {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+@media (min-width: 900px) {
+  .predictions-standings-grid,
+  .predictions-playoffs-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.predictions-division-table,
+.predictions-conference-bracket,
+.predictions-super-bowl-card {
+  min-width: 0;
+  border: 1px solid var(--color-separator);
+  border-radius: 8px;
+  background: var(--color-bg-secondary);
+  overflow: hidden;
+}
+
+.predictions-division-header {
+  padding: 12px 14px;
+  margin: 0;
+  border-bottom: 1px solid var(--color-separator);
+  background: var(--color-bg-tertiary);
+}
+
+.predictions-division-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.predictions-division-table th,
+.predictions-division-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--color-separator);
+  color: var(--color-label-secondary);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.predictions-standings-row {
+  background: var(--prediction-team-gradient, var(--color-bg-secondary));
+}
+
+.predictions-standings-row td {
+  border-bottom-color: color-mix(in srgb, var(--prediction-team-border, var(--color-separator)) 42%, transparent);
+  background: transparent;
+  color: var(--prediction-team-fg, var(--color-label));
+}
+
+.predictions-standings-row .predictions-team-name {
+  color: var(--prediction-team-muted, var(--color-label-secondary));
+}
+
+.predictions-standings-row .predictions-team-code {
+  color: var(--prediction-team-fg, var(--color-label));
+}
+
+.predictions-division-table th {
+  color: var(--color-label-tertiary);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.predictions-division-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.predictions-rank {
+  display: inline-flex;
+  width: 22px;
+  min-height: 22px;
+  align-items: center;
+  justify-content: center;
+  color: var(--prediction-team-fg, var(--color-label));
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.predictions-bracket-rounds {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+@media (min-width: 1180px) {
+  .predictions-bracket-rounds {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+.predictions-bracket-round {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.predictions-bracket-round h3 {
+  color: var(--color-label-tertiary);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+}
+
+.predictions-bracket-matchup {
+  min-width: 0;
+  border: 1px solid var(--color-separator);
+  border-radius: 8px;
+  background: var(--color-bg-tertiary);
+  overflow: hidden;
+}
+
+.predictions-bracket-matchup > header,
+.predictions-super-bowl-card > header {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--color-separator);
+  color: var(--color-label-tertiary);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.predictions-bracket-teams {
+  display: flex;
+  flex-direction: column;
+}
+
+.predictions-playoff-team {
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 0;
+  border-bottom: 1px solid var(--color-separator);
+  background: var(--color-bg-secondary);
+  color: var(--color-label);
+  text-align: left;
+}
+
+.predictions-playoff-team:last-child {
+  border-bottom: 0;
+}
+
+.predictions-playoff-team:disabled {
+  min-height: 42px;
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      transparent 0,
+      transparent 8px,
+      var(--color-fill-secondary) 8px,
+      var(--color-fill-secondary) 16px
+    ),
+    var(--color-bg-secondary);
+  color: var(--color-label-quaternary);
+}
+
+.predictions-playoff-team.is-picked {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--color-signature) 22%, transparent), var(--color-bg-secondary));
+  box-shadow: inset 3px 0 0 var(--color-signature);
+}
+
+.predictions-super-bowl-card {
+  margin: 0 14px 16px;
+  background: linear-gradient(135deg, var(--color-signature), color-mix(in srgb, var(--color-signature) 68%, var(--color-bg-secondary)));
+}
+
+.predictions-super-bowl-card > header {
+  border-bottom-color: color-mix(in srgb, var(--color-signature-fg) 18%, transparent);
+  color: color-mix(in srgb, var(--color-signature-fg) 70%, transparent);
+}
+
+.predictions-super-bowl-card .predictions-bracket-matchup {
+  margin: 14px;
+  border-color: color-mix(in srgb, var(--color-signature-fg) 18%, transparent);
+}
+
+.predictions-super-bowl-card--champion {
+  overflow: hidden;
+  color: var(--color-signature-fg);
+}
+
+.predictions-champion-banner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(14px, 3vw, 34px);
+  min-height: 118px;
+  margin: 14px;
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid color-mix(in srgb, var(--color-signature-fg) 14%, transparent);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--color-signature-fg) 7%, transparent), transparent 34%, transparent 66%, color-mix(in srgb, var(--color-signature-fg) 7%, transparent)),
+    color-mix(in srgb, var(--color-signature) 78%, var(--color-bg-secondary));
+}
+
+.predictions-champion-team {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: 74px;
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-signature-fg);
+  text-align: left;
+  overflow: hidden;
+  transition:
+    background 160ms cubic-bezier(0.32, 0.72, 0, 1),
+    border-color 160ms cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 160ms cubic-bezier(0.32, 0.72, 0, 1),
+    opacity 160ms cubic-bezier(0.32, 0.72, 0, 1),
+    transform 160ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.predictions-champion-team::before {
+  content: "";
+  position: absolute;
+  inset-block: 12px;
+  z-index: 1;
+  inline-size: 4px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.predictions-champion-team::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: transparent;
+}
+
+.predictions-champion-team > * {
+  position: relative;
+  z-index: 2;
+}
+
+.predictions-champion-team--start::before {
+  inset-inline-start: 0;
+}
+
+.predictions-champion-team--end::before {
+  inset-inline-end: 0;
+}
+
+.predictions-champion-team--end {
+  grid-template-columns: minmax(0, 1fr) auto;
+  text-align: right;
+}
+
+.predictions-champion-team--end .predictions-champion-logo {
+  order: 2;
+}
+
+.predictions-champion-team--end .predictions-champion-team-copy {
+  align-items: flex-end;
+}
+
+.predictions-champion-team.is-runner-up {
+  opacity: 0.42;
+  filter: saturate(0.72);
+}
+
+.predictions-champion-team.is-winner {
+  border-color: color-mix(in srgb, var(--prediction-team-border, var(--color-signature-fg)) 62%, transparent);
+  background: var(--prediction-team-gradient, color-mix(in srgb, var(--color-signature) 88%, var(--color-signature-fg) 12%));
+  color: var(--prediction-team-fg, var(--color-signature-fg));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--prediction-team-fg, var(--color-signature-fg)) 18%, transparent),
+    0 12px 28px color-mix(in srgb, var(--prediction-team-border, var(--color-signature-fg)) 34%, transparent);
+}
+
+.predictions-champion-team.is-winner::after {
+  background: var(--prediction-team-overlay, transparent);
+}
+
+.predictions-champion-team.is-winner::before {
+  background: var(--color-signature);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--color-signature) 58%, transparent);
+}
+
+.predictions-champion-team:is(:hover, :focus-visible) {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.predictions-champion-logo {
+  width: clamp(54px, 7vw, 86px);
+  height: clamp(54px, 7vw, 86px);
+  object-fit: contain;
+  filter: drop-shadow(0 5px 10px color-mix(in srgb, var(--color-signature-fg) 24%, transparent));
+}
+
+.predictions-champion-team.is-winner .predictions-champion-logo {
+  transform: scale(1.08);
+  filter:
+    drop-shadow(0 7px 12px color-mix(in srgb, var(--prediction-team-fg, var(--color-signature-fg)) 30%, transparent))
+    drop-shadow(0 0 14px color-mix(in srgb, var(--prediction-team-border, var(--color-signature-fg)) 34%, transparent));
+}
+
+.predictions-champion-team.is-winner .predictions-champion-seed,
+.predictions-champion-team.is-winner .predictions-champion-team-copy > span:last-child {
+  color: var(--prediction-team-muted, color-mix(in srgb, var(--prediction-team-fg, var(--color-signature-fg)) 72%, transparent));
+}
+
+.predictions-champion-team.is-runner-up .predictions-champion-logo {
+  opacity: 0.78;
+}
+
+.predictions-champion-team-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.predictions-champion-winner-badge {
+  width: fit-content;
+  margin-bottom: 3px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: var(--color-signature);
+  color: var(--color-signature-fg);
+}
+
+.predictions-champion-team-copy strong,
+.predictions-champion-center strong {
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  line-height: 0.9;
+  text-transform: uppercase;
+}
+
+.predictions-champion-team-copy strong {
+  overflow: hidden;
+  font-size: clamp(30px, 4vw, 48px);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.predictions-champion-team-copy span,
+.predictions-champion-center span {
+  font-family: var(--font-body, 'Figtree', sans-serif);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.predictions-champion-seed {
+  color: color-mix(in srgb, var(--color-signature-fg) 72%, transparent);
+}
+
+.predictions-champion-center {
+  display: flex;
+  min-width: 170px;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  text-align: center;
+}
+
+.predictions-champion-center strong {
+  font-size: clamp(38px, 5vw, 62px);
+}
+
+.predictions-champion-center span:last-child {
+  color: color-mix(in srgb, var(--color-signature-fg) 68%, transparent);
+}
+
+@media (max-width: 719px) {
+  .predictions-control-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .predictions-fast-pick-toggle {
+    align-self: flex-end;
+  }
+
+  .predictions-game-card {
+    grid-template-columns: 1fr;
+    gap: 0;
+    margin-bottom: 10px;
+    border: 1px solid var(--color-separator);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .predictions-game-card-meta,
+  .predictions-game-card-actions {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .predictions-game-matchup {
+    grid-template-columns: minmax(0, 1fr) 46px minmax(0, 1fr);
+    padding: 0 10px 10px;
+  }
+
+  .predictions-winner-button {
+    min-height: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .predictions-winner-button .predictions-team-identity {
+    flex-direction: column;
+  }
+
+  .predictions-winner-button .predictions-team-logo {
+    width: 46px;
+    height: 46px;
+  }
+
+  .predictions-winner-button .predictions-team-code {
+    font-size: 24px;
+  }
+
+  .predictions-team-pick-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .predictions-advanced-override-button {
+    width: 100%;
+  }
+
+  .predictions-division-table {
+    overflow-x: auto;
+  }
+
+  .predictions-champion-banner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    padding: 18px;
+  }
+
+  .predictions-champion-center {
+    order: -1;
+    min-width: 0;
+  }
+
+  .predictions-champion-team,
+  .predictions-champion-team--end {
+    grid-template-columns: auto minmax(0, 1fr);
+    text-align: left;
+  }
+
+  .predictions-champion-team--end .predictions-champion-logo {
+    order: 0;
+  }
+
+  .predictions-champion-team--end .predictions-champion-team-copy {
+    align-items: flex-start;
+  }
+}
+
+/* Predictions record-first refinements */
+.predictions-record-board,
+.predictions-team-page {
+  min-width: 0;
+  border: 1px solid var(--color-separator);
+  border-radius: 8px;
+  background: var(--color-bg-secondary);
+  overflow: hidden;
+}
+
+.predictions-record-board > .predictions-section-header,
+.predictions-team-page-header {
+  padding: 18px;
+  border-bottom: 1px solid var(--color-separator);
+}
+
+.predictions-record-grid {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+@media (min-width: 900px) {
+  .predictions-record-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.predictions-record-group {
+  container-type: inline-size;
+  min-width: 0;
+  border: 1px solid var(--color-separator);
+  border-radius: 8px;
+  background: var(--color-bg-secondary);
+  overflow: hidden;
+}
+
+.predictions-record-group-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.predictions-record-row,
+.predictions-advanced-team-row,
+.predictions-team-game-row {
+  display: grid;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  border-bottom: 1px solid var(--color-separator);
+  background: transparent;
+  color: var(--color-label);
+  text-align: left;
+}
+
+.predictions-record-row {
+  grid-template-columns: minmax(136px, 1fr) minmax(92px, max-content) clamp(24px, 6cqw, 44px) max-content;
+  grid-template-areas: "identity status . controls";
+  min-height: 78px;
+  padding: 10px 12px;
+}
+
+.predictions-record-row > .predictions-team-identity {
+  grid-area: identity;
+}
+
+.predictions-record-row > .predictions-record-row-status {
+  grid-area: status;
+}
+
+.predictions-record-row > .predictions-record-controls {
+  grid-area: controls;
+  justify-self: end;
+}
+
+.predictions-record-row .predictions-team-identity,
+.predictions-advanced-team-row .predictions-team-identity {
+  overflow: hidden;
+}
+
+.predictions-record-row .predictions-team-copy,
+.predictions-advanced-team-row .predictions-team-copy {
+  overflow: hidden;
+}
+
+.predictions-record-row .predictions-team-name,
+.predictions-advanced-team-row .predictions-team-name {
+  display: block;
+  max-width: 100%;
+}
+
+.predictions-team-gradient-row {
+  position: relative;
+  overflow: hidden;
+  border-bottom-color: color-mix(in srgb, var(--prediction-team-border, var(--color-separator)) 42%, transparent);
+  background: var(--prediction-team-gradient, transparent);
+  color: var(--prediction-team-fg, var(--color-label));
+}
+
+.predictions-team-gradient-row::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--prediction-team-overlay, transparent);
+  transition: background 160ms cubic-bezier(0.32, 0.72, 0, 1), box-shadow 160ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.predictions-team-gradient-row > * {
+  position: relative;
+  z-index: 1;
+}
+
+.predictions-record-row:last-child,
+.predictions-advanced-team-row:last-child,
+.predictions-team-game-row:last-child {
+  border-bottom: 0;
+}
+
+.predictions-record-row-status {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  align-self: center;
+  overflow: hidden;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+.predictions-record-row-status span {
+  max-width: 100%;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.predictions-record-row-status strong,
+.predictions-advanced-team-row > span:first-of-type,
+.predictions-team-page-header h2 {
+  color: var(--color-label);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.predictions-team-gradient-row .predictions-record-row-status strong,
+.predictions-team-gradient-row.predictions-advanced-team-row > span:first-of-type,
+.predictions-team-gradient-row .predictions-team-code,
+.predictions-team-gradient-row.predictions-team-page-header h2 {
+  color: var(--prediction-team-fg, var(--color-label));
+}
+
+.predictions-record-row-status strong {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: clamp(18px, 3.1cqw, 20px);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.predictions-record-row-status span,
+.predictions-advanced-team-row > span:last-child,
+.predictions-team-page-header span {
+  color: var(--color-label-tertiary);
+  font-family: var(--font-body, 'Figtree', sans-serif);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.predictions-team-gradient-row .predictions-record-row-status span,
+.predictions-team-gradient-row.predictions-advanced-team-row > span:last-child,
+.predictions-team-gradient-row .predictions-team-name,
+.predictions-team-gradient-row .predictions-record-steppers label > span,
+.predictions-team-gradient-row.predictions-team-page-header span,
+.predictions-team-gradient-row.predictions-team-page-header .predictions-eyebrow {
+  color: var(--prediction-team-muted, var(--color-label-tertiary));
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--prediction-team-fg, var(--color-label)) 20%, transparent);
+}
+
+.predictions-record-controls {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.predictions-record-primary {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.predictions-record-value {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.predictions-record-value strong {
+  color: var(--color-label);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 44px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  line-height: 0.9;
+  font-variant-numeric: tabular-nums;
+}
+
+.predictions-record-value span,
+.predictions-record-steppers label > span,
+.predictions-division-control summary {
+  color: var(--color-label-tertiary);
+  font-family: var(--font-body, 'Figtree', sans-serif);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.predictions-record-steppers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.predictions-record-steppers label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+}
+
+.predictions-record-division-stepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.predictions-record-stepper {
+  display: inline-grid;
+  grid-template-columns: 30px 38px 30px;
+  align-items: center;
+  justify-self: end;
+  width: 98px;
+  min-width: 98px;
+  max-width: 98px;
+  min-height: 32px;
+  border: 1px solid var(--color-separator);
+  border-radius: 999px;
+  background: var(--color-fill-secondary);
+  overflow: hidden;
+}
+
+.predictions-team-gradient-row .predictions-record-stepper {
+  border-color: color-mix(in srgb, var(--prediction-team-fg, var(--color-label)) 22%, transparent);
+  background: var(--prediction-team-subtle, var(--color-fill-secondary));
+}
+
+.predictions-record-stepper button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 32px;
+  border: 0;
+  background: transparent;
+  color: var(--color-label);
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.predictions-team-gradient-row .predictions-record-stepper button,
+.predictions-team-gradient-row .predictions-record-stepper span {
+  color: var(--prediction-team-fg, var(--color-label));
+}
+
+.predictions-record-stepper button:disabled {
+  color: var(--color-label-quaternary);
+}
+
+.predictions-team-gradient-row .predictions-record-stepper button:disabled {
+  color: var(--prediction-team-muted, var(--color-label-tertiary));
+  opacity: 0.45;
+}
+
+.predictions-record-stepper span {
+  color: var(--color-label);
+  font-size: 13px;
+  font-weight: 900;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.predictions-division-control {
+  border-top: 1px solid var(--color-separator);
+  padding-top: 8px;
+}
+
+.predictions-division-control summary {
+  width: fit-content;
+  cursor: pointer;
+}
+
+.predictions-division-control > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.predictions-division-control > div > span {
+  color: var(--color-label-secondary);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.predictions-record-controls--compact .predictions-record-value {
+  display: none;
+}
+
+.predictions-record-controls--compact .predictions-record-primary {
+  justify-content: flex-end;
+}
+
+.predictions-record-controls--compact .predictions-record-steppers {
+  width: min(100%, 178px);
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.predictions-record-controls--compact .predictions-record-steppers label {
+  display: grid;
+  grid-template-columns: minmax(64px, 1fr) auto;
+  gap: 8px;
+}
+
+.predictions-record-controls--compact .predictions-record-steppers label > span {
+  text-align: right;
+}
+
+.predictions-record-controls--compact .predictions-division-control {
+  margin-left: auto;
+  max-width: 220px;
+}
+
+@container (max-width: 560px) {
+  .predictions-record-row {
+    grid-template-columns: minmax(0, 1fr) max-content;
+    grid-template-areas:
+      "identity identity"
+      "status controls";
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 14px;
+    min-height: 0;
+    padding: 12px;
+  }
+
+  .predictions-record-row-status {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .predictions-record-row-status span {
+    text-align: left;
+  }
+
+  .predictions-record-controls--compact .predictions-record-primary {
+    justify-content: flex-end;
+  }
+
+  .predictions-record-controls--compact .predictions-record-steppers {
+    width: min(100%, 178px);
+    max-width: 178px;
+    margin-left: auto;
+  }
+
+  .predictions-record-controls--compact .predictions-record-steppers label {
+    grid-template-columns: minmax(70px, auto) auto;
+  }
+}
+
+.predictions-advanced-team-row {
+  grid-template-columns: minmax(170px, 1fr) auto;
+  min-height: 64px;
+  width: 100%;
+  padding: 12px 14px;
+  cursor: pointer;
+  outline: none;
+  transition:
+    border-color 160ms cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 160ms cubic-bezier(0.32, 0.72, 0, 1),
+    transform 160ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.predictions-advanced-team-row:hover,
+.predictions-record-row:hover,
+.predictions-team-game-row:hover {
+  background: var(--color-bg-tertiary);
+}
+
+.predictions-team-gradient-row:hover {
+  background: var(--prediction-team-gradient, transparent);
+}
+
+.predictions-advanced-team-row:is(:hover, :focus-visible) {
+  border-bottom-color: color-mix(in srgb, var(--prediction-team-fg, var(--color-label)) 42%, transparent);
+}
+
+.predictions-advanced-team-row > span:first-of-type {
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.predictions-back-button {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 32px;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 10px;
+  padding: 0 11px;
+  border: 1px solid var(--color-separator);
+  border-radius: 8px;
+  background: var(--color-fill);
+  color: var(--color-label-secondary);
+  font-family: var(--font-body, 'Figtree', sans-serif);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.predictions-back-button > span:first-child {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.predictions-team-page {
+  overflow: hidden;
+}
+
+.predictions-team-page-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(18px, 4vw, 48px);
+  min-height: clamp(118px, 16vh, 180px);
+  background: var(--color-bg-secondary);
+}
+
+.predictions-team-page-header.predictions-team-gradient-row {
+  background: var(--prediction-team-gradient, var(--color-bg-secondary));
+}
+
+.predictions-team-page-header > div:last-child {
+  min-width: 128px;
+  text-align: right;
+}
+
+.predictions-team-page-header h2 {
+  margin: 6px 0 4px;
+  font-size: clamp(42px, 5vh, 70px);
+  text-align: right;
+}
+
+.predictions-team-page-header .predictions-team-identity {
+  gap: clamp(10px, 1.4vw, 18px);
+}
+
+.predictions-team-page-header .predictions-team-logo {
+  width: clamp(48px, 8vh, 92px);
+  height: clamp(48px, 8vh, 92px);
+}
+
+.predictions-team-page-header .predictions-team-code {
+  font-size: clamp(18px, 2.6vh, 34px);
+}
+
+.predictions-team-page-header .predictions-team-name {
+  font-size: clamp(13px, 1.8vh, 21px);
+  font-weight: 850;
+}
+
+.predictions-team-page-panel {
+  padding: 14px;
+  background: var(--color-bg-secondary);
+}
+
+.predictions-team-game-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.predictions-team-game-header h2 {
+  margin: 0;
+  color: var(--color-label);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.predictions-team-page-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-separator);
+}
+
+.predictions-team-page-actions button {
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--color-separator);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-label-secondary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.predictions-team-page-actions button.is-primary {
+  border-color: var(--color-signature);
+  background: var(--color-signature);
+  color: var(--color-signature-fg);
+}
+
+.predictions-team-game-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  border: 1px solid var(--color-separator);
+  border-radius: 0;
+  padding: 0;
+  background: var(--color-bg-secondary);
+  overflow: hidden;
+}
+
+@media (min-width: 1100px) {
+  .predictions-team-game-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.predictions-team-game-row {
+  grid-template-columns: 92px minmax(0, 1fr) 104px;
+  min-height: 58px;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--prediction-team-border, var(--color-separator)) 42%, transparent);
+  border-radius: 0;
+  background: var(--prediction-team-gradient, var(--color-bg-secondary));
+}
+
+.predictions-team-game-row.is-picked {
+  box-shadow: inset 4px 0 0 var(--game-result-color, var(--color-signature));
+}
+
+.predictions-team-game-row.is-win {
+  --game-result-color: var(--color-accent-green);
+}
+
+.predictions-team-game-row.is-loss {
+  --game-result-color: var(--color-accent-red);
+}
+
+.predictions-team-game-row.is-tie {
+  --game-result-color: var(--color-signature);
+}
+
+.predictions-team-game-row.is-bye {
+  box-shadow: inset 4px 0 0 var(--prediction-team-muted, var(--color-label-tertiary));
+}
+
+.predictions-team-game-meta {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+  color: var(--prediction-team-muted, var(--color-label-tertiary));
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.predictions-team-game-opponent {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.predictions-team-game-marker {
+  min-width: 22px;
+  color: var(--prediction-team-muted, var(--color-label-tertiary));
+  font-family: var(--font-body, 'Figtree', sans-serif);
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.02em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.predictions-bye-identity {
+  min-width: 0;
+}
+
+.predictions-bye-logo-spacer {
+  visibility: hidden;
+}
+
+.predictions-bye-label {
+  color: var(--prediction-team-fg, var(--color-label));
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.predictions-team-game-actions {
+  display: inline-flex;
+  gap: 5px;
+  justify-content: flex-end;
+}
+
+.predictions-team-game-actions--bye {
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 29px;
+  color: var(--prediction-team-muted, var(--color-label-secondary));
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.predictions-game-result-button {
+  width: 31px;
+  height: 29px;
+  border: 1px solid color-mix(in srgb, var(--prediction-team-fg, var(--color-label)) 22%, transparent);
+  border-radius: 8px;
+  background: var(--prediction-team-subtle, var(--color-fill));
+  color: var(--prediction-team-muted, var(--color-label-secondary));
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.predictions-game-result-button.is-win.is-active {
+  border-color: var(--color-accent-green);
+  background: var(--color-accent-green);
+  color: var(--color-alpha-fg);
+}
+
+.predictions-game-result-button.is-loss.is-active {
+  border-color: var(--color-accent-red);
+  background: var(--color-accent-red);
+  color: var(--color-alpha-fg);
+}
+
+.predictions-game-result-button.is-tie.is-active {
+  border-color: var(--color-signature);
+  background: var(--color-signature);
+  color: var(--color-signature-fg);
+}
+
+@media (max-width: 719px) {
+  .predictions-record-row {
+    grid-template-columns: minmax(0, 1fr) max-content;
+    grid-template-areas:
+      "identity identity"
+      "status controls";
+    align-items: center;
+  }
+
+  .predictions-record-row-status {
+    align-items: flex-start;
+  }
+
+  .predictions-record-controls--compact .predictions-record-primary,
+  .predictions-record-primary {
+    align-items: center;
+    flex-direction: row;
+  }
+
+  .predictions-record-steppers {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .predictions-record-controls--compact .predictions-division-control {
+    width: 100%;
+    max-width: none;
+    margin-left: 0;
+  }
+
+  .predictions-team-page-header {
+    align-items: flex-start;
+    grid-template-columns: minmax(0, 1fr);
+    min-height: clamp(132px, 24vh, 180px);
+  }
+
+  .predictions-team-page-header > div:last-child {
+    min-width: 0;
+    text-align: left;
+  }
+
+  .predictions-team-page-header h2 {
+    text-align: left;
+  }
+
+  .predictions-team-page-header .predictions-team-logo {
+    width: clamp(48px, 14vw, 68px);
+    height: clamp(48px, 14vw, 68px);
+  }
+
+  .predictions-team-game-row {
+    grid-template-columns: minmax(74px, 0.34fr) minmax(0, 1fr);
+    min-height: 62px;
+  }
+
+  .predictions-team-game-actions {
+    width: 100%;
+    grid-column: 2;
+  }
+
+  .predictions-game-result-button {
+    flex: 1;
   }
 }

@@ -112,6 +112,7 @@ const PlayerBrowser = ({
   onNavigateHome,
   onNavigateTeam,
   onNavigatePlayer,
+  onViewSchedule,
   onPlayerModeChange,
   onComparePlayer,
   onBuildTrade,
@@ -410,6 +411,7 @@ const PlayerBrowser = ({
           backLabel={navBack?.label}
           onCompare={onComparePlayer}
           onBuildTrade={onBuildTrade}
+          onViewSchedule={selectedPlayer.teamId ? () => onViewSchedule?.(selectedPlayer.teamId) : undefined}
         />
       );
     }
@@ -456,6 +458,7 @@ const PlayerBrowser = ({
           team={selectedTeam}
           onBack={onNavigateHome}
           onSelectPlayer={handleSelectPlayer}
+          onViewSchedule={() => onViewSchedule?.(selectedTeam.id)}
         />
       );
     }

@@ -1045,3 +1045,16 @@ All notable changes, oldest first. Add new entries at the bottom.
 - **Heatmap D/ST cleanup** - Heatmap defense mode now supports D/ST-only leagues, hides irrelevant all-position chips and no-value stat filters, and expands D/ST fantasy point drilldowns into line-by-line scoring.
 - **Companion Rankings filters** - Rankings now supports fantasy-team filtering, overall vs positional rank scopes, mobile sort controls, and stable ranks that are computed before search or roster filtering.
 - **Trade and Statistics handoff polish** - Statistics Build Trade now carries the target player's roster into Trade Agent when available, selected Trade Agent assets use cleaner player/pick metadata, and player stat section labels use readable accents in dark team themes.
+
+---
+
+## v7.5 - Predictor Redesign & Schedule
+*2026-05-15*
+
+- **Predictor redesign** - Rebuilt Predictions around record-first picks, an Advanced Mode team drilldown, editorial standings, a manual playoff bracket, team-gradient rows, and separate team/game progress tracking.
+- **2026 schedule data** - Added a generated 2026 regular-season schedule feed with ESPN event ids, kickoff metadata, broadcasters, venue details, ordered team opponents, and documentation for maintaining `public/season-schedule.json`.
+- **Statistics Schedule** - Added a Statistics Schedule subview with week and team modes, international/PrimeTime/holiday filters, team/player schedule handoffs, broadcast display, bye-week rows, and a game-stat route for ESPN box-score summaries when games are final.
+- **Prediction validation fixes** - Tightened Choose Record constraints so impossible overall/division combinations are blocked, division wins stay balanced within each division, and undefeated/winless records propagate forced picks to opponents.
+- **Prediction display fixes** - Prevented Live Seeds and Playoffs from filling before records are entered, kept Advanced Mode headers live while staged game picks change, aligned bye rows, preserved team gradients at rest, and improved responsive row/stepper sizing.
+- **Statistics Visual fixes** - Hid future seasons until stats exist, enabled Visual without requiring a connected fantasy league, and opened Visual against the latest stat-bearing expanded season instead of the newest displayed placeholder year.
+- **Companion polish** - Kept Rankings scroll position fixed while holding the scoring-preview comparison control, and updated Companion Defense rankings so the visible rank reflects toughest-to-easiest strength while summary copy follows the active sort/filter state.

@@ -432,6 +432,7 @@ const PlayerStatsVisual = ({
     players,
     scheduleMap,
     statsLoading,
+    loadPlayers,
     loadSeasonStats,
   } = useSleeperStats();
   const chartInstanceId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
@@ -457,6 +458,7 @@ const PlayerStatsVisual = ({
   const selectedSeasonKey = normalizedSeasonOptions.includes(selectedSeason)
     ? selectedSeason
     : defaultSelectedSeason;
+  const shouldUseContextStats = hasLeague && selectedSeasonKey === String(season);
   const selectedScoringSettings = fantasyScoringByYear[selectedSeasonKey] ?? null;
   const canUseFantasyForSeason = Boolean(selectedScoringSettings);
   const scoringSettings = selectedScoringSettings ?? activeScoringSettings ?? DEFAULT_SCORING;
@@ -483,11 +485,15 @@ const PlayerStatsVisual = ({
   }, []);
 
   useEffect(() => {
-    if (hasLeague && selectedSeasonKey === String(season) && !weeklyStats && !statsLoading) loadSeasonStats?.();
-  }, [hasLeague, loadSeasonStats, season, selectedSeasonKey, statsLoading, weeklyStats]);
+    if (!players) void loadPlayers?.();
+  }, [loadPlayers, players]);
 
   useEffect(() => {
-    if (!hasLeague || !selectedSeasonKey || selectedSeasonKey === String(season)) return undefined;
+    if (shouldUseContextStats && !weeklyStats && !statsLoading) loadSeasonStats?.();
+  }, [loadSeasonStats, shouldUseContextStats, statsLoading, weeklyStats]);
+
+  useEffect(() => {
+    if (!selectedSeasonKey || shouldUseContextStats) return undefined;
     if (weeklyStatsBySeason[selectedSeasonKey] !== undefined || historicalStatsRequestsRef.current.has(selectedSeasonKey)) return undefined;
 
     const seasonToLoad = selectedSeasonKey;
@@ -510,10 +516,10 @@ const PlayerStatsVisual = ({
 
     void loadHistoricalStats();
     return undefined;
-  }, [hasLeague, season, selectedSeasonKey, weeklyStatsBySeason]);
+  }, [selectedSeasonKey, shouldUseContextStats, weeklyStatsBySeason]);
 
   useEffect(() => {
-    if (!hasLeague || !selectedSeasonKey || selectedSeasonKey === String(season)) return undefined;
+    if (!selectedSeasonKey || shouldUseContextStats) return undefined;
     if (scheduleMapBySeason[selectedSeasonKey] !== undefined || historicalScheduleRequestsRef.current.has(selectedSeasonKey)) return undefined;
 
     const seasonToLoad = selectedSeasonKey;
@@ -536,15 +542,15 @@ const PlayerStatsVisual = ({
 
     void loadHistoricalSchedule();
     return undefined;
-  }, [hasLeague, scheduleMapBySeason, season, selectedSeasonKey]);
+  }, [scheduleMapBySeason, selectedSeasonKey, shouldUseContextStats]);
 
-  const selectedWeeklyStats = selectedSeasonKey === String(season)
+  const selectedWeeklyStats = shouldUseContextStats
     ? weeklyStats
     : weeklyStatsBySeason[selectedSeasonKey];
-  const selectedScheduleMap = selectedSeasonKey === String(season)
+  const selectedScheduleMap = shouldUseContextStats
     ? scheduleMap
     : scheduleMapBySeason[selectedSeasonKey];
-  const selectedStatsLoading = selectedSeasonKey === String(season)
+  const selectedStatsLoading = shouldUseContextStats
     ? statsLoading
     : Boolean(weeklyStatsLoadingBySeason[selectedSeasonKey] || scheduleLoadingBySeason[selectedSeasonKey]);
   const playerName = useMemo(
@@ -734,14 +740,6 @@ const PlayerStatsVisual = ({
   const showChartLoading = selectedStatsLoading && !selectedWeeklyStats;
   const showNoData = !showChartLoading && !rows.length;
   const showChart = !showChartLoading && rows.length > 0;
-
-  if (!hasLeague) {
-    return (
-      <div className="rounded-xl p-5 text-sm" style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-separator)', color: 'var(--color-label-secondary)' }}>
-        Connect a Sleeper league to unlock weekly stat visualization.
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">

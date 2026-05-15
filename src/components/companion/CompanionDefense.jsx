@@ -96,6 +96,15 @@ function getValueLabel(mode, position, stat) {
     : `${getDefenseRankingStatOption(position, stat).label} Allowed to ${position}`;
 }
 
+function getDefenseSummaryText({ valueLabel, sort, dir, query }) {
+  const trimmedQuery = String(query ?? '').trim();
+  const sortPhrase = sort === 'team'
+    ? `sorted by defense ${dir === 'asc' ? 'A-Z' : 'Z-A'}`
+    : `sorted by ${sort === 'avg' ? 'per game' : 'total'}, ${dir === 'asc' ? 'fewest allowed first' : 'most allowed first'}`;
+  const queryPhrase = trimmedQuery ? ` - matching "${trimmedQuery}"` : '';
+  return `${valueLabel} - season to date - ${sortPhrase}${queryPhrase}`;
+}
+
 function groupContributionsByWeek(row) {
   if (!row) return [];
   const byWeek = new Map();
@@ -152,6 +161,12 @@ export default function CompanionDefense({ routeState, onRouteStateChange }) {
   const state = useMemo(() => normalizeRouteState(routeState ?? DEFAULT_DEFENSE_RANKING_STATE), [routeState]);
   const statOptions = useMemo(() => getDefenseRankingStatOptions(state.position), [state.position]);
   const activeStatLabel = getValueLabel(state.mode, state.position, state.stat);
+  const summaryText = getDefenseSummaryText({
+    valueLabel: activeStatLabel,
+    sort: state.sort,
+    dir: state.dir,
+    query: state.query,
+  });
 
   useEffect(() => {
     if (hasLeague && !players) loadPlayers?.();
@@ -262,7 +277,7 @@ export default function CompanionDefense({ routeState, onRouteStateChange }) {
 
       <div className="companion-defense-summary-row px-4">
         <div>
-          <p className="companion-defense-subtitle">{activeStatLabel} - season to date - most allowed first</p>
+          <p className="companion-defense-subtitle">{summaryText}</p>
         </div>
       </div>
 
@@ -316,7 +331,7 @@ export default function CompanionDefense({ routeState, onRouteStateChange }) {
                   <CompanionPlayerMetric key="avg" value={fmtValue(row.avg, state.mode, state.stat)} label="Per Game" />,
                 ]}
                 leading={(
-                  <span className="companion-defense-rank">#{row.rank}</span>
+                  <span className="companion-defense-rank">#{row.strengthRank}</span>
                 )}
                 trailing={<span className="companion-defense-row-chevron" aria-hidden="true">&gt;</span>}
                 onClick={() => setSelectedTeam(row.team)}
@@ -364,7 +379,7 @@ export default function CompanionDefense({ routeState, onRouteStateChange }) {
             <button type="button" onClick={() => setSelectedTeam(null)} aria-label="Close defense details">Close</button>
           </div>
           <div className="companion-defense-modal-stats">
-            <span><strong>#{selectedRow.rank}</strong>Rank</span>
+            <span><strong>#{selectedRow.strengthRank}</strong>Rank</span>
             <span><strong>{fmtValue(selectedRow.total, state.mode, state.stat)}</strong>Total Allowed</span>
             <span><strong>{fmtValue(selectedRow.avg, state.mode, state.stat)}</strong>Per Game</span>
           </div>

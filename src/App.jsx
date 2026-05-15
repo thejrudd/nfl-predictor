@@ -1,15 +1,15 @@
-import { Suspense, lazy, useCallback, useEffect, useState, useRef, useTransition } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useMemo, useState, useRef, useTransition } from 'react';
 import { loadScheduleData } from './utils/scheduleParser';
+import { loadSeasonSchedule } from './utils/seasonSchedule';
 import { usePredictions } from './context/PredictionContext';
 import { useTheme } from './context/ThemeContext';
-import { validateTotalWinsLosses } from './utils/validation';
 import { exportAsJSON, importFromJSON } from './utils/exportImport';
-import TeamList from './components/TeamList';
 import { usePWAInstall } from './hooks/usePWAInstall';
 import useBodyScrollLock from './hooks/useBodyScrollLock';
 import NavBar from './components/NavBar';
 import BottomTabBar from './components/BottomTabBar';
 import SeasonSubNav from './components/SeasonSubNav';
+import StatisticsSubNav from './components/StatisticsSubNav';
 import CompanionSubNav from './components/CompanionSubNav';
 import TradeSubNav from './components/TradeSubNav';
 import ScoutSubNav from './components/ScoutSubNav';
@@ -29,11 +29,11 @@ import { debugCompanionLog, debugCompanionTimeAsync } from './utils/companionPer
 import ScoringOverrideBanner from './components/companion/ScoringOverrideBanner';
 
 const ExportPreview = lazy(() => import('./components/ExportPreview'));
-const TeamDetail = lazy(() => import('./components/TeamDetail'));
-const StandingsTable = lazy(() => import('./components/StandingsTable'));
-const PlayoffSeeding = lazy(() => import('./components/PlayoffSeeding'));
+const PredictionsRedesign = lazy(() => import('./components/predictions/PredictionsRedesign'));
 const Guide = lazy(() => import('./components/Guide'));
 const PlayerBrowser = lazy(() => import('./components/PlayerBrowser'));
+const StatisticsSchedule = lazy(() => import('./components/StatisticsSchedule'));
+const StatisticsGame = lazy(() => import('./components/StatisticsGame'));
 const FavoriteTeamPicker = lazy(() => import('./components/FavoriteTeamPicker'));
 const CompanionConnect = lazy(() => import('./components/companion/CompanionConnect'));
 const CompanionRoster = lazy(() => import('./components/companion/CompanionRoster'));
@@ -196,8 +196,231 @@ function LeagueContextHeader({
   );
 }
 
+function getScheduleTeamId(value) {
+  if (typeof value === 'string') return value.toUpperCase();
+  return value?.id ? String(value.id).toUpperCase() : null;
+}
+
+function getScheduleGameTeamId(game, side) {
+  if (side === 'away') {
+    return getScheduleTeamId(game?.awayTeam)
+      ?? getScheduleTeamId(game?.away)
+      ?? getScheduleTeamId(game?.awayTeamId)
+      ?? getScheduleTeamId(game?.awayId);
+  }
+  return getScheduleTeamId(game?.homeTeam)
+    ?? getScheduleTeamId(game?.home)
+    ?? getScheduleTeamId(game?.homeTeamId)
+    ?? getScheduleTeamId(game?.homeId);
+}
+
+function buildPredictionScheduleModel(seasonSchedule, teams = []) {
+  const teamSchedules = new Map(teams.map((team) => [team.id, []]));
+  const hasScheduleGames = seasonSchedule?.metadata?.hasSchedule || seasonSchedule?.games?.length > 0;
+
+  if (!hasScheduleGames) {
+    return {
+      schedule: seasonSchedule,
+      teams,
+      hasScheduleGames: false,
+    };
+  }
+
+  const weeks = (seasonSchedule?.weeks ?? []).map((week) => ({
+    ...week,
+    games: (week.games ?? []).map((game, index) => {
+      const awayTeam = getScheduleGameTeamId(game, 'away');
+      const homeTeam = getScheduleGameTeamId(game, 'home');
+      const awaySchedule = teamSchedules.get(awayTeam) ?? [];
+      const homeSchedule = teamSchedules.get(homeTeam) ?? [];
+      const awayGameIndex = awaySchedule.length;
+      const homeGameIndex = homeSchedule.length;
+      const id = game.id ?? `${seasonSchedule.season ?? 2026}-W${String(week.week).padStart(2, '0')}-${awayTeam}-${homeTeam}-${index + 1}`;
+      const normalizedGame = {
+        ...game,
+        id,
+        week: week.week,
+        awayTeam,
+        homeTeam,
+        awayGameIndex,
+        homeGameIndex,
+      };
+
+      if (awayTeam) {
+        awaySchedule.push({
+          id,
+          week: week.week,
+          opponentId: homeTeam,
+          awayTeam,
+          homeTeam,
+          gameIndex: awayGameIndex,
+        });
+        teamSchedules.set(awayTeam, awaySchedule);
+      }
+
+      if (homeTeam) {
+        homeSchedule.push({
+          id,
+          week: week.week,
+          opponentId: awayTeam,
+          awayTeam,
+          homeTeam,
+          gameIndex: homeGameIndex,
+        });
+        teamSchedules.set(homeTeam, homeSchedule);
+      }
+
+      return normalizedGame;
+    }),
+  }));
+
+  const predictionTeams = teams.map((team) => {
+    const schedule = teamSchedules.get(team.id) ?? [];
+    if (!schedule.length) return team;
+    return {
+      ...team,
+      schedule,
+      opponents: schedule.map((entry) => entry.opponentId),
+    };
+  });
+
+  return {
+    schedule: { ...seasonSchedule, weeks, games: weeks.flatMap((week) => week.games) },
+    teams: predictionTeams,
+    hasScheduleGames: true,
+  };
+}
+
+function getPredictionGameWinner(game, predictions) {
+  const awayTeam = getScheduleGameTeamId(game, 'away');
+  const homeTeam = getScheduleGameTeamId(game, 'home');
+  const awayResult = predictions?.[awayTeam]?.gameResults?.[game.awayGameIndex];
+  const homeResult = predictions?.[homeTeam]?.gameResults?.[game.homeGameIndex];
+
+  if (awayResult === 'W' || homeResult === 'L') return awayTeam;
+  if (awayResult === 'L' || homeResult === 'W') return homeTeam;
+  if (awayResult === 'T' || homeResult === 'T') return 'T';
+  return null;
+}
+
+function buildPredictionPickMap(weeks = [], predictions = {}) {
+  return weeks.reduce((acc, week) => {
+    for (const game of week.games ?? []) {
+      const winner = getPredictionGameWinner(game, predictions);
+      if (winner) acc[game.id] = winner;
+    }
+    return acc;
+  }, {});
+}
+
+const VALID_PREDICTION_RESULTS = new Set(['W', 'L', 'T']);
+const FULL_SEASON_GAME_COUNT = 17;
+const REGULAR_SEASON_GAME_COUNT = 272;
+
+function getPositiveCount(value) {
+  const count = Number(value);
+  return Number.isFinite(count) ? Math.max(0, count) : 0;
+}
+
+function getTeamPredictionGameCount(team) {
+  return Math.max(
+    team?.opponents?.length || 0,
+    team?.schedule?.length || 0,
+    FULL_SEASON_GAME_COUNT,
+  );
+}
+
+function countRecordDecisionSlots(record, teamGameCount) {
+  if (!record) return 0;
+  const decisions = getPositiveCount(record.wins)
+    + getPositiveCount(record.losses)
+    + getPositiveCount(record.ties);
+  return Math.min(teamGameCount, decisions);
+}
+
+function countExplicitGameSlots(record, teamGameCount) {
+  return Object.entries(record?.gameResults ?? {}).reduce((count, [slot, result]) => {
+    const index = Number(slot);
+    if (!Number.isInteger(index) || index < 0 || index >= teamGameCount) return count;
+    return VALID_PREDICTION_RESULTS.has(result) ? count + 1 : count;
+  }, 0);
+}
+
+function isManualRecordPrediction(record) {
+  return Boolean(record?.manualOverride || record?.recordSource === 'manual');
+}
+
+function getPredictionProgressSummary(teams = [], predictions = {}, gameCounts = {}) {
+  let completedTeams = 0;
+  let manualTeamSlots = 0;
+  let totalTeamSlots = gameCounts.totalTeamSlots ?? 0;
+
+  if (!totalTeamSlots) {
+    totalTeamSlots = teams.reduce((sum, team) => sum + getTeamPredictionGameCount(team), 0);
+  }
+
+  for (const team of teams) {
+    const teamGameCount = getTeamPredictionGameCount(team);
+    const record = predictions?.[team.id];
+    const recordSlots = countRecordDecisionSlots(record, teamGameCount);
+    const explicitSlots = countExplicitGameSlots(record, teamGameCount);
+    const hasCompleteManualRecord = isManualRecordPrediction(record) && recordSlots >= teamGameCount;
+    const hasCompleteGamePicks = explicitSlots >= teamGameCount;
+
+    if (hasCompleteManualRecord || hasCompleteGamePicks) {
+      completedTeams += 1;
+    }
+
+    if (isManualRecordPrediction(record)) {
+      manualTeamSlots += Math.max(0, recordSlots - explicitSlots);
+    }
+  }
+
+  const totalGames = gameCounts.totalGames
+    || Math.round(totalTeamSlots / 2)
+    || (teams.length ? REGULAR_SEASON_GAME_COUNT : 0);
+  const pickedGames = Math.min(
+    totalGames,
+    (gameCounts.pickedGames ?? 0) + (manualTeamSlots / 2),
+  );
+
+  return {
+    completedTeams,
+    totalTeams: teams.length,
+    pickedGames,
+    totalGames,
+  };
+}
+
+function prunePlayoffPicksAfterChange(previous, matchupId) {
+  const next = { ...previous };
+  const conference = matchupId.startsWith('AFC-') ? 'AFC' : matchupId.startsWith('NFC-') ? 'NFC' : null;
+  if (matchupId === 'super-bowl') return next;
+
+  if (conference && matchupId.includes('-wc-')) {
+    delete next[`${conference}-div-1`];
+    delete next[`${conference}-div-2`];
+    delete next[`${conference}-championship`];
+    delete next['super-bowl'];
+    return next;
+  }
+
+  if (conference && matchupId.includes('-div-')) {
+    delete next[`${conference}-championship`];
+    delete next['super-bowl'];
+    return next;
+  }
+
+  if (conference && matchupId.endsWith('-championship')) {
+    delete next['super-bowl'];
+  }
+
+  return next;
+}
+
 function AppInner() {
   const [scheduleData, setScheduleData] = useState(null);
+  const [seasonSchedule, setSeasonSchedule] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [appRoute, setAppRoute] = useState(() => parseAppRoute(window.location.pathname, window.location.search));
@@ -206,7 +429,7 @@ function AppInner() {
   const [tradeAnalyticsPrewarmRequested, setTradeAnalyticsPrewarmRequested] = useState(false);
   const [, startRouteTransition] = useTransition();
 
-  const { hasLeague, selectedLeagueId, season, changeSeason, league, linkedLeagueSeasonOptions } = useSleeperLeague();
+  const { hasLeague, selectedLeagueId, season, changeSeason, league, linkedLeagueSeasonOptions, scoringOverridePaused } = useSleeperLeague();
   const {
     statsLoading,
     seasonStats,
@@ -214,9 +437,20 @@ function AppInner() {
     espnIdOverrides,
   } = useSleeperStats();
 
-  const { getPredictionCount, resetAllPredictions, predictions, importPredictions, generateRandomPredictions } = usePredictions();
+  const {
+    getPredictionCount,
+    getGamePredictionCounts,
+    resetAllPredictions,
+    predictions,
+    importPredictions,
+    generateRandomPredictions,
+    setManualTeamRecord,
+    setTeamGameResults,
+  } = usePredictions();
   const { darkMode, toggleDarkMode, favoriteTeam, setFavoriteTeam } = useTheme();
   const fileInputRef = useRef(null);
+  const contentAreaRef = useRef(null);
+  const pendingContentScrollTopRef = useRef(null);
   const latestAppRouteRef = useRef(appRoute);
   const heatmapRouteUpdateTimerRef = useRef(null);
   const pendingHeatmapRoutePatchRef = useRef(null);
@@ -237,8 +471,24 @@ function AppInner() {
   const [leagueSwitcherOpen, setLeagueSwitcherOpen] = useState(false);
   useBodyScrollLock(leagueSwitcherOpen);
 
-  const [teamSearch, setTeamSearch] = useState('');
-  const [divisionFilter, setDivisionFilter] = useState('');
+  const preserveContentScrollDuringUpdate = useCallback((update) => {
+    pendingContentScrollTopRef.current = contentAreaRef.current?.scrollTop ?? null;
+    update();
+  }, []);
+
+  useLayoutEffect(() => {
+    const scrollTop = pendingContentScrollTopRef.current;
+    if (scrollTop == null) return;
+    pendingContentScrollTopRef.current = null;
+
+    const contentArea = contentAreaRef.current;
+    if (!contentArea) return;
+    const maxScrollTop = Math.max(0, contentArea.scrollHeight - contentArea.clientHeight);
+    contentArea.scrollTop = Math.min(scrollTop, maxScrollTop);
+  }, [scoringOverridePaused]);
+
+  const [predictionPickMode, setPredictionPickMode] = useState('record');
+  const [playoffPicks, setPlayoffPicks] = useState({});
 
   const { isInstallable, isInstalled, triggerInstall } = usePWAInstall();
 
@@ -247,7 +497,12 @@ function AppInner() {
   const statisticsView = appRoute.statisticsView;
   const statisticsTeamId = appRoute.statisticsTeamId;
   const statisticsPlayerId = appRoute.statisticsPlayerId;
+  const statisticsGameId = appRoute.statisticsGameId;
   const statisticsMode = appRoute.statisticsMode ?? STATISTICS_MODES.GAME;
+  const statisticsScheduleMode = appRoute.statisticsScheduleMode;
+  const statisticsScheduleWeek = appRoute.statisticsScheduleWeek;
+  const statisticsScheduleTeamId = appRoute.statisticsScheduleTeamId;
+  const statisticsScheduleFilter = appRoute.statisticsScheduleFilter;
   const predictionsTeamId = appRoute.predictionsTeamId;
   const companionView = appRoute.companionView;
   const tradeView = appRoute.tradeView;
@@ -319,10 +574,6 @@ function AppInner() {
         query: appRoute.defenseQuery ?? '',
       }
     : null;
-  const selectedPredictionTeam = activeTab === 'predictions' && predictionsTeamId
-    ? (scheduleData?.teams?.find((team) => team.id.toUpperCase() === predictionsTeamId) ?? null)
-    : null;
-
   const readHistoryState = useCallback(() => {
     const current = window.history.state;
     return current && typeof current === 'object' ? current : {};
@@ -448,6 +699,14 @@ function AppInner() {
     applyRoute({ activeTab: 'statistics', statisticsView: 'browser' });
   }, [applyRoute]);
 
+  const navigateStatisticsSubView = useCallback((view) => {
+    if (view === 'schedule') {
+      applyRoute({ activeTab: 'statistics', statisticsView: 'schedule' });
+      return;
+    }
+    applyRoute({ activeTab: 'statistics', statisticsView: 'browser' });
+  }, [applyRoute]);
+
   const navigateToStatisticsTeam = useCallback((team) => {
     if (!team?.id) return;
     applyRoute({
@@ -456,6 +715,35 @@ function AppInner() {
       statisticsTeamId: team.id,
     });
   }, [applyRoute]);
+
+  const navigateToStatisticsScheduleTeam = useCallback((teamId) => {
+    if (!teamId) return;
+    applyRoute({
+      activeTab: 'statistics',
+      statisticsView: 'schedule',
+      statisticsScheduleMode: 'team',
+      statisticsScheduleTeamId: teamId,
+    });
+  }, [applyRoute]);
+
+  const navigateToStatisticsGame = useCallback((game) => {
+    const gameId = game?.espnEventId ?? game?.eventId ?? game?.id;
+    if (!gameId) return;
+    applyRoute({
+      activeTab: 'statistics',
+      statisticsView: 'game',
+      statisticsGameId: String(gameId),
+    });
+  }, [applyRoute]);
+
+  const updateStatisticsScheduleRoute = useCallback((patch, options = {}) => {
+    applyRoute({
+      ...appRoute,
+      activeTab: 'statistics',
+      statisticsView: 'schedule',
+      ...patch,
+    }, options);
+  }, [appRoute, applyRoute]);
 
   const navigateToStatisticsPlayer = useCallback((player, { backLabel = null, backRoute = null, mode = STATISTICS_MODES.GAME } = {}) => {
     if (!player?.id) return;
@@ -538,18 +826,6 @@ function AppInner() {
   }, []);
 
   useEffect(() => {
-    if (seasonView !== 'predictions') {
-      setTeamSearch('');
-      setDivisionFilter('');
-    }
-  }, [seasonView]);
-
-  useEffect(() => {
-    setTeamSearch('');
-    setDivisionFilter('');
-  }, [activeTab]);
-
-  useEffect(() => {
     if (activeTab !== 'statistics' || statisticsView !== 'player') {
       setStatsNavBack(null);
       return;
@@ -565,8 +841,12 @@ function AppInner() {
   }, [activeTab, statisticsView, statisticsPlayerId, buildStatsBackContext, readHistoryState]);
 
   useEffect(() => {
-    loadScheduleData()
-      .then(data => { setScheduleData(data); setLoading(false); })
+    Promise.all([loadScheduleData(), loadSeasonSchedule()])
+      .then(([data, loadedSeasonSchedule]) => {
+        setScheduleData(data);
+        setSeasonSchedule(loadedSeasonSchedule);
+        setLoading(false);
+      })
       .catch(err => { setError(err.message); setLoading(false); });
   }, []);
 
@@ -600,6 +880,49 @@ function AppInner() {
   const handleImportClick = () => { fileInputRef.current?.click(); setActionSheetOpen(false); };
   const handleMyTeam = () => { setTeamPickerOpen(true); setActionSheetOpen(false); };
 
+  const predictionScheduleModel = useMemo(
+    () => buildPredictionScheduleModel(seasonSchedule, scheduleData?.teams ?? []),
+    [scheduleData, seasonSchedule],
+  );
+  const predictionTeams = predictionScheduleModel.teams;
+  const predictionSchedule = predictionScheduleModel.schedule;
+  const predictionPickMap = useMemo(
+    () => buildPredictionPickMap(predictionSchedule?.weeks ?? [], predictions),
+    [predictionSchedule, predictions],
+  );
+
+  const handlePredictionRecordChange = useCallback(({ teamId, record }) => {
+    if (!teamId || !record) return;
+    setManualTeamRecord(teamId, record, predictionTeams);
+  }, [predictionTeams, setManualTeamRecord]);
+
+  const handlePredictionGameResultsSave = useCallback(({ teamId, gameResults }) => {
+    if (!teamId) return false;
+    return setTeamGameResults(teamId, gameResults, predictionTeams);
+  }, [predictionTeams, setTeamGameResults]);
+
+  const handlePlayoffPick = useCallback(({ matchupId, winnerId }) => {
+    if (!matchupId || !winnerId) return;
+    setPlayoffPicks((prev) => {
+      const next = prunePlayoffPicksAfterChange(prev, matchupId);
+      if (prev[matchupId] === winnerId) {
+        delete next[matchupId];
+      } else {
+        next[matchupId] = winnerId;
+      }
+      return next;
+    });
+  }, []);
+
+  const handleOpenPredictionTeam = useCallback((team) => {
+    navigatePredictionTeam(team);
+  }, [navigatePredictionTeam]);
+
+  const handleBackToAdvancedMode = useCallback(() => {
+    setPredictionPickMode('advanced');
+    applyRoute({ activeTab: 'predictions', seasonView: 'predictions' });
+  }, [applyRoute]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen" style={{ background: 'var(--color-bg)' }}>
@@ -617,9 +940,16 @@ function AppInner() {
   }
 
   const predictionCount = getPredictionCount();
-  const totalTeams = scheduleData.teams.length;
-  const validation = validateTotalWinsLosses(predictions);
-  const isSeasonComplete = predictionCount === totalTeams && validation.isValid;
+  const progressSummary = getPredictionProgressSummary(
+    predictionTeams,
+    predictions,
+    getGamePredictionCounts(predictionTeams),
+  );
+  const completedTeamCount = progressSummary.completedTeams;
+  const totalTeams = progressSummary.totalTeams || scheduleData.teams.length;
+  const pickedGameCount = progressSummary.pickedGames;
+  const totalGames = progressSummary.totalGames;
+  const isSeasonComplete = totalTeams > 0 && completedTeamCount === totalTeams;
   const statsRoutePlayerMeta = activeTab === 'statistics' && statisticsView === 'player'
     ? (readHistoryState().statsPlayerMeta ?? null)
     : null;
@@ -632,7 +962,10 @@ function AppInner() {
         activeTab={activeTab}
         onTabChange={navigateToTab}
         predictionCount={predictionCount}
+        completedTeamCount={completedTeamCount}
         totalTeams={totalTeams}
+        pickedGameCount={pickedGameCount}
+        totalGames={totalGames}
         isSeasonComplete={isSeasonComplete}
         darkMode={darkMode}
         onToggleDarkMode={toggleDarkMode}
@@ -679,7 +1012,7 @@ function AppInner() {
                   color: isSeasonComplete ? 'var(--color-accent-green)' : 'var(--color-label-secondary)',
                 }}
               >
-                {predictionCount}/{totalTeams}{isSeasonComplete && ' ✓'}
+                Teams {completedTeamCount}/{totalTeams}{isSeasonComplete && ' ✓'}
               </span>
             </div>
             <SeasonSubNav activeView={seasonView} onViewChange={navigateSeasonView} />
@@ -727,87 +1060,75 @@ function AppInner() {
           </div>
         )}
 
+        {activeTab === 'statistics' && (
+          <div className="season-subnav">
+            <StatisticsSubNav
+              activeView={statisticsView === 'schedule' ? 'schedule' : 'stats'}
+              onViewChange={navigateStatisticsSubView}
+            />
+          </div>
+        )}
+
         {/* Scoring override banner — frozen above scroll area */}
         {activeTab === 'companion' && hasLeague && companionView !== 'scoring' && (
-          <ScoringOverrideBanner />
+          <ScoringOverrideBanner preserveContentScrollDuringUpdate={preserveContentScrollDuringUpdate} />
         )}
 
         {/* ── Content area ─────────────────────────────────── */}
         <div
+          ref={contentAreaRef}
           className="content-area lg:px-8 pt-4 lg:pt-6"
           onScroll={(e) => setContentScrolled(e.currentTarget.scrollTop > 2)}
         >
 
           {activeTab === 'predictions' && (
-            <div className="px-4">
-              {seasonView === 'predictions' && (
-                <>
-                  {/* Search + filter */}
-                  <div className="flex gap-2 mb-4 lg:mb-5">
-                    <div className="flex-1 relative">
-                      <svg
-                        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
-                        style={{ color: 'var(--color-label-tertiary)' }}
-                        fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                        aria-hidden="true"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                      <input
-                        type="text"
-                        value={teamSearch}
-                        onChange={e => setTeamSearch(e.target.value)}
-                        placeholder="Search teams…"
-                        aria-label="Search teams"
-                        className="w-full pl-9 pr-3 py-2 rounded-xl font-medium focus:outline-none"
-                        style={{
-                          fontSize: '16px',
-                          background: 'var(--color-fill-secondary)',
-                          color: 'var(--color-label)',
-                        }}
-                      />
-                    </div>
-                    <div className="flex gap-1.5 items-center shrink-0">
-                      {[['', 'All'], ['AFC', 'AFC'], ['NFC', 'NFC']].map(([val, label]) => (
-                        <button
-                          key={val}
-                          onClick={() => setDivisionFilter(val)}
-                          className="px-3 py-2 rounded-xl text-xs font-semibold transition-colors"
-                          style={{
-                            background: divisionFilter === val ? 'var(--color-signature)' : 'var(--color-fill-secondary)',
-                            color: divisionFilter === val ? 'var(--color-signature-fg)' : 'var(--color-label-secondary)',
-                          }}
-                          aria-pressed={divisionFilter === val}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <TeamList
-                    teams={scheduleData.teams}
-                    onTeamClick={navigatePredictionTeam}
-                    teamSearch={teamSearch}
-                    divisionFilter={divisionFilter}
-                  />
-                </>
-              )}
-
-              {seasonView === 'standings' && (
-                <Suspense fallback={<SectionLoading label="Loading standings" />}>
-                  <StandingsTable teams={scheduleData.teams} />
-                </Suspense>
-              )}
-              {seasonView === 'playoffs' && (
-                <Suspense fallback={<SectionLoading label="Loading playoffs" />}>
-                  <PlayoffSeeding teams={scheduleData.teams} />
-                </Suspense>
-              )}
-            </div>
+            <Suspense fallback={<SectionLoading label="Loading predictions" />}>
+              <PredictionsRedesign
+                teams={predictionTeams}
+                scheduleData={predictionSchedule}
+                seasonView={seasonView}
+                pickMode={predictionPickMode}
+                onPickModeChange={setPredictionPickMode}
+                selectedTeamId={predictionsTeamId}
+                picks={predictionPickMap}
+                predictions={predictions}
+                onRecordChange={handlePredictionRecordChange}
+                onSaveTeamGameResults={handlePredictionGameResultsSave}
+                playoffPicks={playoffPicks}
+                onPlayoffPick={handlePlayoffPick}
+                onOpenTeam={handleOpenPredictionTeam}
+                onBackToAdvancedMode={handleBackToAdvancedMode}
+              />
+            </Suspense>
           )}
 
-          {activeTab === 'statistics' && (
+          {activeTab === 'statistics' && statisticsView === 'schedule' && (
+            <Suspense fallback={<SectionLoading label="Loading schedule" />}>
+              <StatisticsSchedule
+                teams={predictionTeams}
+                scheduleData={predictionSchedule}
+                mode={statisticsScheduleMode}
+                week={statisticsScheduleWeek}
+                teamId={statisticsScheduleTeamId}
+                filter={statisticsScheduleFilter}
+                onRouteChange={updateStatisticsScheduleRoute}
+                onViewGameStats={navigateToStatisticsGame}
+              />
+            </Suspense>
+          )}
+
+          {activeTab === 'statistics' && statisticsView === 'game' && (
+            <Suspense fallback={<SectionLoading label="Loading game statistics" />}>
+              <StatisticsGame
+                gameId={statisticsGameId}
+                teams={predictionTeams}
+                scheduleData={predictionSchedule}
+                onBackToSchedule={() => navigateStatisticsSubView('schedule')}
+              />
+            </Suspense>
+          )}
+
+          {activeTab === 'statistics' && statisticsView !== 'schedule' && statisticsView !== 'game' && (
             <Suspense fallback={<SectionLoading label="Loading statistics" />}>
             <PlayerBrowser
               teams={scheduleData.teams}
@@ -822,6 +1143,7 @@ function AppInner() {
               onNavigateHome={navigateToStatisticsHome}
               onNavigateTeam={navigateToStatisticsTeam}
               onNavigatePlayer={navigateToStatisticsPlayer}
+              onViewSchedule={navigateToStatisticsScheduleTeam}
               onPlayerModeChange={updateStatisticsMode}
               onBuildTrade={(initialTrade) => {
                 applyRoute({
@@ -1082,7 +1404,15 @@ function AppInner() {
       {/* ── Modals ────────────────────────────────────────────── */}
       {guideOpen && (
         <Suspense fallback={<ModalLoading label="Loading guide" />}>
-          <Guide onClose={() => setGuideOpen(false)} activeTab={activeTab} companionView={companionView} tradeView={tradeView} />
+          <Guide
+            onClose={() => setGuideOpen(false)}
+            activeTab={activeTab}
+            seasonView={seasonView}
+            statisticsView={statisticsView}
+            companionView={companionView}
+            tradeView={tradeView}
+            scoutView={scoutView}
+          />
         </Suspense>
       )}
       {teamPickerOpen && (
@@ -1145,16 +1475,6 @@ function AppInner() {
       {exportPreviewOpen && (
         <Suspense fallback={<ModalLoading label="Preparing export" />}>
           <ExportPreview teams={scheduleData.teams} onClose={() => setExportPreviewOpen(false)} />
-        </Suspense>
-      )}
-
-      {selectedPredictionTeam && (
-        <Suspense fallback={<ModalLoading label="Loading team details" />}>
-          <TeamDetail
-            team={selectedPredictionTeam}
-            allTeams={scheduleData.teams}
-            onClose={() => applyRoute({ activeTab: 'predictions', seasonView: 'predictions' })}
-          />
         </Suspense>
       )}
 

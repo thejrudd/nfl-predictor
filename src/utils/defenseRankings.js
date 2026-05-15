@@ -124,6 +124,19 @@ function buildGamesByTeam(scheduleMap, teams, activeWeeks) {
   return gamesByTeam;
 }
 
+function buildStrengthRankMap(rows, rankKey) {
+  return new Map([...rows]
+    .sort((a, b) => {
+      const aVal = a[rankKey];
+      const bVal = b[rankKey];
+      if (aVal == null && bVal == null) return a.team.localeCompare(b.team);
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
+      return (aVal - bVal) || a.team.localeCompare(b.team);
+    })
+    .map((row, index) => [row.team, index + 1]));
+}
+
 export function buildDefenseRankingRows({
   weeklyStats,
   players,
@@ -202,6 +215,9 @@ export function buildDefenseRankingRows({
     };
   });
 
+  const rankKey = normalizedSort === 'avg' ? 'avg' : 'total';
+  const strengthRankByTeam = buildStrengthRankMap(rows, rankKey);
+
   const sortedRows = rows.sort((a, b) => {
     if (normalizedSort === 'team') {
       const delta = a.team.localeCompare(b.team);
@@ -217,7 +233,11 @@ export function buildDefenseRankingRows({
     return delta || a.team.localeCompare(b.team);
   });
 
-  return sortedRows.map((row, index) => ({ ...row, rank: index + 1 }));
+  return sortedRows.map((row, index) => ({
+    ...row,
+    rank: index + 1,
+    strengthRank: strengthRankByTeam.get(row.team) ?? index + 1,
+  }));
 }
 
 export function filterDefenseRankingRows(rows, query) {

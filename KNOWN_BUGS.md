@@ -12,6 +12,7 @@ Open bugs are listed first, fixed bugs below. Add new entries at the bottom of e
 | Desktop sidebar cannot be collapsed — always occupies 240px regardless of available screen width or user preference |
 | Companion → Matchup player projection formula hover can fail to stay open from the `i` control, hiding the projection math before it can be read |
 | Statistics player profile career highlights can show 0 TFL for defensive players when ESPN's career aggregate omits tackles for loss even though season-level defensive stats include them |
+| Companion → Defense averages round values to the nearest whole number instead of showing the nearest tenth decimal |
 
 ---
 
@@ -242,3 +243,22 @@ Open bugs are listed first, fixed bugs below. Add new entries at the bottom of e
 | Companion Heatmap mobile filter chips started at uneven horizontal positions because only Phase/Position reserved a fixed label column and Result was pushed to the right | v7.3.1 |
 | Companion Heatmap mobile filters consumed too much vertical space, leaving the heatmap itself crowded below the controls | v7.3.1 |
 | Statistics Visual filter chips could crowd together on mobile because the season/stat/mode controls and scale selector stayed split into left and right header groups instead of stacking | v7.4 |
+| Companion → Defense ranks most-allowed defenses as #1 and keeps the summary copy static when filters or sort order change | v7.5 |
+| Predictions Choose Record can allow impossible division records, including every team in a division reaching 4-2 | v7.5 |
+| Predictions Choose Record can allow an impossible overall/division combination, such as 17-0 overall with 0-6 in the division | v7.5 |
+| Predictions Choose Record does not propagate forced wins or losses to affected opponents when selecting an undefeated or winless record | v7.5 |
+| Predictions right-rail Live Seeds populates playoff teams before any records have been entered | v7.5 |
+| Predictions right-rail Live Seeds fills remaining seed slots with unentered teams after the first record is entered | v7.5 |
+| Predictions Advanced Mode team header only shows the team gradient on hover instead of at rest | v7.5 |
+| Predictions Advanced Mode team header record does not live-update while staged Game Picks are being edited | v7.5 |
+| Predictions Advanced Mode can crash when rendering the placeholder bye week row because the row has no game id | v7.5 |
+| Predictions Advanced Mode bye week label is not horizontally aligned with opponent team abbreviations | v7.5 |
+| Predictions Choose Record rows can overlap team identity, record status, and steppers on narrower laptop viewports | v7.5 |
+| Predictions Choose Record stepper pills can stretch too wide when rows switch into their narrower responsive layout | v7.5 |
+| Predictions Advanced Mode team rows lack a clear hover affordance even though the rows are clickable | v7.5 |
+| Companion scoring preview Hold toggle can reset Companion tab scroll position to the top, making Rankings jump while comparing scoring systems | v7.5 |
+| Predictions Playoffs tab populates the bracket before any team records have been selected | v7.5 |
+| Predictions Choose Record Division stepper is coupled to Wins and can auto-fill division wins instead of letting users adjust Division directly | v7.5 |
+| Statistics player profiles can show the 2026 season before any 2026 stats have been recorded | v7.5 |
+| Statistics Visual is only enabled for the most recent displayed season, so players whose newest displayed year has no stats cannot use Visual for their latest stat-bearing season | v7.5 |
+| Statistics Visual is unavailable without a connected fantasy league even though Game Stats visualizations can run without league scoring | v7.5 |
