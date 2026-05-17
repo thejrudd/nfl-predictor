@@ -33,6 +33,7 @@ const PredictionsRedesign = lazy(() => import('./components/predictions/Predicti
 const Guide = lazy(() => import('./components/Guide'));
 const PlayerBrowser = lazy(() => import('./components/PlayerBrowser'));
 const StatisticsSchedule = lazy(() => import('./components/StatisticsSchedule'));
+const StatisticsStandings = lazy(() => import('./components/StatisticsStandings'));
 const StatisticsGame = lazy(() => import('./components/StatisticsGame'));
 const FavoriteTeamPicker = lazy(() => import('./components/FavoriteTeamPicker'));
 const CompanionConnect = lazy(() => import('./components/companion/CompanionConnect'));
@@ -704,6 +705,10 @@ function AppInner() {
       applyRoute({ activeTab: 'statistics', statisticsView: 'schedule' });
       return;
     }
+    if (view === 'standings') {
+      applyRoute({ activeTab: 'statistics', statisticsView: 'standings' });
+      return;
+    }
     applyRoute({ activeTab: 'statistics', statisticsView: 'browser' });
   }, [applyRoute]);
 
@@ -1063,7 +1068,7 @@ function AppInner() {
         {activeTab === 'statistics' && (
           <div className="season-subnav">
             <StatisticsSubNav
-              activeView={statisticsView === 'schedule' ? 'schedule' : 'stats'}
+              activeView={statisticsView === 'schedule' || statisticsView === 'standings' ? statisticsView : 'stats'}
               onViewChange={navigateStatisticsSubView}
             />
           </div>
@@ -1117,6 +1122,15 @@ function AppInner() {
             </Suspense>
           )}
 
+          {activeTab === 'statistics' && statisticsView === 'standings' && (
+            <Suspense fallback={<SectionLoading label="Loading standings" />}>
+              <StatisticsStandings
+                teams={predictionTeams}
+                scheduleData={predictionSchedule}
+              />
+            </Suspense>
+          )}
+
           {activeTab === 'statistics' && statisticsView === 'game' && (
             <Suspense fallback={<SectionLoading label="Loading game statistics" />}>
               <StatisticsGame
@@ -1128,7 +1142,7 @@ function AppInner() {
             </Suspense>
           )}
 
-          {activeTab === 'statistics' && statisticsView !== 'schedule' && statisticsView !== 'game' && (
+          {activeTab === 'statistics' && statisticsView !== 'schedule' && statisticsView !== 'standings' && statisticsView !== 'game' && (
             <Suspense fallback={<SectionLoading label="Loading statistics" />}>
             <PlayerBrowser
               teams={scheduleData.teams}

@@ -2714,6 +2714,199 @@ body {
   line-height: 1.5;
 }
 
+.statistics-standings {
+  display: grid;
+  gap: 14px;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.statistics-standings-panel,
+.statistics-standings-table-card {
+  min-width: 0;
+  border: 1px solid var(--color-separator);
+  border-radius: 8px;
+  background: var(--color-bg-secondary);
+  overflow: hidden;
+}
+
+.statistics-standings-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  width: min(100%, 300px);
+}
+
+.statistics-standings-summary span {
+  display: grid;
+  min-height: 46px;
+  min-width: 0;
+  align-content: center;
+  gap: 3px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-separator);
+  border-radius: 8px;
+  background: var(--color-fill);
+  color: var(--color-label-secondary);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.statistics-standings-summary strong {
+  color: var(--color-label);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.statistics-standings-grid {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.statistics-standings-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 43px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-separator);
+  background: var(--color-bg-tertiary);
+}
+
+.statistics-standings-table-header span:first-child {
+  color: var(--color-label);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.statistics-standings-table-header span:last-child {
+  color: var(--color-label-tertiary);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.statistics-standings-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.statistics-standings-table {
+  width: 100%;
+  min-width: 480px;
+  border-collapse: collapse;
+}
+
+.statistics-standings-table th,
+.statistics-standings-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--color-separator);
+  color: var(--color-label-secondary);
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.15;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.statistics-standings-table th {
+  color: var(--color-label-tertiary);
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.statistics-standings-row {
+  background: var(--statistics-standings-row-bg, var(--color-bg-secondary));
+}
+
+.statistics-standings-row td {
+  border-bottom-color: color-mix(in srgb, var(--statistics-standings-row-border, var(--color-separator)) 42%, transparent);
+  background: transparent;
+  color: var(--statistics-standings-row-fg, var(--color-label));
+  font-variant-numeric: tabular-nums;
+}
+
+.statistics-standings-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.statistics-standings-rank {
+  display: inline-flex;
+  width: 22px;
+  min-height: 22px;
+  align-items: center;
+  justify-content: center;
+  color: var(--statistics-standings-row-fg, var(--color-label));
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.statistics-standings-team {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.statistics-standings-team-logo {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 5px color-mix(in srgb, var(--color-label) 18%, transparent));
+}
+
+.statistics-standings-team-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1;
+}
+
+.statistics-standings-team-code,
+.statistics-standings-record {
+  color: var(--statistics-standings-row-fg, var(--color-label));
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.statistics-standings-team-name {
+  overflow: visible;
+  color: var(--statistics-standings-row-muted, var(--color-label-secondary));
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.15;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+@media (min-width: 1280px) {
+  .statistics-standings-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (min-width: 720px) {
   .statistics-schedule-game-row,
   .statistics-schedule-team-row {

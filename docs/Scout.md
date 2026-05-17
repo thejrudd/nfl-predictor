@@ -1,6 +1,6 @@
 # Scout Tab — Architecture & Implementation Reference
 
-Introduced in v7.0 Alpha. Scout is a top-level rookie evaluation hub backed by static 2026 prospect data. It supports a pre-draft state with ranked prospects and nullable draft result fields, then can be updated after each pick with actual round, pick, overall, and team.
+Introduced in v7.0. Scout is a top-level rookie evaluation hub backed by static 2026 prospect data. It supports a pre-draft state with ranked prospects and nullable draft result fields, then can be updated after each pick with actual round, pick, overall, and team.
 
 ---
 
@@ -10,7 +10,7 @@ Introduced in v7.0 Alpha. Scout is a top-level rookie evaluation hub backed by s
 |---|---|
 | Tab name | Scout |
 | Navigation | Top-level tab alongside Predictions, Statistics, Companion, Trade |
-| Release badge | Alpha |
+| Release badge | Beta |
 | Layout | Single scroll page on mobile; split panel (list left, detail right) on desktop (lg+) |
 | Mobile detail | Bottom sheet (flat top edge, no rounded corners) |
 | Spotlight layout | Current-board editorial cards derived from the current sorted rookie data |
@@ -247,4 +247,4 @@ Scout uses canonical route segments for its top-level views:
 
 - `src/App.jsx` lazy-loads `ScoutTab`.
 - `src/utils/appRoutes.js` parses, normalizes, and builds Scout view routes.
-- `src/components/Sidebar.jsx` and `src/components/BottomTabBar.jsx` show Scout as Alpha.
+- `src/components/Sidebar.jsx` and `src/components/BottomTabBar.jsx` show Scout as Beta.

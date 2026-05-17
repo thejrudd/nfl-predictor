@@ -1064,3 +1064,13 @@ All notable changes, oldest first. Add new entries at the bottom.
 
 - **Statistics schedule mobile fix** - Contained the mobile week rail's horizontal scrolling so the full Statistics Schedule screen no longer drifts left/right, and added the shared scroll cue arrow to the week selector.
 - **Support links restored** - Exposed the Ko-fi support action from the mobile options sheet and stopped excluding Ko-fi/donate asset paths from version control.
+
+---
+
+## v7.6 - Statistics Standings
+*2026-05-17*
+
+- **Statistics Standings tab** - Added a dedicated Statistics subview for division and conference standings, with team-gradient rows and record, win percentage, division, conference, and point-differential columns.
+- **Schedule-result standings model** - Added a tested standings utility that derives records from final schedule scores while keeping all teams visible at 0-0 before results are available.
+- **Statistics navigation polish** - Ordered the Statistics sub-navigation as Stats, Schedule, then Standings on mobile and desktop.
+- **Scout Beta promotion** - Updated Scout's desktop and mobile navigation badge, README feature list, and Scout docs from Alpha to Beta.

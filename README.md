@@ -15,13 +15,14 @@ An interactive web app for the 2026 NFL season — with full Sleeper fantasy lea
 - **Player Browser** — Browse all 32 rosters by conference, division, and position; search players by name across the league
 - **Player Profiles** — Full profile pages with headshot, career stats, game log, and Pro Bowl / All-Pro honors
 - **Statistics Schedule** — Browse the NFL schedule by week or team with international, PrimeTime, and holiday filters
+- **Statistics Standings** — View division and conference standings from final schedule results inside the Statistics section
 - **Sleeper League Integration** — Connect your Sleeper account, import a league, and sync custom scoring settings
 - **League Browser** — Browse any league member's full roster with stats and weekly breakdowns; view a league-wide draft capital grid showing pick ownership by round and year
 - **Fantasy Matchup View** — Head-to-head starter comparison with week-by-week points, projections, positional rankings, weather context, and game location
 - **Player Projections** — Min/max/projected ranges using a recent-weighted blend of form and season average, factoring opponent strength, home/away, weather, and snap % trend
 - **Heatmap** — 32-team grid of fantasy points allowed or scored per position per week; three scope modes, Vegas spread/O/U overlay, location filter, and per-cell player drilldowns
 - **Trade Agent & Upgrades** — Build trades with roster shelves, draft picks, value context, drag-and-drop actions, and guided upgrade suggestions
-- **Scout (Alpha)** — Rookie scouting hub with 2026 prospects, all-position filters, draft-status handling, combine metrics, and side-by-side prospect comparison
+- **Scout (Beta)** — Rookie scouting hub with 2026 prospects, all-position filters, draft-status handling, combine metrics, and side-by-side prospect comparison
 - **Scoring Breakdowns** — Drill into any player or full team score to see a stat-by-stat fantasy point breakdown
 - **Favorite Team Theming** — Pick your favorite NFL team to theme the app; accent color applies across nav, progress bar, and filter toggles
 - **Export/Import** — Save predictions as JSON; import JSON to restore picks
@@ -88,16 +89,16 @@ npm run validate:routing
 | PWA | vite-plugin-pwa + Workbox |
 | Production serving | nginx (Docker) |
 
-## What's New in v7.5.1
+## What's New in v7.6
 
-- **Statistics Schedule mobile fix** - The mobile week selector now keeps horizontal scrolling inside the week rail and shows the shared scroll cue arrow.
-- **Support links restored** - The Ko-fi support action is available from the mobile options sheet, and Ko-fi/donate asset paths are no longer excluded from version control.
+- **Statistics Standings** - Added a dedicated Statistics tab for division and conference standings, powered by final schedule scores when results are available.
+- **Statistics navigation polish** - Ordered the Statistics sub-navigation as Stats, Schedule, then Standings.
+- **Scout Beta badge** - Promoted Scout from Alpha to Beta in desktop and mobile navigation.
 
 For the full version history, see [CHANGELOG.md](CHANGELOG.md).
 
 ## Roadmap
 
-- **v7.6 - Statistics Standings** - Add a dedicated Standings tab inside Statistics.
 - **v8.0 - ESPN League Integration** - Planned major integration track.
 - **v9.0 - Live Fantasy Scoring** - Planned live scoring track.
 - **Scout Rookie Projection Layer** - Add next-season rookie projections that work for standard and IDP-focused draft prep without overloading the current Scout board.
@@ -113,7 +114,7 @@ src/
 │   ├── NavBar.jsx                 # Mobile sticky top nav bar
 │   ├── BottomTabBar.jsx           # Mobile bottom tab bar (Season / Companion)
 │   ├── SeasonSubNav.jsx           # Season sub-view tabs (Predictions / Standings / Playoffs)
-│   ├── StatisticsSubNav.jsx       # Statistics sub-view tabs (Stats / Schedule)
+│   ├── StatisticsSubNav.jsx       # Statistics sub-view tabs (Stats / Schedule / Standings)
 │   ├── CompanionSubNav.jsx        # Companion sub-view tabs
 │   ├── ActionSheet.jsx            # iOS-style bottom sheet for overflow menu
 │   ├── FavoriteTeamPicker.jsx     # Full-screen team color theme picker
@@ -130,6 +131,7 @@ src/
 │   ├── PlayerProfile.jsx          # Player profile page with hero card, stats, and game log
 │   ├── PlayerStatTable.jsx        # Accordion stat table with standard/advanced toggle
 │   ├── StatisticsSchedule.jsx     # NFL schedule browser by week/team/special slate
+│   ├── StatisticsStandings.jsx    # NFL standings by division and conference
 │   ├── StatisticsGame.jsx         # Game-level box score route for final games
 │   ├── predictions/
 │   │   └── PredictionsRedesign.jsx # Record-first predictions, advanced team picks, standings, playoffs
@@ -161,6 +163,7 @@ src/
     ├── projectionEngine.js        # PPG averages, positional ranks, opponent strength, projections
     ├── scoringEngine.js           # Fantasy point calculation and DEFAULT_SCORING config
     ├── scheduleParser.js          # Team/division queries, strength of schedule
+    ├── statisticsStandings.js     # Schedule-result standings model
     ├── validation.js              # Constraint checking and balance validation
     ├── exportImport.js            # JSON export/import
     ├── exportStats.js             # Highlight stat computations for the infographic

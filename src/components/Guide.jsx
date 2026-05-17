@@ -95,6 +95,20 @@ const GUIDE_CONTENT = {
     ],
   },
 
+  statistics_standings: {
+    title: 'STANDINGS',
+    steps: [
+      {
+        title: 'Read the divisions',
+        description: 'Division tables rank teams by schedule results and show overall, division, and conference records.',
+      },
+      {
+        title: 'Scan the conferences',
+        description: 'Conference tables roll AFC and NFC teams into separate ranked views with the same record context.',
+      },
+    ],
+  },
+
   statistics_team: {
     title: 'TEAM PAGE',
     steps: [

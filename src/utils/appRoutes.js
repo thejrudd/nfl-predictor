@@ -16,7 +16,7 @@ function getDefaultActiveTab() {
 const PREDICTIONS_VIEWS = new Set(['predictions', 'standings', 'playoffs']);
 const COMPANION_VIEWS = new Set(['roster', 'rankings', 'matchup', 'waiver', 'league', 'heatmap', 'defense', 'scoring']);
 const TRADE_VIEWS = new Set(['agent', 'intelligence', 'upgrade']);
-const STATISTICS_VIEWS = new Set(['browser', 'team', 'player', 'schedule', 'game']);
+const STATISTICS_VIEWS = new Set(['browser', 'team', 'player', 'schedule', 'standings', 'game']);
 const STATISTICS_MODES = new Set(['game', 'fantasy', 'visual']);
 const STATISTICS_SCHEDULE_MODES = new Set(['week', 'team']);
 const STATISTICS_SCHEDULE_FILTERS = new Set(['international', 'primetime', 'holiday']);
@@ -210,6 +210,14 @@ export function normalizeAppRoute(route = {}) {
       };
     }
 
+    if (statisticsView === 'standings') {
+      return {
+        ...DEFAULT_ROUTE,
+        activeTab: 'statistics',
+        statisticsView: 'standings',
+      };
+    }
+
     if (statisticsView === 'game' && statisticsGameId) {
       return {
         ...DEFAULT_ROUTE,
@@ -375,6 +383,12 @@ export function parseAppRoute(pathname = '/', search = '') {
           statisticsScheduleFilter: parseQueryValue(searchParams, 'filter'),
         });
       }
+      if (statisticsSubview === 'standings') {
+        return normalizeAppRoute({
+          activeTab: 'statistics',
+          statisticsView: 'standings',
+        });
+      }
       if (statisticsSubview === 'game') {
         return normalizeAppRoute({
           activeTab: 'statistics',
@@ -453,6 +467,9 @@ export function buildAppPath(route) {
           ['team', normalized.statisticsScheduleMode === 'team' ? normalized.statisticsScheduleTeamId : null],
           ['filter', normalized.statisticsScheduleFilter],
         ])}`;
+      }
+      if (normalized.statisticsView === 'standings') {
+        return '/statistics/standings';
       }
       if (normalized.statisticsView === 'game' && normalized.statisticsGameId) {
         return `/statistics/game/${encodeURIComponent(normalized.statisticsGameId)}`;

@@ -142,7 +142,7 @@ export default function Sidebar({
           onClick={() => onTabChange('scout')}
           icon={<ScoutIcon />}
           label="Scout"
-          alpha
+          beta
           collapsed={collapsed}
         />
         <SidebarNavItem
@@ -280,7 +280,7 @@ export default function Sidebar({
           className="px-5 py-3 text-xs"
           style={{ color: 'var(--color-label-tertiary)' }}
         >
-          v7.5.1
+          v7.6
         </div>
       </div>
     </aside>
